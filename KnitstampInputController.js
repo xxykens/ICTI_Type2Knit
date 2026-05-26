@@ -13,7 +13,7 @@ let expressionTuning = {
   tagThreshold: 0.16
 };
 
-// UI / main sketch에서 setup 때 호출
+// main sketch에서 setup 때 호출
 function setupKnitstampInput() {
   knitstampInputController = new KnitstampInputController({
     faceTracker: new FaceExpressionTracker(640, 480),
@@ -22,12 +22,12 @@ function setupKnitstampInput() {
   });
 }
 
-// UI / main sketch에서 draw 때 호출
+// main sketch에서 draw 때 호출
 function updateKnitstampInput() {
   knitstampInputController.update();
 }
 
-// UI / main sketch에서 keyPressed 때 호출
+// main sketch에서 keyPressed 때 호출
 function recordKnitstampKey() {
   knitstampInputController.recordKey();
 }
@@ -75,7 +75,6 @@ class KnitstampInputController {
 
     return {
       second: secondIndex,
-      timestamp: Date.now(),
 
       input: {
         face: {
