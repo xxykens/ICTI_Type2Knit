@@ -4,7 +4,7 @@ window.knitstamp = window.knitstamp || {
 
 let knitstampInputController;
 
-const expressionTuning = {
+let expressionTuning = {
   eyeMaxChange: 0.035,
   browMaxChange: 8,
   mouthCurveMaxChange: 0.035,
@@ -47,7 +47,7 @@ class KnitstampInputController {
   }
 
   update() {
-    const now = millis();
+    let now = millis();
 
     if (now - this.lastRecordedAt < this.intervalMs) {
       return;
@@ -55,7 +55,7 @@ class KnitstampInputController {
 
     this.lastRecordedAt = now;
 
-    const second = this.createSecondObject(this.currentSecondIndex);
+    let second = this.createSecondObject(this.currentSecondIndex);
     window.knitstamp.seconds.push(second);
 
     this.currentSecondIndex += 1;
@@ -70,8 +70,8 @@ class KnitstampInputController {
   }
 
   createSecondObject(secondIndex) {
-    const faceData = this.faceTracker.getExpressionData();
-    const typingData = this.typingTracker.getTypingData();
+    let faceData = this.faceTracker.getExpressionData();
+    let keysPerSecond = this.typingTracker.consumeKeysPerSecond();
 
     return {
       second: secondIndex,
@@ -91,9 +91,7 @@ class KnitstampInputController {
         },
 
         typing: {
-          keysPerSecond: typingData.keysPerSecond,
-          intensity: typingData.intensity,
-          state: typingData.state
+          keysPerSecond: keysPerSecond
         }
       }
     };
@@ -133,7 +131,7 @@ class FaceExpressionTracker {
   }
 
   registerBaseline() {
-    const keypoints = this.getKeypoints();
+    let keypoints = this.getKeypoints();
 
     if (!keypoints) {
       return {
@@ -151,13 +149,13 @@ class FaceExpressionTracker {
   }
 
   getExpressionData() {
-    const keypoints = this.getKeypoints();
+    let keypoints = this.getKeypoints();
 
     if (!keypoints) {
       return this.emptyFaceData("얼굴 없음", false);
     }
 
-    const current = this.extractFaceValues(keypoints);
+    let current = this.extractFaceValues(keypoints);
 
     if (!this.baseline) {
       return {
@@ -173,7 +171,7 @@ class FaceExpressionTracker {
       };
     }
 
-    const compared = this.compareFaceValues(this.baseline, current);
+    let compared = this.compareFaceValues(this.baseline, current);
 
     return {
       hasFace: true,
@@ -202,24 +200,24 @@ class FaceExpressionTracker {
     };
   }
 
-  extractFaceValues(k) {
+  extractFaceValues(keypoints) {
     return {
-      eyeOpen: this.getEyeOpen(k),
-      browDist: this.getBrowDistance(k),
-      mouthCorner: this.getMouthCorner(k),
-      mouthOpen: this.getMouthOpen(k)
+      eyeOpen: this.getEyeOpen(keypoints),
+      browDist: this.getBrowDistance(keypoints),
+      mouthCorner: this.getMouthCorner(keypoints),
+      mouthOpen: this.getMouthOpen(keypoints)
     };
   }
 
-  getEyeOpen(k) {
-    if (!this.hasPoints(k, [33, 133, 159, 145, 362, 263, 386, 374])) {
+  getEyeOpen(keypoints) {
+    if (!this.hasPoints(keypoints, [33, 133, 159, 145, 362, 263, 386, 374])) {
       return null;
     }
 
-    const leftEyeW = this.getDistance(k[33], k[133]);
-    const leftEyeH = this.getDistance(k[159], k[145]);
-    const rightEyeW = this.getDistance(k[362], k[263]);
-    const rightEyeH = this.getDistance(k[386], k[374]);
+    let leftEyeW = this.getDistance(keypoints[33], keypoints[133]);
+    let leftEyeH = this.getDistance(keypoints[159], keypoints[145]);
+    let rightEyeW = this.getDistance(keypoints[362], keypoints[263]);
+    let rightEyeH = this.getDistance(keypoints[386], keypoints[374]);
 
     if (leftEyeW === 0 || rightEyeW === 0) {
       return null;
@@ -228,50 +226,50 @@ class FaceExpressionTracker {
     return ((leftEyeH / leftEyeW) + (rightEyeH / rightEyeW)) / 2;
   }
 
-  getBrowDistance(k) {
-    if (!this.hasPoints(k, [105, 159, 334, 386])) {
+  getBrowDistance(keypoints) {
+    if (!this.hasPoints(keypoints, [105, 159, 334, 386])) {
       return null;
     }
 
-    const left = k[159][1] - k[105][1];
-    const right = k[386][1] - k[334][1];
+    let left = keypoints[159][1] - keypoints[105][1];
+    let right = keypoints[386][1] - keypoints[334][1];
 
     return (left + right) / 2;
   }
 
-  getMouthCorner(k) {
-    if (!this.hasPoints(k, [61, 291, 13, 14])) {
+  getMouthCorner(keypoints) {
+    if (!this.hasPoints(keypoints, [61, 291, 13, 14])) {
       return null;
     }
 
-    const mouthWidth = this.getDistance(k[61], k[291]);
+    let mouthWidth = this.getDistance(keypoints[61], keypoints[291]);
 
     if (mouthWidth === 0) {
       return null;
     }
 
-    const cornerY = (k[61][1] + k[291][1]) / 2;
-    const centerY = (k[13][1] + k[14][1]) / 2;
+    let cornerY = (keypoints[61][1] + keypoints[291][1]) / 2;
+    let centerY = (keypoints[13][1] + keypoints[14][1]) / 2;
 
     return (cornerY - centerY) / mouthWidth;
   }
 
-  getMouthOpen(k) {
-    if (!this.hasPoints(k, [13, 14, 61, 291])) {
+  getMouthOpen(keypoints) {
+    if (!this.hasPoints(keypoints, [13, 14, 61, 291])) {
       return null;
     }
 
-    const mouthWidth = this.getDistance(k[61], k[291]);
+    let mouthWidth = this.getDistance(keypoints[61], keypoints[291]);
 
     if (mouthWidth === 0) {
       return null;
     }
 
-    return this.getDistance(k[13], k[14]) / mouthWidth;
+    return this.getDistance(keypoints[13], keypoints[14]) / mouthWidth;
   }
 
   compareFaceValues(base, current) {
-    const scores = {
+    let scores = {
       eyeScore: null,
       browScore: null,
       mouthScore: null,
@@ -280,22 +278,22 @@ class FaceExpressionTracker {
     };
 
     if (base.eyeOpen !== null && current.eyeOpen !== null) {
-      const eyeChange = base.eyeOpen - current.eyeOpen;
+      let eyeChange = base.eyeOpen - current.eyeOpen;
       scores.eyeScore = this.normalizeSignedScore(eyeChange, expressionTuning.eyeMaxChange);
     }
 
     if (base.browDist !== null && current.browDist !== null) {
-      const browChange = base.browDist - current.browDist;
+      let browChange = base.browDist - current.browDist;
       scores.browScore = this.normalizeSignedScore(browChange, expressionTuning.browMaxChange);
     }
 
     if (base.mouthCorner !== null && current.mouthCorner !== null) {
-      const mouthChange = current.mouthCorner - base.mouthCorner;
+      let mouthChange = current.mouthCorner - base.mouthCorner;
       scores.mouthScore = this.normalizeSignedScore(mouthChange, expressionTuning.mouthCurveMaxChange);
     }
 
     if (base.mouthOpen !== null && current.mouthOpen !== null) {
-      const mouthOpenChange = current.mouthOpen - base.mouthOpen;
+      let mouthOpenChange = current.mouthOpen - base.mouthOpen;
 
       if (mouthOpenChange > expressionTuning.mouthOpenIgnoreChange) {
         scores.mouthScore = null;
@@ -339,9 +337,9 @@ class FaceExpressionTracker {
   }
 
   getExpressionTag(scores) {
-    const brow = scores.browScore;
-    const eye = scores.eyeScore;
-    const mouth = scores.mouthScore;
+    let brow = scores.browScore;
+    let eye = scores.eyeScore;
+    let mouth = scores.mouthScore;
 
     if (scores.intensity < expressionTuning.neutralThreshold) {
       return "중립";
@@ -371,15 +369,15 @@ class FaceExpressionTracker {
   }
 
   getDistance(p1, p2) {
-    const dx = p1[0] - p2[0];
-    const dy = p1[1] - p2[1];
+    let dx = p1[0] - p2[0];
+    let dy = p1[1] - p2[1];
 
     return sqrt(dx * dx + dy * dy);
   }
 
-  hasPoints(k, indexes) {
+  hasPoints(keypoints, indexes) {
     for (let i = 0; i < indexes.length; i++) {
-      const p = k[indexes[i]];
+      let p = keypoints[indexes[i]];
 
       if (!p || isNaN(p[0]) || isNaN(p[1])) {
         return false;
@@ -392,51 +390,17 @@ class FaceExpressionTracker {
 
 class TypingSpeedTracker {
   constructor() {
-    this.keyTimes = [];
-    this.windowMs = 3000;
-    this.maxKeysPerSecond = 8;
+    this.keyCount = 0;
   }
 
   recordKey() {
-    const now = millis();
-    this.keyTimes.push(now);
-    this.cleanup(now);
+    this.keyCount += 1;
   }
 
-  cleanup(now) {
-    this.keyTimes = this.keyTimes.filter((time) => {
-      return now - time <= this.windowMs;
-    });
-  }
+  consumeKeysPerSecond() {
+    let keysPerSecond = this.keyCount;
+    this.keyCount = 0;
 
-  getTypingData() {
-    const now = millis();
-    this.cleanup(now);
-
-    const seconds = this.windowMs / 1000;
-    const keysPerSecond = this.keyTimes.length / seconds;
-    const intensity = constrain(keysPerSecond / this.maxKeysPerSecond, 0, 1);
-
-    return {
-      keysPerSecond: keysPerSecond,
-      intensity: intensity,
-      state: this.getTypingState(intensity)
-    };
-  }
-
-  getTypingState(intensity) {
-    if (intensity < 0.05) {
-      return "idle";
-    }
-
-    if (intensity < 0.35) {
-      return "slow";
-    }
-
-    if (intensity < 0.7) {
-      return "medium";
-    }
-
-    return "fast";
+    return keysPerSecond;
   }
 }
