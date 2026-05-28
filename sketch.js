@@ -1,211 +1,246 @@
 // ==========================================
-// S4 뜨개 패턴 렌더링
+// 🌍 [마스터 데이터] 프로젝트 전체 공유 전역 변수
 // ==========================================
-let cells = [];
-let archiveData = []; // 아카이빙 담당 팀원에게 전달할 배열
+window.cells = window.cells || [];
+window.archiveData = window.archiveData || [];
+
+// 뜨개질 기본 설정 및 바늘 상태 마스터 값
 const CELL_SIZE = 26;
 const SPACING = 30;
-
 let gridPath = []; 
 let needlePhase = 0;
 let currentTypingSpeed = 0; 
 let lastSecondSpeedTarget = 0; 
 
-// 해당 초(1000ms) 구간의 실제 타이핑 텍스트 및 특수키 캐싱
+// 1초 구간 타이핑 캐싱 변수
 let tempBackspaceFlag = false;
 let tempText = "";
 
+// 🌟 [추가] 한글 IME 조합 상태 플래그
+let isComposing = false;
+
+// ==========================================
+// 🧭 [중앙 관제탑] 기획서 기준 초기 화면 설정 (S0: 랜딩)
+// ==========================================
+window.currentScreen = "S0"; 
+
 function setup() {
   createCanvas(1280, 832);
-  initGridPath(); 
+
+  
+  
+  // page_S4 내부의 initGridPath 함수를 호출하여 전역 gridPath 배열 초기화
+  if (window.page_S4 && page_S4.initGridPath) {
+    page_S4.initGridPath(); 
+  }
+
+  // 유리님의 IndexedDB 데이터베이스 초기화 (S5 엔진이 로드되어 있다면)
+  if (window.page_S5 && page_S5.initDB) {
+    page_S5.initDB();
+  }
   
   // 인풋 컨트롤러 초기화
   if (typeof setupKnitstampInput === 'function') {
     setupKnitstampInput();
   }
+
+  // 🌟 [추가] 한글 IME 조합 이벤트 리스너 등록
+  document.addEventListener('compositionstart', function() {
+    isComposing = true;
+  });
+
+  document.addEventListener('compositionend', function(e) {
+    isComposing = false;
+    // 조합이 완료된 온전한 한글 음절만 여기서 받습니다
+    if (window.currentScreen === "S4" || window.currentScreen === "S5") {
+      if (e.data && e.data.length > 0) {
+        tempText += e.data;
+      }
+    }
+  });
 }
 
 function draw() {
   colorMode(RGB);
   background('#FAFAFA'); 
 
-  // 1. 인풋 시스템 프레임 업데이트
-  let prevLen = window.knitstamp && window.knitstamp.seconds ? window.knitstamp.seconds.length : 0;
+  // ==========================================
+  // 🏢 [화면 라우팅 시스템] 기획서 플로우 맵핑
+  // ==========================================
   
-  if (typeof updateKnitstampInput === 'function') {
-    updateKnitstampInput(); 
-  }
-
-  // 2. 새로운 1초 데이터가 푸시된 순간 셀 생성
-  if (window.knitstamp && window.knitstamp.seconds && window.knitstamp.seconds.length > prevLen) {
-    let secData = window.knitstamp.seconds[window.knitstamp.seconds.length - 1];
-    let kps = secData.input.typing.keysPerSecond;
-    let face = secData.input.face;
-    
-    if (kps > 0 || tempBackspaceFlag) {
-      let speedVal = min(kps / 8, 1);
-      lastSecondSpeedTarget = speedVal; 
-      
-      // 감정 매핑: mouthScore (-1~1) -> Tension (0~1)
-      let cellTension = 0.5; 
-      if (face.hasFace && face.hasBaseline && face.scores.mouth !== null) {
-        cellTension = map(face.scores.mouth, -1, 1, 0, 1);
-      }
-
-      // 눈 감정 매핑
-      let cellEye = 'NEUTRAL';
-      if (!face.hasFace) {
-        cellEye = 'BLURRY';
-      } else if (face.tag === '찌푸림' || face.tag === '무거움') {
-        cellEye = 'FROWN';
-      } else if (face.tag === '놀람') {
-        cellEye = 'SURPRISED';
-      }
-      
-      let newCellData = {
-        text: tempText,
-        speed: speedVal,
-        isBackspace: tempBackspaceFlag,
-        tension: cellTension,
-        eye: cellEye
-      };
-
-      cells.unshift(new KnitCell(newCellData)); 
-
-      archiveData.unshift({
-        text: newCellData.text,
-        isBackspace: newCellData.isBackspace,
-        speed: newCellData.speed,
-        tension: newCellData.tension,
-        eye: newCellData.eye
-      });
+  // S0: Landing (카피 보강 화면)
+  if (window.currentScreen === "S0") {
+    if (window.page_S0 && page_S0.drawLanding) {
+      page_S0.drawLanding();
     } else {
-      lastSecondSpeedTarget = 0; 
+      drawDebugPlaceholder("S0: 랜딩 화면");
     }
-
-    // 1초 단위 캐싱 초기화
-    tempBackspaceFlag = false;
-    tempText = "";
+    return;
   }
 
-  // 3. 바늘 보간 및 애니메이션 업데이트
-  currentTypingSpeed = lerp(currentTypingSpeed, lastSecondSpeedTarget, 0.1);
-  if (currentTypingSpeed > 0.01) {
-    let speedMultiplier = map(currentTypingSpeed, 0, 1, 0.5, 2); 
-    needlePhase += (TWO_PI / 150) * speedMultiplier; 
+  // S1': 온보딩 통합 단계 (S1 + S2 합쳐진 형태)
+  if (window.currentScreen === "S1") {
+    if (window.page_S1 && page_S1.drawOnboarding) {
+      page_S1.drawOnboarding();
+    } else {
+      drawDebugPlaceholder("S1': 통합 온보딩 화면");
+    }
+    return;
   }
-  
-  drawNeedles(currentTypingSpeed);
 
-  // 4. 셀 렌더링 (최대 75개 제한 최적화)
-  for (let i = 0; i < cells.length; i++) {
-    if (i >= 75 || cells[i].pos.y > height + 100) continue;
-
-    let target = getGridPosition(i);
-    cells[i].targetPos.set(target.x, target.y);
-    cells[i].update();
-    cells[i].display(CELL_SIZE, i); 
+  // S3: 작가 이름 및 닉네임 인풋 화면
+  if (window.currentScreen === "S3") {
+    if (window.page_S3 && page_S3.drawNameInput) {
+      page_S3.drawNameInput();
+    } else {
+      drawDebugPlaceholder("S3: 작가명 입력 화면");
+    }
+    return;
   }
+
+  // S4: 실시간 감정 뜨개 방직 화면
+  if (window.currentScreen === "S4") {
+    page_S4.updateAndDraw(); // 유리님이 분리해둔 순수 그래픽 엔진 가동
+    return;
+  }
+
+  // S5: 아카이브 가이드 UI 및 팝업 (privacy ≠ private 일 때 진입)
+  if (window.currentScreen === "S5") {
+    page_S4.updateAndDraw(); // 배경에는 실시간 뜨개 무늬 유지
+    if (window.page_S5 && page_S5.drawArchiveGuideUI) {
+      page_S5.drawArchiveGuideUI(window.archiveData);
+    }
+    return;
+  }
+
+  // S6: 비공개 완료 영수증 화면 (privacy === private 일 때 진입)
+  if (window.currentScreen === "S6") {
+    if (window.page_S6 && page_S6.drawPrivateReceipt) {
+      page_S6.drawPrivateReceipt();
+    } else {
+      drawDebugPlaceholder("S6: 비공개 완료 페이지 (영수증)");
+    }
+    return;
+  }
+
+  // S7: 전체 아카이브 박물관 타임라인 리스트
+  if (window.currentScreen === "S7") {
+    if (window.page_S7_S8 && page_S7_S8.drawS7Timeline) {
+      page_S7_S8.drawS7Timeline();
+    } else {
+      drawDebugPlaceholder("S7: 아카이브 박물관 리스트");
+    }
+    return;
+  }
+
+  // S8: 아카이브 단독 상세 뷰 (S7 위에 오버레이로 표현 가능)
+  if (window.currentScreen === "S8") {
+    if (window.page_S7_S8 && page_S7_S8.drawS8SingleView) {
+      page_S7_S8.drawS8SingleView();
+    } else {
+      drawDebugPlaceholder("S8: 아카이브 단독 상세 뷰");
+    }
+    return;
+  }
+
 }
 
+// ==========================================
+// ⌨️ 키 입력 이벤트 및 디버깅 핫키 스위치
+// ==========================================
 function keyPressed() {
+  // 시스템 제어 단축키 패스
   if (keyCode === SHIFT || keyCode === CONTROL || keyCode === ALT || keyCode === ESCAPE) return;
 
-  if (keyCode === BACKSPACE) {
-    tempBackspaceFlag = true;
-  } else {
-    tempText += key;
+  // 🌟 [추가] 숫자키를 눌러 강제 화면 이동 시 S5 인풋 폼들을 깨끗하게 지워줍니다.
+  if (['0','1','3','4','5','6','7','8'].includes(key)) {
+    if (window.page_S5 && page_S5.removeUI) {
+      page_S5.removeUI(); 
+    }
+  }
+
+  // 🛠️ 임시 화면 제어 단축키 (숫자 입력 시 해당 페이지로 강제 트랜지션)
+  if (key === '0') { window.currentScreen = "S0"; return false; }
+  if (key === '1') { window.currentScreen = "S1"; return false; } // S1' 통합본으로 연결
+  if (key === '3') { window.currentScreen = "S3"; return false; }
+  if (key === '4') { window.currentScreen = "S4"; return false; }
+  if (key === '5') { window.currentScreen = "S5"; return false; }
+  if (key === '6') { window.currentScreen = "S6"; return false; }
+  if (key === '7') { 
+    // S7로 갈 때는 조원분들의 로드 함수가 있다면 실행 후 이동
+    if (window.page_S7_S8 && page_S7_S8.loadDataFromDB) {
+      page_S7_S8.loadDataFromDB().then(() => { window.currentScreen = "S7"; });
+    } else {
+      window.currentScreen = "S7";
+    }
+    return false; 
+  }
+  if (key === '8') { window.currentScreen = "S8"; return false; }
+
+  // 🧶 S4나 S5 타이핑 모드일 때만 한 글자씩 빌드업 캐싱
+  if (window.currentScreen === "S4" || window.currentScreen === "S5") {
+    if (keyCode === BACKSPACE) {
+      tempBackspaceFlag = true;
+
+      //백스페이스 누르면 지워지도록 처리
+      if (tempText.length > 0) {
+        tempText = tempText.slice(0, -1);
+      }
+    } 
   }
   
-  // 키 타이핑 트래커 기록
+  // 팀원분 키 타이핑 트래커 연동
   if (typeof recordKnitstampKey === 'function') {
     recordKnitstampKey();
   }
+
+  // 스페이스바 브라우저 튕김 방지
+  if (key === ' ') return false;
 }
 
-// ==========================================
-// 형태 및 위치 계산 유틸 함수
-// ==========================================
-function initGridPath() {
-  gridPath.push({r: 0, c: 0, w: 1}); 
-  gridPath.push({r: 1, c: 2, w: 3}); 
-  gridPath.push({r: 1, c: 1, w: 3});
-  gridPath.push({r: 1, c: 0, w: 3});
-  for(let c=0; c<5; c++) gridPath.push({r: 2, c: c, w: 5}); 
-  for(let c=6; c>=0; c--) gridPath.push({r: 3, c: c, w: 7}); 
-  for(let c=0; c<9; c++) gridPath.push({r: 4, c: c, w: 9}); 
+// 2) 🌟 [새로 추가] 화면에 진짜 글자가 타이핑되는 순간 한글을 온전하게 가로챕니다!
+function keyTyped() {
+  if (window.currentScreen === "S4" || window.currentScreen === "S5") {
+    // 스페이스바 처리
+    if (key === ' ') {
+      tempText += ' ';
+      return false; 
+    }
 
-  let w = 10;
-  for(let r=5; r<500; r++) {
-    if (r % 2 === 1) { 
-      for(let c=9; c>=0; c--) gridPath.push({r: r, c: c, w: w});
-    } else { 
-      for(let c=0; c<10; c++) gridPath.push({r: r, c: c, w: w});
+    // 🌟 [핵심 수정] IME 조합 중이면 완전히 무시 (한글 중간 자모 차단)
+    // 조합이 끝난 한글은 compositionend에서 처리하므로 여기선 영문/숫자만 받습니다
+    if (isComposing || key === 'Process') {
+      return false;
+    }
+    
+    // 완성된 온전한 한글 문자만 tempText에 누적합니다.
+    if (key.length === 1) {
+      tempText += key; 
     }
   }
 }
 
-function getGridPosition(index) {
-  let cellPos = gridPath[index] || gridPath[gridPath.length - 1];
-  let y = cellPos.r * SPACING + 220; 
-  let startX = -((cellPos.w - 1) * SPACING) / 2;
-  let x = startX + (cellPos.c * SPACING) + (width / 2);
-  return createVector(x, y);
-}
+function mousePressed() {
+  // S7 타임라인 화면일 때 클릭 인터랙션 핸들러 가동
+  if (window.currentScreen === "S7" && window.page_S7_S8 && page_S7_S8.checkS7Click) {
+    
+    // 🌟 [추가] 마우스 클릭으로 S8 상세 뷰에 진입하기 직전, S5의 좀비 UI들을 싹 청소합니다!
+    if (window.page_S5 && page_S5.removeUI) {
+      page_S5.removeUI();
+    }
 
-function drawNeedles(typingIntensity) {
-  push();
-  translate(width / 2, 220 - CELL_SIZE * 0.8); 
-  
-  let slideBase = 8 + typingIntensity * 12; 
-  
-  let heatIntensity = 0;
-  if (typingIntensity > 0.85) {
-    heatIntensity = map(typingIntensity, 0.85, 1, 0, 1);
+    page_S7_S8.checkS7Click();
   }
-
-  push();
-  let leftSeesaw = cos(needlePhase * 0.7) * 0.06;
-  rotate(PI / 4 + leftSeesaw);
-  let leftSlide = sin(needlePhase) * slideBase;
-  translate(0, leftSlide); 
-  drawSingleNeedle(heatIntensity);
-  pop();
-
-  push();
-  let rightSeesaw = sin(needlePhase * 0.85) * 0.06;
-  rotate(-PI / 4 + rightSeesaw);
-  let rightSlide = sin(needlePhase * 1.3 + PI / 3) * slideBase;
-  translate(0, rightSlide); 
-  drawSingleNeedle(heatIntensity);
-  pop();
-  
-  pop();
 }
 
-function drawSingleNeedle(heatIntensity) {
-  let ctx = drawingContext;
-  let grad = ctx.createLinearGradient(0, -25, 0, 100); 
-  
-  let r = Math.round(lerp(225, 255, heatIntensity));
-  let g = Math.round(lerp(215, 80, heatIntensity));
-  let b = Math.round(lerp(195, 80, heatIntensity));
-  
-  grad.addColorStop(0, `rgb(${r}, ${g}, ${b})`);
-  grad.addColorStop(1, 'rgb(225, 205, 175)');
-
-  ctx.fillStyle = grad;
-  noStroke();
-  
-  beginShape();
-  vertex(-3, -25);   
-  vertex(3, -25);
-  vertex(7, 350);    
-  vertex(-7, 350);
-  endShape(CLOSE);
-  
-  ellipse(0, -25, 6, 6); 
-  
-  ctx.fillStyle = 'rgb(225, 215, 195)'; 
-  ellipse(0, 350, 14, 14);
+// 📌 아직 구현되지 않은 조원분들의 화면 영역을 안내해 주는 디버깅 가이드 플레이스홀더
+function drawDebugPlaceholder(screenName) {
+  push();
+  textAlign(CENTER, CENTER);
+  fill(120); textSize(24);
+  text(`[ ${screenName} ]`, width / 2, height / 2 - 20);
+  textSize(13); fill(160);
+  text("임시 플레이스홀더 상태입니다. 상단 숫자 단축키를 눌러 테스트해 보세요!", width / 2, height / 2 + 20);
+  text("단축키 안내 -> 0:랜딩 | 1:온보딩 | 3:작가명 | 4:뜨개질 | 5:공개팝업 | 6:비공개영수증 | 7:박물관", width / 2, height - 50);
+  pop();
 }
