@@ -88,11 +88,11 @@ class KnitPiece {
           // 💡 이제 호버링 대시보드나 텍스트 표상 시 "사", "자"가 순서대로 정밀하게 출력됩니다!
           text: characterToMap, 
           
-          // 패턴엔진 렌더링에 필요한 원본 KnitCell의 시각적 속성들은 그대로 상속
-          speed: cell.speed,
+          // 패턴엔진 렌더링에 필요한 시각적 속성 (absorbArchiveData의 필드명에 맞춰 매핑)
+          speed: cell.typingSpeed,
           isBackspace: cell.isBackspace,
-          tension: cell.tension,
-          eye: cell.eye
+          tension: cell.emotionIntensity,
+          eye: cell.emotionTag
         });
 
         // 10열 레이아웃 격자 줄바꿈 로직

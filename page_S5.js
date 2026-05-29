@@ -168,19 +168,16 @@ const page_S5 = {
         .then(generatedId => {
           this.failCount = 0; // 실패 스택 리셋
           this.removeUI();
-          
+          window.currentScreen = "S7"; // draw 루프가 S5 UI를 재생성하기 전에 즉시 전환
+
           alert(`🎉 아카이브 등록 성공! (ID: ${generatedId})`);
-          
-          // 성공 후 S7 박물관 타임라인 화면으로 트랜지션
+
+          // S7 데이터 갱신 (백그라운드 — currentScreen 전환과 분리)
           if (window.page_S7_S8 && page_S7_S8.loadDataFromDB) {
-            page_S7_S8.loadDataFromDB().then(() => {
-              window.currentScreen = "S7";
-            });
-          } else {
-            window.currentScreen = "S7";
+            page_S7_S8.loadDataFromDB();
           }
         })
-        .catch(err => {
+        .catch(() => {
           this.processFailure();
         });
     } else {

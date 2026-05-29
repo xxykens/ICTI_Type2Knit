@@ -252,13 +252,12 @@ function keyPressed() {
 
   if (key === '5') { window.currentScreen = "S5"; return false; }
   if (key === '6') { window.currentScreen = "S6"; return false; }
-  if (key === '7') { 
+  if (key === '7') {
+    window.currentScreen = "S7"; // 즉시 전환 — S5 UI 재생성 방지
     if (window.page_S7_S8 && page_S7_S8.loadDataFromDB) {
-      page_S7_S8.loadDataFromDB().then(() => { window.currentScreen = "S7"; });
-    } else {
-      window.currentScreen = "S7";
+      page_S7_S8.loadDataFromDB(); // 백그라운드 데이터 갱신
     }
-    return false; 
+    return false;
   }
   if (key === '8') { window.currentScreen = "S8"; return false; }
 
@@ -297,6 +296,20 @@ function mousePressed() {
       page_S5.removeUI();
     }
     page_S7_S8.checkS7Click();
+  }
+  if (window.currentScreen === "S8" && window.page_S7_S8 && page_S7_S8.handleS8CheckboxClick) {
+    page_S7_S8.handleS8CheckboxClick(mouseX, mouseY);
+  }
+}
+
+function mouseWheel(event) {
+  if (window.currentScreen === "S8" && window.page_S7_S8 && page_S7_S8.handleS8Scroll) {
+    page_S7_S8.handleS8Scroll(event.delta);
+    return false;
+  }
+  if (window.currentScreen === "S7" && window.page_S7_S8 && page_S7_S8.handleS7Scroll) {
+    page_S7_S8.handleS7Scroll(event.delta);
+    return false;
   }
 }
 
