@@ -67,29 +67,35 @@ class KnitPiece {
 
     this.cells.forEach((cell) => {
       // 💡 핵심: 글자가 없더라도(예: 백스페이스만 누른 1초) 
-      // 패턴엔진 측의 모직물 형태(흔적)는 유지되어야 하므로 최소 1칸을 차지하게 만듭니다.
-      let loopCount = Math.max(cell.syllables, 1);
+      // 공백을 제외한 순수 텍스트를 배열이나 문자열 형태로 준비합니다.
+      // 예: "사자" -> ["사", "자"]
+      let cleanText = cell.text ? cell.text.replace(/ /g, "") : "";
+      // 글자가 없더라도(예: 백스페이스만 누른 1초) 최소 1칸의 형태는 유지되도록 보장
+      let loopCount = Math.max(cleanText.length, 1);
 
       // 음절 수만큼 루프를 돌며 2차원 바둑판 칸마다 쪼개서 속성 전달
       for (let i = 0; i < loopCount; i++) {
+        
+        // 🌟 [핵심 해결책]: 복사된 패턴 수(루프)에 맞게 각 음절을 1글자씩 정밀 매핑합니다.
+        // 만약 글자가 없는 공백 구간이라면 원본 cell.text(혹은 " ")를 유지합니다.
+        let characterToMap = cleanText.length > 0 ? cleanText[i] : (cell.text || " ");
+
         this.knitArray.push({
           _row: currentRow,                 // 격차 재배치 행 (Y축)
           _col: currentColumn,              // 격차 재배치 열 (X축 - 10코 고정)
           knitStamp: cell.knitStamp,        // 원본 시간 변수 연동
           
-          // 마우스 호버링 및 첫 글자 출력을 위해 텍스트 정보 매핑
-          text: cell.text, 
+          // 💡 이제 호버링 대시보드나 텍스트 표상 시 "사", "자"가 순서대로 정밀하게 출력됩니다!
+          text: characterToMap, 
           
-          // 패턴엔진 측의 모직물 표현을 위한 데이터 원본 그대로 활용
-          speed: cell.typingSpeed,
+          // 패턴엔진 렌더링에 필요한 원본 KnitCell의 시각적 속성들은 그대로 상속
+          speed: cell.speed,
           isBackspace: cell.isBackspace,
-          
-          // 기획안 명세 일치화된 감정 데이터
-          emotionTag: cell.emotionTag,
-          emotionIntensity: cell.emotionIntensity
+          tension: cell.tension,
+          eye: cell.eye
         });
 
-        // 🧵 한 단에 고정 10코씩 배치하는 줄바꿈 시스템
+        // 10열 레이아웃 격자 줄바꿈 로직
         currentColumn++;
         if (currentColumn >= 10) {
           currentColumn = 0;
