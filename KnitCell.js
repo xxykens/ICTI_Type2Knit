@@ -4,7 +4,8 @@ class KnitCell {
     this.speed = data.speed;
     this.isBackspace = data.isBackspace;
     this.tension = data.tension;
-    this.eye = data.eye;
+    this.eye = data.eye; 
+    this.emotionTag = data.tag; // 🌟 [수정 부분 1] 감정 원본 태그를 받도록 추가
 
     this.pos = createVector(width / 2, 220 - CELL_SIZE); 
     this.targetPos = createVector(0, 0); 
@@ -12,22 +13,42 @@ class KnitCell {
     this.calculateStyles();
   }
 
+  // 🌟 [수정 부분 2] calculateStyles 함수 전체 교체
   calculateStyles() {
-    this.bgHue = map(this.tension, 0, 1, 0, 360);
+    // 1. 7개의 감정 그룹별 베이스 색상 (360도 7등분, 약 51.4도 간격)
+    let baseHue = 0;
+    
+    if (this.emotionTag === '찌푸림') {
+      baseHue = 0;       // 빨강
+    } else if (this.emotionTag === '중립') {
+      baseHue = 51;      // 노랑
+    } else if (this.emotionTag === '풀림') {
+      baseHue = 103;     // 초록
+    } else if (this.emotionTag === '놀람') {
+      baseHue = 309;     // 마젠타/핑크
+    } else if (this.emotionTag === '무거움') {
+      baseHue = 206;     // 파랑
+    } else if (this.emotionTag === '긴장') {
+      baseHue = 257;     // 보라
+    } else {
+      // '표정 변화', '얼굴 없음', '기준값 없음' 등 예외 처리
+      baseHue = 154;     // 청록
+    }
 
-    let hueShift = 0;
-    if (this.eye === 'NEUTRAL') hueShift = random(-15, 15);
-    else if (this.eye === 'FROWN') hueShift = random(30, 60);
-    else if (this.eye === 'SURPRISED') hueShift = random(90, 130);
-    else if (this.eye === 'BLURRY') hueShift = random(160, 200);
+    // 2. 셀 배경 색 (감정 수치 0~1에 따라 베이스 색상에서 -30 ~ +30 매핑)
+    let hueShift = map(this.tension, 0, 1, -30, 30);
+    this.bgHue = (baseHue + hueShift + 360) % 360;
 
-    this.stitchHue = (this.bgHue + hueShift + 360) % 360;
+    // 3. 코 색 (배경 색상에서 -30 ~ +30 랜덤 매핑)
+    let randomShift = random(-30, 30);
+    this.stitchHue = (this.bgHue + randomShift + 360) % 360;
 
-    let baseBri = map(this.speed, 0, 1, 65, 90); 
+    // 4. 명도 및 채도 (기존 유지)
+    let baseBri = map(this.speed, 0, 1, 55, 80); 
     this.bgBri = baseBri;
-    this.stitchBri = min(baseBri + 10, 100);
+    this.stitchBri = min(baseBri + 15, 100);
 
-    this.sat = map(this.speed, 0, 1, 10, 50); 
+    this.sat = map(this.speed, 0, 1, 20, 50); 
   }
 
   update() {
@@ -38,12 +59,12 @@ class KnitCell {
     colorMode(HSB, 360, 100, 100);
 
     if (this.isBackspace) {
-      let older = cells[idx + 1];
+      let older = cells[idx + 1] || window.cells[idx + 1];
       if (older && !older.isBackspace && p5.Vector.dist(this.pos, older.pos) < SPACING * 1.5) {
         this.drawBrokenThread(older.pos, this.pos, older.bgHue, older.sat, older.bgBri);
       }
       
-      let newer = cells[idx - 1];
+      let newer = cells[idx - 1] || window.cells[idx - 1];
       if (newer && !newer.isBackspace && p5.Vector.dist(this.pos, newer.pos) < SPACING * 1.5) {
         this.drawBrokenThread(newer.pos, this.pos, newer.bgHue, newer.sat, newer.bgBri);
       }

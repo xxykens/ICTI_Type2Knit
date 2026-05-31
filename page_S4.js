@@ -44,7 +44,8 @@ const page_S4 = {
           speed: speedVal,
           isBackspace: tempBackspaceFlag,
           tension: cellTension,
-          eye: cellEye
+          eye: cellEye,
+          tag: face.tag
         };
 
         // 🌟 [수정] window.을 명시해서 sketch.js 전역 마스터 배열에 확실하게 꽂아줍니다!
