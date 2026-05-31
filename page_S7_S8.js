@@ -669,7 +669,9 @@ const page_S7_S8 = {
         fill(30); textSize(14); textStyle(BOLD); textAlign(LEFT, TOP);
         text(`"${hoveredCellInfo.text || "공백/엔터"}"`, panelX + 20, hsY + 20);
         fill(110); textSize(11); textStyle(NORMAL);
-        text(`페이스 태그: ${hoveredCellInfo.eye}  (긴장: ${(hoveredCellInfo.tension * 100).toFixed(0)}%)`, panelX + 20, hsY + 44);
+        const _eyeToKo = { FROWN: '찌푸림', SURPRISED: '놀람', BLURRY: '표정 변화', NEUTRAL: '중립' };
+        const _eyeLabel = _eyeToKo[hoveredCellInfo.eye] || hoveredCellInfo.eye || '알 수 없음';
+        text(`${_eyeLabel}  (${(hoveredCellInfo.tension * 100).toFixed(0)}%)`, panelX + 20, hsY + 44);
         text(`타자 속도: ${(hoveredCellInfo.speed * 100).toFixed(0)}%`, panelX + 20, hsY + 62);
       }
     } else {
