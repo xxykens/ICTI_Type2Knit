@@ -79,8 +79,8 @@ function draw() {
         text: newCellData.text,
         isBackspace: newCellData.isBackspace,
         speed: newCellData.speed,
-        tension: newCellData.tension,
-        eye: newCellData.eye
+        emotionTag: (face && face.tag) ? face.tag : (newCellData.tag || newCellData.eye),
+        emotionIntensityPercent: Math.round(((face && face.hasBaseline && face.intensity !== undefined) ? face.intensity : newCellData.tension) * 100)
       });
     } else {
       lastSecondSpeedTarget = 0; 
