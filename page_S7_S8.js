@@ -7,7 +7,6 @@ const page_S7_S8 = {
   showText: true,
   showEmotionInfo: true,
   scrollY: 0,
-  showKnitView: true,
   s7ScrollX: 0,
 
   // Dexie 데이터 로드
@@ -31,10 +30,17 @@ const page_S7_S8 = {
     push();
     colorMode(RGB);
 
-    const BAND_W = 120;
-    const TOP_Y  = 70;
-    const BOT_Y  = height - 30;
-    const MAX_H  = BOT_Y - TOP_Y;
+    const BAND_W  = 162;
+    const TOP_Y   = 70;
+    const BOT_Y   = height - 30;
+    const MAX_H   = BOT_Y - TOP_Y;
+
+    // S7_SP를 BAND_W에서 분리 → 내/외부 간격을 독립적으로 제어
+    const S7_SP   = 16;    // 셀 중심 간격 고정
+    const S7_CELL = 14.4;  // 셀 크기: gap 1.6px (기존 2px × 0.8)
+    // inter-band gap = BAND_W - 9×S7_SP - S7_CELL = 162 - 144 - 14.4 ≈ 3.6px (기존 2px × ~1.8)
+    const S7_PADX = 0;
+    const S7_PADY = 0;
 
     // ── 헤더 바 ──────────────────────────────────────────
     fill(250); stroke(215); strokeWeight(0.5);
@@ -43,14 +49,7 @@ const page_S7_S8 = {
     fill(30); noStroke(); textSize(15); textStyle(BOLD); textAlign(LEFT, CENTER);
     text("Type to Knit · Archive", 40, TOP_Y / 2 - 7);
     fill(160); textSize(11); textStyle(NORMAL);
-    text("클릭 → 상세보기   ·   마우스 휠 → 가로 스크롤   ·   '4' → 새 뜨기", 40, TOP_Y / 2 + 11);
-
-    // 뜨개 ↔ 텍스트 토글 버튼
-    let tW = 120, tH = 28, tX = width - tW - 20, tY = (TOP_Y - tH) / 2;
-    fill(this.showKnitView ? color(50, 80, 190) : color(65, 65, 65));
-    noStroke(); rectMode(CORNER); rect(tX, tY, tW, tH, 6);
-    fill(255); textSize(12); textStyle(NORMAL); textAlign(CENTER, CENTER);
-    text(this.showKnitView ? "🧶 뜨개 보기" : "📝 텍스트 보기", tX + tW / 2, tY + tH / 2);
+    text("클릭 → 상세보기   ·   ◀ ▶ 버튼 → 가로 이동   ·   '4' → 새 뜨기", 40, TOP_Y / 2 + 11);
 
     // ── 빈 상태 ──────────────────────────────────────────
     if (this.archivedPieces.length === 0) {
@@ -69,13 +68,19 @@ const page_S7_S8 = {
     let maxScroll = max(0, totalW - width);
     this.s7ScrollX = constrain(this.s7ScrollX, 0, maxScroll);
 
+    // ── 좌우 이동 버튼 고정 좌표 ──────────────────────────
+    const BTN_X_L = 30, BTN_X_R = width - 30;
+    const BTN_Y_C = (TOP_Y + BOT_Y) / 2, BTN_R = 24;
+
     // ── 호버 감지 ─────────────────────────────────────────
+    let overLeftBtn  = dist(mouseX, mouseY, BTN_X_L, BTN_Y_C) < BTN_R;
+    let overRightBtn = dist(mouseX, mouseY, BTN_X_R, BTN_Y_C) < BTN_R;
     let hoveredIdx = -1;
-    if (mouseY >= TOP_Y && mouseY <= BOT_Y) {
+    if (!overLeftBtn && !overRightBtn && mouseY >= TOP_Y && mouseY <= BOT_Y) {
       let raw = Math.floor((mouseX + this.s7ScrollX) / BAND_W);
       if (raw >= 0 && raw < nBands) hoveredIdx = raw;
     }
-    cursor(hoveredIdx >= 0 ? HAND : ARROW);
+    cursor((hoveredIdx >= 0 || overLeftBtn || overRightBtn) ? HAND : ARROW);
 
     // ── 클리핑 적용 후 띠 렌더 ───────────────────────────
     drawingContext.save();
@@ -89,8 +94,6 @@ const page_S7_S8 = {
 
       let piece    = this.archivedPieces[i];
       let gridData = piece.knitArray || piece.cells || [];
-      let totalRows = max(1, Math.ceil(gridData.length / 10));
-      let rowH = constrain(MAX_H / totalRows, 2, 18);
 
       // 호버 Y 오프셋
       let yOff = 0;
@@ -98,56 +101,92 @@ const page_S7_S8 = {
       else if (hoveredIdx !== -1 && abs(hoveredIdx - i) === 1) yOff = 2;
       let by = TOP_Y + yOff;
 
-      if (this.showKnitView) {
-        // ── 뜨개 뷰 ──────────────────────────────────────
-        push();
-        colorMode(HSB, 360, 100, 100);
-        if (piece.privacy === "private") {
-          fill(0, 0, 20); noStroke();
-          rectMode(CORNER); rect(bx, by, BAND_W, MAX_H);
-        } else {
-          colorMode(RGB); fill(245); noStroke();
-          rectMode(CORNER); rect(bx, by, BAND_W, MAX_H);
-          colorMode(HSB, 360, 100, 100);
-          let cW = BAND_W / 10;
-          for (let j = 0; j < gridData.length; j++) {
-            let col  = j % 10;
-            let row  = Math.floor(j / 10);
-            let cell = gridData[j];
-            let cx = bx + col * cW;
-            let cy = by + row * rowH;
-            if (cy > BOT_Y + 10) break;
-            if (cell.isBackspace) {
-              fill(0, 0, 22); noStroke();
-            } else {
-              let h = map(cell.tension || 0.5, 0, 1, 0, 360);
-              let s = map(cell.speed   || 0,   0, 1, 20, 60);
-              let b = map(cell.speed   || 0,   0, 1, 65, 90);
-              fill(h, s, b); noStroke();
-            }
-            rectMode(CORNER); rect(cx, cy, cW, rowH);
-          }
-        }
-        pop();
+      // ── 뜨개 뷰 ──────────────────────────────────────
+      push();
+      colorMode(HSB, 360, 100, 100);
+      if (piece.privacy === "private") {
+        fill(0, 0, 20); noStroke();
+        rectMode(CORNER); rect(bx, by, BAND_W, MAX_H);
       } else {
-        // ── 텍스트 뷰 ────────────────────────────────────
-        colorMode(RGB);
-        if (piece.privacy === "private") {
-          fill(20); noStroke();
-          rectMode(CORNER); rect(bx, by, BAND_W, MAX_H);
-        } else {
-          fill(245); stroke(215); strokeWeight(0.5);
-          rectMode(CORNER); rect(bx, by, BAND_W, MAX_H);
-          let chars = gridData.map(function(c) { return c.text || ''; }).join('').replace(/ /g, '');
-          fill(40); noStroke(); textSize(14); textStyle(NORMAL); textAlign(CENTER, TOP);
-          let chH = 19;
-          for (let k = 0; k < chars.length; k++) {
-            let ty = by + 4 + k * chH;
-            if (ty + chH > BOT_Y) break;
-            text(chars[k], bx + BAND_W / 2, ty);
+        colorMode(RGB); fill(245); noStroke();
+        rectMode(CORNER); rect(bx, by, BAND_W, MAX_H);
+        colorMode(HSB, 360, 100, 100);
+        for (let j = 0; j < gridData.length; j++) {
+          let col  = j % 10;
+          let row  = Math.floor(j / 10);
+          let cell = gridData[j];
+          let cx = bx + S7_PADX + col * S7_SP + S7_CELL * 0.5;
+          let cy = by + S7_PADY + row * S7_SP + S7_CELL * 0.5;
+          if (cy - S7_CELL * 0.5 > BOT_Y + 10) break;
+
+          const cellW  = S7_CELL - 1;
+          const cellH  = S7_CELL - 1;
+          const minDim = S7_CELL;
+
+          let h = map(cell.tension || 0.5, 0, 1, 0, 360);
+          let s = map(cell.speed   || 0,   0, 1, 20, 60);
+          let b = map(cell.speed   || 0,   0, 1, 65, 90);
+
+          let hueShift = 0;
+          if      (cell.eye === 'FROWN')     hueShift = 45;
+          else if (cell.eye === 'SURPRISED') hueShift = 110;
+          else if (cell.eye === 'BLURRY')    hueShift = 180;
+          let stitchH   = (h + hueShift) % 360;
+          let stitchBri = min(b + 15, 100);
+
+          if (cell.isBackspace) {
+            // S8과 동일: 색상 있는 선 2개로 풀림 표현
+            let lineR = minDim * 0.4;
+            stroke(h, s, b); strokeWeight(max(0.5, minDim * 0.15)); noFill();
+            line(cx - lineR, cy - lineR, cx + lineR * 0.4, cy);
+            line(cx - lineR, cy + lineR, cx + lineR * 0.2, cy);
+          } else {
+            let isFilled = (cell.speed || 0) >= 0.6;
+            let isSquare = (cell.tension || 0.5) >= 0.5;
+            let sw = max(0.4, minDim * 0.12);
+
+            if (isFilled) {
+              fill(h, s, b); noStroke();
+            } else {
+              noFill(); stroke(h, s, b); strokeWeight(sw);
+            }
+
+            if (isSquare) {
+              rectMode(CENTER); rect(cx, cy, cellW, cellH, max(0.5, minDim * 0.08));
+            } else {
+              ellipse(cx, cy, cellW, cellH);
+            }
+
+            // 내부 감정 패턴 — S8과 동일한 로직, 셀이 충분히 클 때만 표시
+            if (minDim >= 6) {
+              let r = minDim * 0.25;
+              stroke(stitchH, s, stitchBri); strokeWeight(max(0.4, minDim * 0.08)); noFill();
+
+              if (cell.eye === 'FROWN') {
+                line(cx - r, cy - r, cx + r, cy + r);
+                line(cx + r, cy - r, cx - r, cy + r);
+              } else if (cell.eye === 'SURPRISED') {
+                // S8과 동일: 8꼭짓점 별
+                beginShape();
+                for (let k = 0; k < 8; k++) {
+                  let radius = k % 2 === 0 ? r : r * 0.4;
+                  let angle  = PI / 4 * k;
+                  vertex(cx + cos(angle) * radius, cy + sin(angle) * radius);
+                }
+                endShape(CLOSE);
+              } else {
+                // S8과 동일: 아래 방향 삼각형, 열린 shape
+                beginShape();
+                vertex(cx - r, cy - r * 0.6);
+                vertex(cx, cy + r * 0.8);
+                vertex(cx + r, cy - r * 0.6);
+                endShape();
+              }
+            }
           }
         }
       }
+      pop();
 
       // 호버 테두리
       if (hoveredIdx === i) {
@@ -158,6 +197,23 @@ const page_S7_S8 = {
     }
 
     drawingContext.restore();
+
+    // ── 좌우 이동 버튼 ───────────────────────────────────
+    colorMode(RGB);
+    let canGoLeft  = this.s7ScrollX > 0;
+    let canGoRight = this.s7ScrollX < maxScroll;
+
+    let leftAlpha = canGoLeft ? (overLeftBtn ? 245 : 210) : 55;
+    fill(255, 255, 255, leftAlpha); stroke(190, 190, 190, canGoLeft ? 210 : 55); strokeWeight(1);
+    rectMode(CENTER); rect(BTN_X_L, BTN_Y_C, BTN_R * 2, BTN_R * 2, BTN_R);
+    fill(60, 60, 60, canGoLeft ? 210 : 55); noStroke(); textSize(26); textStyle(BOLD); textAlign(CENTER, CENTER);
+    text('‹', BTN_X_L, BTN_Y_C + 1);
+
+    let rightAlpha = canGoRight ? (overRightBtn ? 245 : 210) : 55;
+    fill(255, 255, 255, rightAlpha); stroke(190, 190, 190, canGoRight ? 210 : 55); strokeWeight(1);
+    rectMode(CENTER); rect(BTN_X_R, BTN_Y_C, BTN_R * 2, BTN_R * 2, BTN_R);
+    fill(60, 60, 60, canGoRight ? 210 : 55); noStroke(); textSize(26); textStyle(BOLD); textAlign(CENTER, CENTER);
+    text('›', BTN_X_R, BTN_Y_C + 1);
 
     // ── 호버 툴팁 ─────────────────────────────────────────
     if (hoveredIdx >= 0) {
@@ -223,14 +279,22 @@ const page_S7_S8 = {
 
   // [S7] 클릭 처리 — 토글 버튼 / 빈 상태 CTA / 띠 클릭
   checkS7Click: function() {
-    const BAND_W = 120;
+    const BAND_W = 162;
     const TOP_Y  = 70;
     const BOT_Y  = height - 30;
 
-    // 뜨개 ↔ 텍스트 토글 버튼
-    let tW = 120, tH = 28, tX = width - tW - 20, tY = (TOP_Y - tH) / 2;
-    if (mouseX >= tX && mouseX <= tX + tW && mouseY >= tY && mouseY <= tY + tH) {
-      this.showKnitView = !this.showKnitView;
+    // ── 좌우 이동 버튼 ───────────────────────────────────
+    const BTN_X_L = 30, BTN_X_R = width - 30;
+    const BTN_Y_C = (TOP_Y + BOT_Y) / 2, BTN_R_HIT = 24;
+    const SCROLL_STEP = BAND_W * 4;
+    let maxScrollC = max(0, this.archivedPieces.length * BAND_W - width);
+
+    if (dist(mouseX, mouseY, BTN_X_L, BTN_Y_C) < BTN_R_HIT) {
+      this.s7ScrollX = constrain(this.s7ScrollX - SCROLL_STEP, 0, maxScrollC);
+      return false;
+    }
+    if (dist(mouseX, mouseY, BTN_X_R, BTN_Y_C) < BTN_R_HIT) {
+      this.s7ScrollX = constrain(this.s7ScrollX + SCROLL_STEP, 0, maxScrollC);
       return false;
     }
 
@@ -259,7 +323,7 @@ const page_S7_S8 = {
 
   // [S7] 가로 스크롤 처리 — 메인 스케치의 mouseWheel에서 호출
   handleS7Scroll: function(delta) {
-    let maxScroll = max(0, this.archivedPieces.length * 120 - width);
+    let maxScroll = max(0, this.archivedPieces.length * 162 - width);
     this.s7ScrollX = constrain(this.s7ScrollX + delta * 0.8, 0, maxScroll);
   },
 

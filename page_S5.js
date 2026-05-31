@@ -160,8 +160,15 @@ const page_S5 = {
       knitArray: myKnitPiece.knitArray
     };
 
+    // 비공개 선택 시 DB에 저장하지 않고 S6(비공개 영수증)으로 이동
+    if (chosenPrivacy === 'private') {
+      this.removeUI();
+      window.currentScreen = "S6";
+      return;
+    }
+
     // 💡 10%의 확률로 의도적 실패 토스트 테스트 (원치 않으시면 random(1) > -1 로 변경하여 항상 성공하게 하세요)
-    let simulationSuccess = random(1) > 0.1; 
+    let simulationSuccess = random(1) > 0.1;
 
     if (simulationSuccess) {
       this.db.knitTable.add(payload)
