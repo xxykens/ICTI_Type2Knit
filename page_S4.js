@@ -45,6 +45,9 @@ const page_S4 = {
           isBackspace: tempBackspaceFlag,
           tension: cellTension,
           eye: cellEye,
+          eyeScore: face.scores.eye,
+          browScore: face.scores.brow,
+          mouthScore: face.scores.mouth,
           tag: face.tag
         };
 
