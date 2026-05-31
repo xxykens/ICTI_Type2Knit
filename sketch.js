@@ -143,7 +143,25 @@ function setup() {
 
   // 캔버스 클릭 시 포커스 이전
   document.querySelector('canvas').addEventListener('mousedown', _imeFocus);
-}
+// ... (기존 setup 내부 코드들) ...
+
+  // 캔버스 클릭 시 포커스 이전
+  document.querySelector('canvas').addEventListener('mousedown', _imeFocus);
+
+  // 💡 [여기에 추가!] 맥북 한글 IME 조합 중에도 타수를 무조건 기록하는 네이티브 이벤트
+  window.addEventListener("keydown", function(e) {
+    if (window.currentScreen !== 'S4') return; // S4 화면에서만 작동
+
+    // 의미 없는 특수키 입력은 타수에서 제외
+    const ignoreKeys = ["Shift", "Control", "Alt", "Meta", "Escape", "CapsLock", "Tab", "Process", "Unidentified"];
+    if (ignoreKeys.includes(e.key)) return;
+
+    // 텍스트(tempText) 조합은 팀원의 _imeInput 로직에 맡기고, 여기서는 오직 '타수'만 카운트합니다!
+    if (typeof recordKnitstampKey === 'function') {
+      recordKnitstampKey();
+    }
+  });
+} // <-- setup() 닫는 중괄호
 
 // 숨김 input 포커스 헬퍼 (S4 전용)
 function _imeFocus() {
@@ -276,10 +294,6 @@ function keyPressed() {
       tempBackspaceFlag = true;
       if (tempText.length > 0) tempText = tempText.slice(0, -1);
     }
-  }
-  
-  if (typeof recordKnitstampKey === 'function') {
-    recordKnitstampKey();
   }
 
   if (key === ' ') return false;
