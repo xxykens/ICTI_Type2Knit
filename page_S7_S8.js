@@ -487,6 +487,7 @@ const page_S7_S8 = {
 
     let hoveredCellInfo = null;
     let emotionCells = [];
+    let seenEmotionTags = new Set();
 
     // 🌟 격리된 HSB 컬러 매핑 존 시작
     push(); 
@@ -585,8 +586,9 @@ const page_S7_S8 = {
           let eIntensity = cell.emotionIntensity !== undefined ? cell.emotionIntensity : (cell.tension || 0);
           let eyeMap = { FROWN: '찌푸림', SURPRISED: '놀람', BLURRY: '표정 변화' };
           let eTag = cell.emotionTag || eyeMap[cell.eye] || '';
-          if (eIntensity >= 0.5 && eTag) {
+          if (eIntensity >= 0.5 && eTag && !seenEmotionTags.has(eTag)) {
             emotionCells.push({ posX, posY, eTag, eIntensity, col });
+            seenEmotionTags.add(eTag);
           }
         }
       }
@@ -605,40 +607,46 @@ const page_S7_S8 = {
     if (this.showEmotionInfo && emotionCells.length > 0) {
       textSize(10); textStyle(NORMAL);
       emotionCells.forEach(({ posX, posY, eTag, eIntensity, col }) => {
-        let isLeft = col < 5;
         let labelText = `${eTag} ${(eIntensity * 100).toFixed(0)}%`;
         let tW = textWidth(labelText) + 14;
         let tH = 18;
         let lineLen = 45;
-        let lx = isLeft ? posX - cellSize / 2 - lineLen - tW : posX + cellSize / 2 + lineLen;
+        // rise = 행 간격의 절반 → 라벨이 현재 행과 위 행 사이에 위치, 위 셀 안 가림
+        let rise    = spacing * 0.5;
+        let lxLeft  = posX - cellSize / 2 - lineLen - tW;
+        let lxRight = posX + cellSize / 2 + lineLen;
+        let isLeft  = col < 5 && lxLeft >= 8;
+        let lx = isLeft ? lxLeft : lxRight;
+        // 라인 끝점 & 라벨 y: 셀 중심에서 rise만큼 위
+        let ly = posY - rise;
 
-        // 연결선
+        // 연결선 (셀 → 우상향 대각선)
         stroke(120); strokeWeight(1.2); noFill();
         if (isLeft) {
-          line(posX - cellSize / 2, posY, lx + tW, posY);
+          line(posX - cellSize / 2, posY, lx + tW, ly);
         } else {
-          line(posX + cellSize / 2, posY, lx, posY);
+          line(posX + cellSize / 2, posY, lx, ly);
         }
 
-        // 화살표 촉 (셀 방향)
+        // 화살표 촉 (셀 방향, 대각선에 맞게 약간 상향)
         fill(120); noStroke();
         if (isLeft) {
           triangle(posX - cellSize / 2,     posY,
-                   posX - cellSize / 2 - 8, posY - 4,
-                   posX - cellSize / 2 - 8, posY + 4);
+                   posX - cellSize / 2 - 9, posY - 3,
+                   posX - cellSize / 2 - 5, posY + 4);
         } else {
           triangle(posX + cellSize / 2,     posY,
-                   posX + cellSize / 2 + 8, posY - 4,
-                   posX + cellSize / 2 + 8, posY + 4);
+                   posX + cellSize / 2 + 9, posY - 3,
+                   posX + cellSize / 2 + 5, posY + 4);
         }
 
-        // 태그 박스
+        // 태그 박스 (라인 끝점 기준)
         fill(255, 248, 215); stroke(195, 170, 75); strokeWeight(1);
-        rectMode(CORNER); rect(lx, posY - tH / 2, tW, tH, 4);
+        rectMode(CORNER); rect(lx, ly - tH / 2, tW, tH, 4);
 
         // 태그 텍스트
         fill(60); noStroke(); textAlign(LEFT, CENTER);
-        text(labelText, lx + 7, posY);
+        text(labelText, lx + 7, ly);
       });
     }
 
