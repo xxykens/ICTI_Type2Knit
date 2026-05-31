@@ -57,8 +57,8 @@ const page_S4 = {
           text: newCellData.text,
           isBackspace: newCellData.isBackspace,
           speed: newCellData.speed,
-          emotionTag: newCellData.tag || face.tag,
-          emotionIntensityPercent: Math.round(((face.hasBaseline && face.intensity !== undefined) ? face.intensity : newCellData.tension) * 100)
+          emotionIntensity: newCellData.tension,
+          emotionTag: newCellData.eye
         });
       } else {
         lastSecondSpeedTarget = 0; 
