@@ -13,7 +13,7 @@ let expressionTuning = {
   eyeMaxChange: 0.035,
   browMaxChange: 8,
   mouthCurveMaxChange: 0.035,
-  mouthOpenIgnoreChange: 0.12,
+  mouthOpenIgnoreChange: 0.25,
   neutralThreshold: 0.08,
   tagThreshold: 0.16
 };
