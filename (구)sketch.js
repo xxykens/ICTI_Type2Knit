@@ -67,7 +67,10 @@ function draw() {
         speed: speedVal,
         isBackspace: tempBackspaceFlag,
         tension: cellTension,
-        eye: cellEye
+        eye: cellEye,
+        eyeScore: face.scores.eye,
+        browScore: face.scores.brow,
+        mouthScore: face.scores.mouth
       };
 
       cells.unshift(new KnitCell(newCellData)); 

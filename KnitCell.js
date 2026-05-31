@@ -4,11 +4,14 @@ class KnitCell {
     this.speed = data.speed;
     this.isBackspace = data.isBackspace;
     this.tension = data.tension;
-    this.eye = data.eye; 
+    this.eye = data.eye;
+    this.eyeScore = data.eyeScore;
+    this.browScore = data.browScore;
+    this.mouthScore = data.mouthScore;
     this.emotionTag = data.tag; // 🌟 [수정 부분 1] 감정 원본 태그를 받도록 추가
 
-    this.pos = createVector(width / 2, 220 - CELL_SIZE); 
-    this.targetPos = createVector(0, 0); 
+    this.pos = createVector(width / 2, 220 - CELL_SIZE);
+    this.targetPos = createVector(0, 0);
     
     this.calculateStyles();
   }
@@ -35,20 +38,42 @@ class KnitCell {
       baseHue = 154;     // 청록
     }
 
-    // 2. 셀 배경 색 (감정 수치 0~1에 따라 베이스 색상에서 -30 ~ +30 매핑)
-    let hueShift = map(this.tension, 0, 1, -30, 30);
+    // 2. 셀 배경 색: 텐션뿐만 아니라 eye/brow/mouth 감정 수치에 따라서도 색상을 조정
+    let scoreHueShift = 0;
+    if (this.browScore !== null && this.browScore !== undefined) {
+      scoreHueShift += map(this.browScore, -1, 1, -30, 30) * 0.4;
+    }
+    if (this.eyeScore !== null && this.eyeScore !== undefined) {
+      scoreHueShift += map(this.eyeScore, -1, 1, -30, 30) * 0.3;
+    }
+    if (this.mouthScore !== null && this.mouthScore !== undefined) {
+      scoreHueShift += map(this.mouthScore, -1, 1, -30, 30) * 0.3;
+    }
+
+    let tensionHueShift = map(this.tension, 0, 1, -15, 15);
+    let hueShift = constrain(scoreHueShift + tensionHueShift, -45, 45);
     this.bgHue = (baseHue + hueShift + 360) % 360;
 
     // 3. 코 색 (배경 색상에서 -30 ~ +30 랜덤 매핑)
     let randomShift = random(-30, 30);
     this.stitchHue = (this.bgHue + randomShift + 360) % 360;
 
-    // 4. 명도 및 채도 (기존 유지)
-    let baseBri = map(this.speed, 0, 1, 55, 80); 
-    this.bgBri = baseBri;
-    this.stitchBri = min(baseBri + 15, 100);
+    // 4. 명도 및 채도
+    let baseBri = map(this.speed, 0, 1, 55, 80);
 
-    this.sat = map(this.speed, 0, 1, 20, 50); 
+    if (this.emotionTag === '중립' || this.emotionTag === '풀림') {
+      baseBri = min(baseBri + 10, 100);
+    }
+
+    if (this.emotionTag === '얼굴 없음' || this.emotionTag === '기준값 없음') {
+      baseBri = 95;
+      this.sat = 15;
+    } else {
+      this.sat = map(this.speed, 0, 1, 10, 50);
+    }
+
+    this.bgBri = baseBri;
+    this.stitchBri = min(baseBri + 10, 100);
   }
 
   update() {
