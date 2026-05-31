@@ -397,7 +397,7 @@ class FaceExpressionTracker {
       return "긴장";
     }
 
-    return "표정 변화";
+    return "미묘함";
   }
 
   getDistance(p1, p2) {
