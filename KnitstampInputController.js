@@ -378,7 +378,7 @@ class FaceExpressionTracker {
     }
 
     if (brow !== null && brow > expressionTuning.tagThreshold) {
-      return "찌푸림";
+      return "짜증";
     }
 
     if (brow !== null && brow < -expressionTuning.tagThreshold) {
@@ -386,11 +386,11 @@ class FaceExpressionTracker {
     }
 
     if (mouth !== null && mouth > expressionTuning.tagThreshold) {
-      return "무거움";
+      return "슬픔";
     }
 
     if (mouth !== null && mouth < -expressionTuning.tagThreshold) {
-      return "풀림";
+      return "해탈";
     }
 
     if (eye !== null && eye > expressionTuning.tagThreshold) {
