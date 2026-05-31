@@ -2,6 +2,11 @@ window.knitstamp = window.knitstamp || {
   seconds: []
 };
 
+// ==========================================
+// 🔍 [디버그 모드] true = 카메라 미리보기 + 콘솔 로그 ON
+// ==========================================
+const FACE_DEBUG = true;
+
 let knitstampInputController;
 
 let expressionTuning = {
@@ -69,9 +74,17 @@ class KnitstampInputController {
     return this.faceTracker.registerBaseline();
   }
 
+  getCurrentFaceStatus() {
+    return {
+      hasFace: this.faceTracker.hasFace(),
+      hasBaseline: this.faceTracker.baseline !== null,
+    };
+  }
+
   createSecondObject(secondIndex) {
     let faceData = this.faceTracker.getExpressionData();
     let keysPerSecond = this.typingTracker.consumeKeysPerSecond();
+    if (FACE_DEBUG) console.log(`[face] hasFace:${faceData.hasFace} hasBaseline:${faceData.hasBaseline} tag:${faceData.tag} mouth:${faceData.scores?.mouth?.toFixed(2)}`);
 
     return {
       second: secondIndex,
@@ -106,14 +119,32 @@ class FaceExpressionTracker {
 
     this.video = createCapture(VIDEO);
     this.video.size(w, h);
-    this.video.hide();
 
-    this.facemesh = ml5.facemesh(this.video, () => {
-      console.log("FaceMesh model loaded");
+    if (FACE_DEBUG) {
+      this.video.style('position', 'fixed');
+      this.video.style('top', '10px');
+      this.video.style('right', '10px');
+      this.video.style('width', '160px');
+      this.video.style('border', '2px solid red');
+      this.video.style('z-index', '9999');
+      console.log("[facemesh] ml5.facemesh 존재?", typeof ml5?.facemesh);
+    } else {
+      this.video.hide();
+    }
+
+    let videoEl = this.video.elt || this.video;
+    this.facemesh = ml5.facemesh(videoEl, () => {
+      if (FACE_DEBUG) console.log("[facemesh] 모델 로드 완료 ✅");
     });
 
     this.facemesh.on("predict", (results) => {
+      let firstDetection = this.predictions.length === 0 && results.length > 0;
       this.predictions = results;
+
+      if (firstDetection) {
+        if (FACE_DEBUG) console.log("[facemesh] 첫 얼굴 감지 ✅ — 기준값 자동 등록 시도");
+        this.registerBaseline();
+      }
     });
   }
 
@@ -133,6 +164,7 @@ class FaceExpressionTracker {
     let keypoints = this.getKeypoints();
 
     if (!keypoints) {
+      if (FACE_DEBUG) console.log("[baseline] 등록 실패 — 얼굴 미감지");
       return {
         success: false,
         reason: "NO_FACE"
@@ -140,6 +172,7 @@ class FaceExpressionTracker {
     }
 
     this.baseline = this.extractFaceValues(keypoints);
+    if (FACE_DEBUG) console.log("[baseline] 등록 완료 ✅", this.baseline);
 
     return {
       success: true,
