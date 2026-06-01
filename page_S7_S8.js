@@ -134,15 +134,10 @@ const page_S7_S8 = {
     }
     cursor((hoveredIdx >= 0 || overLeftBtn || overRightBtn) ? HAND : ARROW);
 
-    // ── 클리핑 적용 후 띠 렌더 ───────────────────────────
-    drawingContext.save();
-    drawingContext.beginPath();
-    drawingContext.rect(0, TOP_Y, width, MAX_H);
-    drawingContext.clip();
-
-    for (let i = 0; i < nBands; i++) {
+    // ── 띠 하나를 그리는 로컬 함수 ──────────────────────
+    const drawBand = (i) => {
       let bx = i * BAND_W - this.s7ScrollX;
-      if (bx + BAND_W < 0 || bx > width) continue;
+      if (bx + BAND_W < 0 || bx > width) return;
 
       let piece    = this.archivedPieces[i];
       let gridData = piece.knitArray || piece.cells || [];
@@ -239,9 +234,30 @@ const page_S7_S8 = {
         noFill(); stroke(255, 255, 255, 160); strokeWeight(2.5);
         rectMode(CORNER); rect(bx + 1, by, BAND_W - 2, MAX_H - 1);
       }
+    };
+
+    // ── 클리핑 적용 후 비호버 띠 렌더 ───────────────────
+    drawingContext.save();
+    drawingContext.beginPath();
+    drawingContext.rect(0, TOP_Y, width, MAX_H);
+    drawingContext.clip();
+
+    for (let i = 0; i < nBands; i++) {
+      if (i === hoveredIdx) continue;  // 호버 띠는 헤더 위에서 따로 렌더
+      drawBand(i);
     }
 
     drawingContext.restore();
+
+    // ── 호버 띠를 헤더 바 위에 렌더 (z-order 최상단) ───
+    if (hoveredIdx >= 0) {
+      drawingContext.save();
+      drawingContext.beginPath();
+      drawingContext.rect(0, 0, width, BOT_Y);
+      drawingContext.clip();
+      drawBand(hoveredIdx);
+      drawingContext.restore();
+    }
 
     // ── 좌우 이동 버튼 ───────────────────────────────────
     colorMode(RGB);
@@ -269,7 +285,7 @@ const page_S7_S8 = {
       let eGroups = {};
       (piece.cells || []).forEach(function(c) {
         let t = c.emotionTag;
-        if (!t || t === 'NEUTRAL') return;
+        if (!t || t === 'NEUTRAL' || t === '중립') return;
         if (!eGroups[t]) eGroups[t] = { sum: 0, n: 0 };
         eGroups[t].sum += (c.emotionIntensity || 0);
         eGroups[t].n++;
@@ -628,7 +644,7 @@ const page_S7_S8 = {
           // 표시용 한국어 태그: emotionTagKo(원본) > 영문→한국어 변환 > 그대로
           const _eyeToKoMap = { FROWN: '찌푸림', SURPRISED: '놀람', BLURRY: '표정 변화', NEUTRAL: '중립' };
           let eTag = cell.emotionTagKo || _eyeToKoMap[cell.emotionTag] || _eyeToKoMap[cell.eye] || cell.emotionTag || cell.eye || '';
-          if (eIntensity >= 0.5 && eTag && !seenEmotionTags.has(eTag)) {
+          if (eIntensity >= 0.5 && eTag && eTag !== '중립' && eTag !== 'NEUTRAL' && !seenEmotionTags.has(eTag)) {
             emotionCells.push({ posX, posY, eTag, eIntensity, col });
             seenEmotionTags.add(eTag);
           }
