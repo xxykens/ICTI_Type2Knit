@@ -399,7 +399,10 @@ const page_S7_S8 = {
 
     let cbX = panelX + 20, cbY = 207, cbSize = 15;
     if (mx >= cbX && mx <= cbX + cbSize + 80 && my >= cbY && my <= cbY + cbSize) {
-      this.showText = !this.showText;
+      // anonymous 작품은 텍스트 보기 비활성
+      if (!this.selectedPiece || this.selectedPiece.privacy !== "anonymous") {
+        this.showText = !this.showText;
+      }
       return true;
     }
     let cbY2 = cbY + 28;
@@ -472,16 +475,17 @@ const page_S7_S8 = {
     // ─ 토글 체크박스 ─
     let cbX = px, cbY = 207;
 
+    let _isAnonymous = piece.privacy === "anonymous";
     noStroke();
-    fill(this.showText ? color(90, 185, 100) : color(220));
+    fill(_isAnonymous ? color(210) : (this.showText ? color(90, 185, 100) : color(220)));
     rectMode(CORNER); rect(cbX, cbY, cbSize, cbSize, 3);
-    if (this.showText) {
+    if (this.showText && !_isAnonymous) {
       stroke(255); strokeWeight(2); noFill();
       line(cbX + 3, cbY + 8, cbX + 6, cbY + 11);
       line(cbX + 6, cbY + 11, cbX + 12, cbY + 4);
     }
-    fill(50); noStroke(); textSize(13); textStyle(NORMAL); textAlign(LEFT, CENTER);
-    text("텍스트 보기", cbX + cbSize + 8, cbY + cbSize / 2);
+    fill(_isAnonymous ? color(180) : color(50)); noStroke(); textSize(13); textStyle(NORMAL); textAlign(LEFT, CENTER);
+    text(_isAnonymous ? "텍스트 보기 (익명 보호)" : "텍스트 보기", cbX + cbSize + 8, cbY + cbSize / 2);
 
     let cbY2 = cbY + 28;
     noStroke();
@@ -607,7 +611,7 @@ const page_S7_S8 = {
           text("🔒", posX, posY + 1);
         } 
         // 🌐 글자 출력 매핑 (고채도 배경 대응: 흰색 외곽선 + 어두운 채움으로 가독성 확보)
-        else if (this.showText && cell.text && cell.text.trim().length > 0) {
+        else if (this.showText && piece.privacy !== "anonymous" && cell.text && cell.text.trim().length > 0) {
           let textChar = cell.text.trim()[0];
           textSize(18); textStyle(BOLD); textAlign(CENTER, CENTER);
           noStroke();
@@ -621,8 +625,9 @@ const page_S7_S8 = {
         // 감정 정보 수집 (토글 ON 시 RGB 구간에서 화살표 어노테이션 렌더)
         if (this.showEmotionInfo) {
           let eIntensity = cell.emotionIntensity !== undefined ? cell.emotionIntensity : (cell.tension || 0);
-          let eyeMap = { FROWN: '짜증', SURPRISED: '놀람', BLURRY: '미묘함' };
-          let eTag = cell.emotionTag || cell.eye || '';
+          // 표시용 한국어 태그: emotionTagKo(원본) > 영문→한국어 변환 > 그대로
+          const _eyeToKoMap = { FROWN: '찌푸림', SURPRISED: '놀람', BLURRY: '표정 변화', NEUTRAL: '중립' };
+          let eTag = cell.emotionTagKo || _eyeToKoMap[cell.emotionTag] || _eyeToKoMap[cell.eye] || cell.emotionTag || cell.eye || '';
           if (eIntensity >= 0.5 && eTag && !seenEmotionTags.has(eTag)) {
             emotionCells.push({ posX, posY, eTag, eIntensity, col });
             seenEmotionTags.add(eTag);
@@ -643,8 +648,10 @@ const page_S7_S8 = {
     // [감정 정보 태그] 화살표 어노테이션 (RGB)
     if (this.showEmotionInfo && emotionCells.length > 0) {
       textSize(10); textStyle(NORMAL);
+      const _labelToKo = { FROWN: '찌푸림', SURPRISED: '놀람', BLURRY: '표정 변화', NEUTRAL: '중립' };
       emotionCells.forEach(({ posX, posY, eTag, eIntensity, col }) => {
-        let labelText = `${eTag} ${(eIntensity * 100).toFixed(0)}%`;
+        let displayTag = _labelToKo[eTag] || eTag;
+        let labelText = `${displayTag} ${(eIntensity * 100).toFixed(0)}%`;
         let tW = textWidth(labelText) + 14;
         let tH = 18;
         let lineLen = 45;

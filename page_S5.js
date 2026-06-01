@@ -144,6 +144,8 @@ const page_S5 = {
     let chosenNickname = this.nicknameInput.value().trim();
     if (chosenNickname === "") chosenNickname = "anonymous";
     let chosenPrivacy = this.privacySelect.value();
+    // 닉네임 미입력(anonymous) 시 privacy를 "anonymous"로 별도 분류
+    if (chosenNickname === "anonymous") chosenPrivacy = "anonymous";
 
     // 🌟 유리님이 세팅한 고유 변형 클래스 KnitPiece 가동!
     let myKnitPiece = new KnitPiece(chosenNickname, chosenPrivacy);

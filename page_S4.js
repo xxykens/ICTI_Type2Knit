@@ -59,7 +59,8 @@ const page_S4 = {
           isBackspace:      newCellData.isBackspace,
           speed:            newCellData.speed,
           emotionIntensity: newCellData.tension,
-          emotionTag:       newCellData.eye,
+          emotionTag:       newCellData.eye,       // 패턴 모양용 영문 (FROWN/SURPRISED/…)
+          emotionTagKo:     face.tag,              // 표시용 원본 한국어 (짜증/놀람/…)
           // S4 실시간 렌더 값 그대로 보존 → S7/S8에서 재계산 없이 동일하게 표현
           bgHue:    _newCell.bgHue,
           stitchHue: _newCell.stitchHue,
