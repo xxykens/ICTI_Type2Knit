@@ -21,20 +21,20 @@ class KnitCell {
     // 1. 7개의 감정 그룹별 베이스 색상 (360도 7등분, 약 51.4도 간격)
     let baseHue = 0;
     
-    if (this.emotionTag === '찌푸림') {
+    if (this.emotionTag === '짜증') {
       baseHue = 0;       // 빨강
     } else if (this.emotionTag === '중립') {
       baseHue = 51;      // 노랑
-    } else if (this.emotionTag === '풀림') {
+    } else if (this.emotionTag === '해탈') {
       baseHue = 103;     // 초록
     } else if (this.emotionTag === '놀람') {
       baseHue = 309;     // 마젠타/핑크
-    } else if (this.emotionTag === '무거움') {
+    } else if (this.emotionTag === '슬픔') {
       baseHue = 206;     // 파랑
     } else if (this.emotionTag === '긴장') {
       baseHue = 257;     // 보라
     } else {
-      // '표정 변화', '얼굴 없음', '기준값 없음' 등 예외 처리
+      // '미묘함', '얼굴 없음', '기준값 없음' 등 예외 처리
       baseHue = 154;     // 청록
     }
 
@@ -61,7 +61,7 @@ class KnitCell {
     // 4. 명도 및 채도
     let baseBri = map(this.speed, 0, 1, 55, 80);
 
-    if (this.emotionTag === '중립' || this.emotionTag === '풀림') {
+    if (this.emotionTag === '중립' || this.emotionTag === '해탈') {
       baseBri = min(baseBri + 10, 100);
     }
 

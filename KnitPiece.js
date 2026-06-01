@@ -47,7 +47,7 @@ class KnitPiece {
         syllables: syllableCount,           // 변형 연산용 음절 수
         isBackspace: cell.isBackspace,      // 패턴엔진용 지우기 여부
         typingSpeed: cell.speed,            // 패턴엔진용 타이핑 속도
-        emotionTag: cell.emotionTag,        // 감정 수치 1: 조원분들의 한글 표정 태그 ("중립", "찌푸림" 등)
+        emotionTag: cell.emotionTag,        // 감정 수치 1: 조원분들의 한글 표정 태그 ("중립", "짜증" 등)
         emotionIntensity: cell.emotionIntensity // 감정 수치 2: 조원분들의 표정 변화 강도 (0 ~ 1)
       });
     });

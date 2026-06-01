@@ -33,7 +33,7 @@ const page_S4 = {
         let cellEye = 'NEUTRAL';
         if (!face.hasFace) {
           cellEye = 'BLURRY';
-        } else if (face.tag === '찌푸림' || face.tag === '무거움') {
+        } else if (face.tag === '짜증' || face.tag === '슬픔') {
           cellEye = 'FROWN';
         } else if (face.tag === '놀람') {
           cellEye = 'SURPRISED';

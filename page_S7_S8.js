@@ -16,6 +16,28 @@ const page_S7_S8 = {
       .then(data => {
         // 최신 데이터가 위로 오도록 역순(내림차순) 정렬하는 것이 타임라인에 유리합니다!
         data.sort((a, b) => new Date(b.date) - new Date(a.date)); 
+
+        // Normalize legacy Korean emotion tag names saved in older archives
+        const tagMap = {
+          '찌푸림': '짜증',
+          '무거움': '슬픔',
+          '풀림': '해탈',
+          '표정 변화': '미묘함'
+        };
+
+        data.forEach(piece => {
+          let arr = piece.knitArray || piece.cells || [];
+          arr.forEach(cell => {
+            if (cell && cell.emotionTag && tagMap[cell.emotionTag]) {
+              cell.emotionTag = tagMap[cell.emotionTag];
+            }
+            // also normalize any text labels that might appear in fields
+            if (cell && cell.eye && typeof cell.eye === 'string') {
+              // nothing to map for English eye constants (FROWN, SURPRISED, BLURRY)
+            }
+          });
+        });
+
         this.archivedPieces = data;
         return data;
       })
@@ -123,19 +145,21 @@ const page_S7_S8 = {
           const cellH  = S7_CELL - 1;
           const minDim = S7_CELL;
 
-          let h = map(cell.tension || 0.5, 0, 1, 0, 360);
-          let s = map(cell.speed   || 0,   0, 1, 20, 60);
-          let b = map(cell.speed   || 0,   0, 1, 65, 90);
+          // Prefer stored HSB/style values if present (saved from live `KnitCell`),
+          // otherwise fall back to the original tension/speed-based mapping.
+          let h = (cell.bgHue !== undefined) ? cell.bgHue : map(cell.tension || 0.5, 0, 1, 0, 360);
+          let s = (cell.sat !== undefined)   ? cell.sat   : map(cell.speed || 0, 0, 1, 20, 60);
+          let b = (cell.bgBri !== undefined) ? cell.bgBri : map(cell.speed || 0, 0, 1, 65, 90);
 
           let hueShift = 0;
           if      (cell.eye === 'FROWN')     hueShift = 45;
           else if (cell.eye === 'SURPRISED') hueShift = 110;
           else if (cell.eye === 'BLURRY')    hueShift = 180;
-          let stitchH   = (h + hueShift) % 360;
-          let stitchBri = min(b + 15, 100);
+          let stitchH   = (cell.stitchHue !== undefined) ? cell.stitchHue : (h + hueShift) % 360;
+          let stitchBri = (cell.stitchBri !== undefined) ? cell.stitchBri : min(b + 15, 100);
 
           if (cell.isBackspace) {
-            // S8과 동일: 색상 있는 선 2개로 풀림 표현
+            // S8과 동일: 색상 있는 선 2개로 해탈(풀림) 표현
             let lineR = minDim * 0.4;
             stroke(h, s, b); strokeWeight(max(0.5, minDim * 0.15)); noFill();
             line(cx - lineR, cy - lineR, cx + lineR * 0.4, cy);
@@ -220,7 +244,7 @@ const page_S7_S8 = {
       let piece = this.archivedPieces[hoveredIdx];
       let bx = hoveredIdx * BAND_W - this.s7ScrollX;
 
-      let eyeLabel = { FROWN: '찌푸림', SURPRISED: '놀람', BLURRY: '표정 변화' };
+      let eyeLabel = { FROWN: '짜증', SURPRISED: '놀람', BLURRY: '미묘함' };
       let eGroups = {};
       (piece.cells || []).forEach(function(c) {
         let t = c.emotionTag;
@@ -458,7 +482,7 @@ const page_S7_S8 = {
     fill(80); noStroke(); textSize(13); textStyle(BOLD); textAlign(LEFT, TOP);
     text("감정 태그", px, cbY2 + 32);
 
-    let eyeLabel = { FROWN: '찌푸림', SURPRISED: '놀람', BLURRY: '표정 변화' };
+    let eyeLabel = { FROWN: '짜증', SURPRISED: '놀람', BLURRY: '미묘함' };
     let eGroups = {};
     (piece.cells || []).forEach(function(c) {
       let t = c.emotionTag;
@@ -502,20 +526,21 @@ const page_S7_S8 = {
 
       if (posY < 100 || posY > height + spacing) return; // 화면 밖 셀 스킵
 
-      let bgHue = map(cell.tension || 0.5, 0, 1, 0, 360);
+      // Use stored style values created at live-time when available so archive
+      // cells render identically to the live preview.
+      let bgHue = (cell.bgHue !== undefined) ? cell.bgHue : map(cell.tension || 0.5, 0, 1, 0, 360);
       let hueShift = 0;
-      
       if (cell.eye === 'FROWN') hueShift = 45;
       else if (cell.eye === 'SURPRISED') hueShift = 110;
       else if (cell.eye === 'BLURRY') hueShift = 180;
 
-      let stitchHue = (bgHue + hueShift + 360) % 360;
-      let baseBri = map(cell.speed || 0, 0, 1, 65, 90);
+      let stitchHue = (cell.stitchHue !== undefined) ? cell.stitchHue : (bgHue + hueShift + 360) % 360;
+      let baseBri = (cell.bgBri !== undefined) ? cell.bgBri : map(cell.speed || 0, 0, 1, 65, 90);
       let bgBri = baseBri;
-      let stitchBri = min(baseBri + 15, 100);
-      let sat = map(cell.speed || 0, 0, 1, 20, 60);
+      let stitchBri = (cell.stitchBri !== undefined) ? cell.stitchBri : min(baseBri + 15, 100);
+      let sat = (cell.sat !== undefined) ? cell.sat : map(cell.speed || 0, 0, 1, 20, 60);
 
-      // [1] 백스페이스 올 풀림 복원
+      // [1] 백스페이스 올 해탈(풀림) 복원
       if (cell.isBackspace) {
         stroke(bgHue, sat, bgBri); strokeWeight(3.5); noFill();
         line(posX - 12, posY - 12, posX + 5, posY);
@@ -584,7 +609,7 @@ const page_S7_S8 = {
         // 감정 정보 수집 (토글 ON 시 RGB 구간에서 화살표 어노테이션 렌더)
         if (this.showEmotionInfo) {
           let eIntensity = cell.emotionIntensity !== undefined ? cell.emotionIntensity : (cell.tension || 0);
-          let eyeMap = { FROWN: '찌푸림', SURPRISED: '놀람', BLURRY: '표정 변화' };
+          let eyeMap = { FROWN: '짜증', SURPRISED: '놀람', BLURRY: '미묘함' };
           let eTag = cell.emotionTag || eyeMap[cell.eye] || '';
           if (eIntensity >= 0.5 && eTag && !seenEmotionTags.has(eTag)) {
             emotionCells.push({ posX, posY, eTag, eIntensity, col });
@@ -669,7 +694,7 @@ const page_S7_S8 = {
         fill(30); textSize(14); textStyle(BOLD); textAlign(LEFT, TOP);
         text(`"${hoveredCellInfo.text || "공백/엔터"}"`, panelX + 20, hsY + 20);
         fill(110); textSize(11); textStyle(NORMAL);
-        const _eyeToKo = { FROWN: '찌푸림', SURPRISED: '놀람', BLURRY: '표정 변화', NEUTRAL: '중립' };
+        const _eyeToKo = { FROWN: '짜증', SURPRISED: '놀람', BLURRY: '미묘함', NEUTRAL: '중립' };
         const _eyeLabel = _eyeToKo[hoveredCellInfo.eye] || hoveredCellInfo.eye || '알 수 없음';
         text(`${_eyeLabel}  (${(hoveredCellInfo.tension * 100).toFixed(0)}%)`, panelX + 20, hsY + 44);
         text(`타자 속도: ${(hoveredCellInfo.speed * 100).toFixed(0)}%`, panelX + 20, hsY + 62);
