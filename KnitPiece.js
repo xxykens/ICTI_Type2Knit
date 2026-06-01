@@ -42,13 +42,18 @@ class KnitPiece {
 
       // 기획서 및 팀원분 엔진 명세에 100% 맞춰 일차적으로 cells 배열에 주입
       this.cells.push({
-        knitStamp: index + 1,               // 시간 변수: 몇 초에 생성된 값인지 (1초, 2초...)
-        text: cell.text || "",              // 텍스트: 모직물 위에 겹쳐서 호버링/렌더링될 원본 문자열
-        syllables: syllableCount,           // 변형 연산용 음절 수
-        isBackspace: cell.isBackspace,      // 패턴엔진용 지우기 여부
-        typingSpeed: cell.speed,            // 패턴엔진용 타이핑 속도
-        emotionTag: cell.emotionTag,        // 감정 수치 1: 조원분들의 한글 표정 태그 ("중립", "짜증" 등)
-        emotionIntensity: cell.emotionIntensity // 감정 수치 2: 조원분들의 표정 변화 강도 (0 ~ 1)
+        knitStamp: index + 1,
+        text: cell.text || "",
+        syllables: syllableCount,
+        isBackspace: cell.isBackspace,
+        typingSpeed: cell.speed,
+        emotionTag: cell.emotionTag,
+        emotionIntensity: cell.emotionIntensity,
+        bgHue:    cell.bgHue,
+        stitchHue: cell.stitchHue,
+        sat:      cell.sat,
+        bgBri:    cell.bgBri,
+        stitchBri: cell.stitchBri
       });
     });
 
@@ -92,7 +97,12 @@ class KnitPiece {
           speed: cell.typingSpeed,
           isBackspace: cell.isBackspace,
           tension: cell.emotionIntensity,
-          eye: cell.emotionTag
+          eye: cell.emotionTag,
+          bgHue:    cell.bgHue,
+          stitchHue: cell.stitchHue,
+          sat:      cell.sat,
+          bgBri:    cell.bgBri,
+          stitchBri: cell.stitchBri
         });
 
         // 10열 레이아웃 격자 줄바꿈 로직

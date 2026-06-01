@@ -1,3 +1,33 @@
+// KnitCell.calculateStyles()와 동일한 색상 로직 (S7/S8 공용)
+// knitArray: cell.eye = 한글 감정 태그, cell.tension = emotionIntensity (0~1)
+function _knitCellColors(cell) {
+  const eye = cell.eye || '';
+  let baseHue = 154; // 기본: 청록 (표정 변화 등 예외)
+  if      (eye === '찌푸림') baseHue = 0;
+  else if (eye === '중립')   baseHue = 51;
+  else if (eye === '풀림')   baseHue = 103;
+  else if (eye === '놀람')   baseHue = 309;
+  else if (eye === '무거움') baseHue = 206;
+  else if (eye === '긴장')   baseHue = 257;
+
+  const tension = cell.tension || 0;
+  const speed   = cell.speed   || 0;
+  const noFace  = (eye === '얼굴 없음' || eye === '기준값 없음');
+
+  const h = (baseHue + map(tension, 0, 1, -15, 15) + 360) % 360;
+  const s = noFace ? 15 : map(speed, 0, 1, 10, 50);
+  let   b = map(speed, 0, 1, 55, 80);
+  if (eye === '중립' || eye === '풀림') b = min(b + 10, 100);
+  if (noFace) b = 95;
+
+  let stitchShift = 30;
+  if      (eye === '찌푸림') stitchShift = 45;
+  else if (eye === '놀람')   stitchShift = 110;
+  else if (eye === '표정 변화' || eye === 'BLURRY') stitchShift = 180;
+
+  return { h, s, b, stitchH: (h + stitchShift + 360) % 360, stitchBri: min(b + 10, 100) };
+}
+
 /**
  * [S7-S8 단계] 팀원 그래픽引擎 이식형 아카이브 뷰어 모듈
  */
@@ -145,18 +175,9 @@ const page_S7_S8 = {
           const cellH  = S7_CELL - 1;
           const minDim = S7_CELL;
 
-          // Prefer stored HSB/style values if present (saved from live `KnitCell`),
-          // otherwise fall back to the original tension/speed-based mapping.
-          let h = (cell.bgHue !== undefined) ? cell.bgHue : map(cell.tension || 0.5, 0, 1, 0, 360);
-          let s = (cell.sat !== undefined)   ? cell.sat   : map(cell.speed || 0, 0, 1, 20, 60);
-          let b = (cell.bgBri !== undefined) ? cell.bgBri : map(cell.speed || 0, 0, 1, 65, 90);
-
-          let hueShift = 0;
-          if      (cell.eye === 'FROWN')     hueShift = 45;
-          else if (cell.eye === 'SURPRISED') hueShift = 110;
-          else if (cell.eye === 'BLURRY')    hueShift = 180;
-          let stitchH   = (cell.stitchHue !== undefined) ? cell.stitchHue : (h + hueShift) % 360;
-          let stitchBri = (cell.stitchBri !== undefined) ? cell.stitchBri : min(b + 15, 100);
+          let { h, s, b, stitchH, stitchBri } = (cell.bgHue !== undefined)
+            ? { h: cell.bgHue, s: cell.sat, b: cell.bgBri, stitchH: cell.stitchHue, stitchBri: cell.stitchBri }
+            : _knitCellColors(cell);
 
           if (cell.isBackspace) {
             // S8과 동일: 색상 있는 선 2개로 해탈(풀림) 표현
@@ -186,10 +207,10 @@ const page_S7_S8 = {
               let r = minDim * 0.25;
               stroke(stitchH, s, stitchBri); strokeWeight(max(0.4, minDim * 0.08)); noFill();
 
-              if (cell.eye === 'FROWN') {
+              if (cell.eye === 'FROWN' || cell.eye === '찌푸림') {
                 line(cx - r, cy - r, cx + r, cy + r);
                 line(cx + r, cy - r, cx - r, cy + r);
-              } else if (cell.eye === 'SURPRISED') {
+              } else if (cell.eye === 'SURPRISED' || cell.eye === '놀람') {
                 // S8과 동일: 8꼭짓점 별
                 beginShape();
                 for (let k = 0; k < 8; k++) {
@@ -526,19 +547,10 @@ const page_S7_S8 = {
 
       if (posY < 100 || posY > height + spacing) return; // 화면 밖 셀 스킵
 
-      // Use stored style values created at live-time when available so archive
-      // cells render identically to the live preview.
-      let bgHue = (cell.bgHue !== undefined) ? cell.bgHue : map(cell.tension || 0.5, 0, 1, 0, 360);
-      let hueShift = 0;
-      if (cell.eye === 'FROWN') hueShift = 45;
-      else if (cell.eye === 'SURPRISED') hueShift = 110;
-      else if (cell.eye === 'BLURRY') hueShift = 180;
-
-      let stitchHue = (cell.stitchHue !== undefined) ? cell.stitchHue : (bgHue + hueShift + 360) % 360;
-      let baseBri = (cell.bgBri !== undefined) ? cell.bgBri : map(cell.speed || 0, 0, 1, 65, 90);
+      let { h: bgHue, s: sat, b: baseBri, stitchH: stitchHue, stitchBri } = (cell.bgHue !== undefined)
+        ? { h: cell.bgHue, s: cell.sat, b: cell.bgBri, stitchH: cell.stitchHue, stitchBri: cell.stitchBri }
+        : _knitCellColors(cell);
       let bgBri = baseBri;
-      let stitchBri = (cell.stitchBri !== undefined) ? cell.stitchBri : min(baseBri + 15, 100);
-      let sat = (cell.sat !== undefined) ? cell.sat : map(cell.speed || 0, 0, 1, 20, 60);
 
       // [1] 백스페이스 올 해탈(풀림) 복원
       if (cell.isBackspace) {
@@ -568,10 +580,10 @@ const page_S7_S8 = {
         let r = cellSize * 0.28;
         stroke(stitchHue, sat, stitchBri); strokeWeight(2.5); noFill();
 
-        if (cell.eye === 'FROWN') {
+        if (cell.eye === 'FROWN' || cell.eye === '찌푸림') {
           line(posX - r, posY - r, posX + r, posY + r);
           line(posX + r, posY - r, posX - r, posY + r);
-        } else if (cell.eye === 'SURPRISED') {
+        } else if (cell.eye === 'SURPRISED' || cell.eye === '놀람') {
           beginShape();
           for (let i = 0; i < 8; i++) {
             let radius = i % 2 === 0 ? r : r * 0.4;
@@ -610,7 +622,7 @@ const page_S7_S8 = {
         if (this.showEmotionInfo) {
           let eIntensity = cell.emotionIntensity !== undefined ? cell.emotionIntensity : (cell.tension || 0);
           let eyeMap = { FROWN: '짜증', SURPRISED: '놀람', BLURRY: '미묘함' };
-          let eTag = cell.emotionTag || eyeMap[cell.eye] || '';
+          let eTag = cell.emotionTag || cell.eye || '';
           if (eIntensity >= 0.5 && eTag && !seenEmotionTags.has(eTag)) {
             emotionCells.push({ posX, posY, eTag, eIntensity, col });
             seenEmotionTags.add(eTag);

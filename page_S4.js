@@ -51,14 +51,21 @@ const page_S4 = {
           tag: face.tag
         };
 
-        // 🌟 [수정] window.을 명시해서 sketch.js 전역 마스터 배열에 확실하게 꽂아줍니다!
-        window.cells.unshift(new KnitCell(newCellData)); 
+        // KnitCell 인스턴스를 먼저 생성해 계산된 색상값(bgHue 등)을 archiveData에 함께 보존
+        let _newCell = new KnitCell(newCellData);
+        window.cells.unshift(_newCell);
         window.archiveData.unshift({
-          text: newCellData.text,
-          isBackspace: newCellData.isBackspace,
-          speed: newCellData.speed,
+          text:             newCellData.text,
+          isBackspace:      newCellData.isBackspace,
+          speed:            newCellData.speed,
           emotionIntensity: newCellData.tension,
-          emotionTag: newCellData.eye
+          emotionTag:       newCellData.eye,
+          // S4 실시간 렌더 값 그대로 보존 → S7/S8에서 재계산 없이 동일하게 표현
+          bgHue:    _newCell.bgHue,
+          stitchHue: _newCell.stitchHue,
+          sat:      _newCell.sat,
+          bgBri:    _newCell.bgBri,
+          stitchBri: _newCell.stitchBri
         });
       } else {
         lastSecondSpeedTarget = 0; 
