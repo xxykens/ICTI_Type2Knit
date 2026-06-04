@@ -257,7 +257,7 @@
 
     #p9 .char-count {
       position: absolute;
-      left: 50%; transform: translateX(-50%); bottom: 80px;
+      left: 49%; transform: translateX(-50%); bottom: 80px;
       font-size: 34px; color: var(--mid-gray);
       display: flex; align-items: center; gap: 8px;
     }
@@ -311,6 +311,18 @@
       letter-spacing: 0.1em;
     }
     
+    /* ── LANG INDICATOR ── */
+    #lang-indicator {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 126px;
+      font-size: 28px;
+      color: var(--mid-gray);
+      letter-spacing: 0.05em;
+      pointer-events: none;
+    }
+
     /* ════════════════════════════════
        P11 – FINISHING
     ════════════════════════════════ */

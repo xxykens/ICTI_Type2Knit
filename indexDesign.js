@@ -227,6 +227,48 @@ function onType() {
 
 function endTyping() { goTo('p11'); }
 
+
+(function() {
+  const ta = document.getElementById('typing-capture');
+  const indicator = document.getElementById('lang-indicator');
+
+let isKorean = true;
+
+function set(korean) {
+  isKorean = korean;
+  if (indicator) indicator.textContent = korean ? '한글' : 'ENG';
+}
+
+set(true);
+
+if (ta) {
+  let isComposing = false;
+
+  ta.addEventListener('compositionstart', () => {
+    isComposing = true;
+    set(true);
+  });
+
+  ta.addEventListener('compositionend', () => {
+    isComposing = false;
+  });
+
+  ta.addEventListener('keydown', function(e) {
+    // 조합 중이면 무시
+    if (isComposing) return;
+    // 문자 키가 아니면 무시 (화살표, shift 등)
+    if (e.key.length !== 1) return;
+    // 문장부호/특수문자면 무시
+    if (/[^\p{L}\p{N}]/u.test(e.key)) return;
+
+    // 조합 없이 ASCII 문자 → 영문 모드
+    if (/^[\x00-\x7F]$/.test(e.key)) {
+      set(false);
+    }
+  });
+}
+})();
+
 // ── P11 → P12 / P14 ──
 function finishAnimation() {
   if (state.privacy === 'private') goTo('p14');
