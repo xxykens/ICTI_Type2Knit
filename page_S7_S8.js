@@ -369,13 +369,46 @@ const page_S7_S8 = {
 
   // [S8] 체크박스/닫기 클릭
   handleS8CheckboxClick: function(mx, my) {
-    // 닫기 버튼 (패널 우측 상단)
     const PANEL_Y  = height / 2 + 10;
-    const closeX   = width - 40;
-    const closeY   = PANEL_Y + 20;
+    const PANEL_H  = height - PANEL_Y;
+    const INFO_W   = 220;
+    const INFO_X   = width - INFO_W - 20;
+
+    // 닫기 버튼
+    const closeX = INFO_X + INFO_W - 20;
+    const closeY = PANEL_Y + 26;
     if (mx >= closeX - 16 && mx <= closeX + 16 && my >= closeY - 16 && my <= closeY + 16) {
       this.showDetailPanel = false;
       this.selectedPiece = null;
+      return true;
+    }
+
+    // 체크박스 Y 계산 (drawS8SingleView와 동일한 로직)
+    const piece = this.selectedPiece;
+    if (!piece) return false;
+    const eyeLabel = { FROWN: '짜증', SURPRISED: '놀람', BLURRY: '미묘함' };
+    let eGroups = {};
+    (piece.cells || []).forEach(c => {
+      const t = c.emotionTag;
+      if (!t || t === 'NEUTRAL' || t === '중립') return;
+      if (!eGroups[t]) eGroups[t] = { sum: 0, n: 0 };
+      eGroups[t].sum += (c.emotionIntensity || 0); eGroups[t].n++;
+    });
+    const eListLen = Math.min(3, Object.keys(eGroups).filter(k => eGroups[k]).length) || 1;
+    const afterTagY = PANEL_Y + 92 + max(1, eListLen) * 20 + 8;
+    const cbX  = INFO_X + 18;
+    const cbSz = 15;
+    const cbY  = afterTagY + 10;
+    const cbY2 = cbY + 28;
+
+    // 텍스트 보기 토글
+    if (mx >= cbX && mx <= cbX + cbSz + 90 && my >= cbY && my <= cbY + cbSz) {
+      if (piece.privacy !== 'anonymous') this.showText = !this.showText;
+      return true;
+    }
+    // 감정 정보 보기 토글
+    if (mx >= cbX && mx <= cbX + cbSz + 100 && my >= cbY2 && my <= cbY2 + cbSz) {
+      this.showEmotionInfo = !this.showEmotionInfo;
       return true;
     }
     // ESC는 keyPressed에서 처리
@@ -473,6 +506,18 @@ const page_S7_S8 = {
     fill(50); noStroke(); textSize(12); textStyle(NORMAL); textAlign(LEFT, CENTER);
     text('텍스트 보기', cbX + cbSz + 8, cbY + cbSz/2);
 
+    // ── 감정 정보 보기 체크박스 ──────────────────────
+    const cbY2 = cbY + 28;
+    noStroke();
+    fill(this.showEmotionInfo ? color(90, 185, 100) : color(220));
+    rectMode(CORNER); rect(cbX, cbY2, cbSz, cbSz, 3);
+    if (this.showEmotionInfo) {
+      stroke(255); strokeWeight(2); noFill();
+      line(cbX+3, cbY2+8, cbX+6, cbY2+11); line(cbX+6, cbY2+11, cbX+12, cbY2+4);
+    }
+    fill(50); noStroke(); textSize(12); textStyle(NORMAL); textAlign(LEFT, CENTER);
+    text('감정 정보 보기', cbX + cbSz + 8, cbY2 + cbSz/2);
+
     // ── 뜨개 그리드 ────────────────────────────────
     const cellSize = 24;
     const spacing  = 28;
@@ -481,6 +526,7 @@ const page_S7_S8 = {
     const gStartY  = PANEL_Y + 20 + this.scrollY;
 
     let hoveredCellInfo = null;
+    let emotionCells = [];
     let seenEmotionTags = new Set();
 
     push();
@@ -493,7 +539,7 @@ const page_S7_S8 = {
 
     this.drawKnitGrid(gridData, gStartX, gStartY, cellSize, spacing, {
       showText:        this.showText,
-      showEmotionInfo: false,
+      showEmotionInfo: this.showEmotionInfo,
       privacy:         piece.privacy,
       clipMinY:        PANEL_Y,
       clipMaxY:        height + spacing,
@@ -502,26 +548,73 @@ const page_S7_S8 = {
         hoveredCellInfo = cell;
         stroke(0, 0, 85); strokeWeight(2); noFill();
         rectMode(CENTER); rect(posX, posY, cellSize + 6, cellSize + 6, 6);
+      },
+      onEmotionCell: (info) => {
+        emotionCells.push(info);
       }
     });
 
     drawingContext.restore();
     pop();
 
-    // ── 호버 셀 정보 ────────────────────────────────
-    if (hoveredCellInfo) {
+    // ── 감정 정보 태그 화살표 어노테이션 ──────────────
+    if (this.showEmotionInfo && emotionCells.length > 0) {
       colorMode(RGB);
+      textSize(10); textStyle(NORMAL);
+      const _labelToKo = { FROWN: '찌푸림', SURPRISED: '놀람', BLURRY: '표정 변화', NEUTRAL: '중립' };
+      emotionCells.forEach(({ posX, posY, eTag, eIntensity, col }) => {
+        let displayTag = _labelToKo[eTag] || eTag;
+        let labelText = `${displayTag} ${(eIntensity * 100).toFixed(0)}%`;
+        let tW = textWidth(labelText) + 14;
+        let tH = 18;
+        let lineLen = 40;
+        let rise    = spacing * 0.5;
+        let lxLeft  = posX - cellSize / 2 - lineLen - tW;
+        let lxRight = posX + cellSize / 2 + lineLen;
+        let isLeft  = col < 5 && lxLeft >= GRID_X;
+        let lx = isLeft ? lxLeft : lxRight;
+        let ly = posY - rise;
+
+        stroke(120); strokeWeight(1.2); noFill();
+        if (isLeft) {
+          line(posX - cellSize / 2, posY, lx + tW, ly);
+        } else {
+          line(posX + cellSize / 2, posY, lx, ly);
+        }
+
+        fill(120); noStroke();
+        if (isLeft) {
+          triangle(posX - cellSize/2, posY, posX - cellSize/2 - 9, posY - 3, posX - cellSize/2 - 5, posY + 4);
+        } else {
+          triangle(posX + cellSize/2, posY, posX + cellSize/2 + 9, posY - 3, posX + cellSize/2 + 5, posY + 4);
+        }
+
+        fill(255, 248, 215); stroke(195, 170, 75); strokeWeight(1);
+        rectMode(CORNER); rect(lx, ly - tH / 2, tW, tH, 4);
+        fill(60); noStroke(); textAlign(LEFT, CENTER);
+        text(labelText, lx + 7, ly);
+      });
+    }
+
+    // ── 선택된 코 정보 ────────────────────────────────
+    colorMode(RGB);
+    const infoY = cbY2 + cbSz + 20;
+    stroke(215); strokeWeight(1);
+    line(INFO_X + 10, infoY - 10, INFO_X + INFO_W - 10, infoY - 10);
+    fill(80); noStroke(); textSize(12); textStyle(BOLD); textAlign(LEFT, TOP);
+    text('선택된 코 정보', px, infoY);
+
+    if (hoveredCellInfo) {
       const _eyeToKo = { FROWN: '짜증', SURPRISED: '놀람', BLURRY: '미묘함', NEUTRAL: '중립' };
       const eyeKo = _eyeToKo[hoveredCellInfo.eye] || hoveredCellInfo.eye || '알 수 없음';
-      const infoY = afterTagY + 50;
-
-      fill(80); noStroke(); textSize(11); textStyle(BOLD); textAlign(LEFT, TOP);
-      text('선택된 코', px, infoY);
       fill(30); textSize(13); textStyle(BOLD);
-      text(`"${hoveredCellInfo.text || '—'}"`, px, infoY + 18);
+      text(`"${hoveredCellInfo.text || '—'}"`, px, infoY + 20);
       fill(120); textSize(11); textStyle(NORMAL);
-      text(`${eyeKo}  (${(hoveredCellInfo.tension*100||0).toFixed(0)}%)`, px, infoY + 38);
-      text(`속도: ${((hoveredCellInfo.speed||0)*100).toFixed(0)}%`, px, infoY + 56);
+      text(`${eyeKo}  (${(hoveredCellInfo.tension*100||0).toFixed(0)}%)`, px, infoY + 40);
+      text(`속도: ${((hoveredCellInfo.speed||0)*100).toFixed(0)}%`, px, infoY + 58);
+    } else {
+      fill(190); noStroke(); textSize(11); textStyle(NORMAL); textAlign(LEFT, TOP);
+      text('니트 코 위에 마우스를 올리면\n정보가 표시됩니다.', px, infoY + 20);
     }
 
     // 하단 안내

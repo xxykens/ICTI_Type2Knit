@@ -590,8 +590,6 @@ function openP18Overlay(piece, sourceCvs) {
     height: ${overlayH}px;
   `;
 
-  _p18DrawCardBig(bigCvs, piece, overlayW, overlayH);
-
   bigCvs.addEventListener('wheel', (e) => {
     backdrop.scrollTop += e.deltaY;
     e.preventDefault();
@@ -602,13 +600,18 @@ function openP18Overlay(piece, sourceCvs) {
   // 우측 정보 패널
   const info = document.createElement('div');
   info.style.cssText = `
-    min-width: 220px;
+    width: 220px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 40px;
+    align-self: flex-start;
     background: rgba(255,255,255,0.92);
     border-radius: 14px;
     padding: 28px 24px;
     font-family: 'HSHwalkong', serif;
     pointer-events: auto;
     box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+    box-sizing: border-box;
   `;
 
   // 닉네임 + 날짜
@@ -668,12 +671,68 @@ function openP18Overlay(piece, sourceCvs) {
   cb.type = 'checkbox';
   cb.checked = false;
   cb.style.cssText = 'width:16px; height:16px; cursor:pointer;';
-  cb.addEventListener('change', () => {
-    _p18DrawCardBig(bigCvs, piece, overlayW, overlayH, cb.checked);
-  });
   cbWrap.appendChild(cb);
   cbWrap.appendChild(document.createTextNode('텍스트 보기'));
   info.appendChild(cbWrap);
+
+  // 감정 정보 보기 체크박스
+  const cbWrap2 = document.createElement('label');
+  cbWrap2.style.cssText = 'display:flex; align-items:center; gap:8px; cursor:pointer; font-size:14px; color:#555; margin-top:6px;';
+  const cb2 = document.createElement('input');
+  cb2.type = 'checkbox';
+  cb2.checked = true;
+  cb2.style.cssText = 'width:16px; height:16px; cursor:pointer;';
+  cbWrap2.appendChild(cb2);
+  cbWrap2.appendChild(document.createTextNode('감정 정보 보기'));
+  info.appendChild(cbWrap2);
+
+  // 공통 redraw — 두 체크박스 상태를 함께 전달
+  const redrawBig = () => _p18DrawCardBig(bigCvs, piece, overlayW, overlayH, cb.checked, cb2.checked);
+  cb.addEventListener('change', redrawBig);
+  cb2.addEventListener('change', redrawBig);
+  redrawBig();
+
+  // 구분선
+  const hr2 = document.createElement('div');
+  hr2.style.cssText = 'border-top:1px solid #e0e0e0; margin:20px 0 10px;';
+  info.appendChild(hr2);
+
+  // 선택된 코 정보
+  const selTitle = document.createElement('div');
+  selTitle.style.cssText = 'font-size:14px; font-weight:600; color:#333; margin-bottom:8px;';
+  selTitle.textContent = '선택된 코 정보';
+  info.appendChild(selTitle);
+
+  const selInfo = document.createElement('div');
+  selInfo.style.cssText = 'font-size:13px; color:#aaa; line-height:1.6;';
+  selInfo.textContent = '니트 코 위에 마우스를 올리면 정보가 표시됩니다.';
+  info.appendChild(selInfo);
+
+  // 마우스 호버 → 선택된 코 정보 업데이트
+  const _SP = Math.floor((overlayW - 8) / 10);
+  const _hsx = _SP / 2 + 4;
+  const _hsy = _SP / 2 + 10;
+  const _tagMapKo = { FROWN: '짜증', SURPRISED: '놀람', BLURRY: '미묘함', NEUTRAL: '중립' };
+  bigCvs.addEventListener('mousemove', (e) => {
+    const r = bigCvs.getBoundingClientRect();
+    const mx = (e.clientX - r.left) * (bigCvs.width / r.width);
+    const my = (e.clientY - r.top) * (bigCvs.height / r.height);
+    const gd = piece.knitArray || piece.cells || [];
+    let found = null;
+    gd.forEach((cell, idx) => {
+      const cx = _hsx + (idx % 10) * _SP;
+      const cy = _hsy + Math.floor(idx / 10) * _SP;
+      if (Math.abs(mx - cx) <= _SP / 2 && Math.abs(my - cy) <= _SP / 2) found = cell;
+    });
+    if (found) {
+      const eyeKo = found.emotionTagKo || _tagMapKo[found.eye] || found.eye || '알 수 없음';
+      selInfo.style.color = '#333';
+      selInfo.innerHTML = `<span style="font-size:15px;font-weight:600;">"${found.text || '—'}"</span><br>${eyeKo} (${((found.tension||0)*100).toFixed(0)}%)<br>속도: ${(((found.speed||0)*100).toFixed(0))}%`;
+    } else {
+      selInfo.style.color = '#aaa';
+      selInfo.textContent = '니트 코 위에 마우스를 올리면 정보가 표시됩니다.';
+    }
+  });
 
   panel.appendChild(info);
   backdrop.appendChild(panel);
@@ -685,7 +744,7 @@ function closeP18Overlay() {
   if (backdrop) backdrop.remove();
 }
 
-function _p18DrawCardBig(cvs, piece, W, H, showText) {
+function _p18DrawCardBig(cvs, piece, W, H, showText, showEmotionInfo) {
   const ctx = cvs.getContext('2d');
   ctx.clearRect(0, 0, W, H);
 
@@ -701,6 +760,10 @@ function _p18DrawCardBig(cvs, piece, W, H, showText) {
   const CS     = SP - 4;
   const startX = SP / 2 + 4;
   const startY = SP / 2 + 10;
+
+  const _emotionCells = [];
+  const _seenTags = new Set();
+  const _tagMapAnno = { FROWN: '찌푸림', SURPRISED: '놀람', BLURRY: '표정 변화', NEUTRAL: '중립' };
 
   gridData.forEach((cell, idx) => {
     const col = idx % 10;
@@ -785,5 +848,60 @@ function _p18DrawCardBig(cvs, piece, W, H, showText) {
       ctx.textBaseline = 'middle';
       ctx.fillText(cell.text.trim()[0], px, py + 1);
     }
+
+    // 감정 정보 수집
+    if (showEmotionInfo) {
+      const eIntensity = cell.emotionIntensity !== undefined ? cell.emotionIntensity : (cell.tension || 0);
+      const eTag = cell.emotionTagKo || _tagMapAnno[cell.emotionTag] || _tagMapAnno[cell.eye] || cell.emotionTag || cell.eye || '';
+      if (eIntensity >= 0.5 && eTag && eTag !== '중립' && eTag !== 'NEUTRAL' && !_seenTags.has(eTag)) {
+        _emotionCells.push({ px, py, eTag, eIntensity, col });
+        _seenTags.add(eTag);
+      }
+    }
   });
+
+  // 감정 정보 화살표 어노테이션
+  if (showEmotionInfo && _emotionCells.length > 0) {
+    ctx.font = `11px 'HSHwalkong', serif`;
+    ctx.textBaseline = 'middle';
+    _emotionCells.forEach(({ px, py, eTag, eIntensity, col }) => {
+      const labelText = `${eTag} ${(eIntensity * 100).toFixed(0)}%`;
+      const tW = ctx.measureText(labelText).width + 14;
+      const tH = 18;
+      const lineLen = 35;
+      const rise    = SP * 0.5;
+      const lxLeft  = px - SP / 2 - lineLen - tW;
+      const lxRight = px + SP / 2 + lineLen;
+      const isLeft  = col < 5 && lxLeft >= 4;
+      const lx = isLeft ? lxLeft : lxRight;
+      const ly = py - rise;
+
+      ctx.strokeStyle = 'rgba(120,120,120,0.8)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      if (isLeft) { ctx.moveTo(px - SP/2, py); ctx.lineTo(lx + tW, ly); }
+      else         { ctx.moveTo(px + SP/2, py); ctx.lineTo(lx,      ly); }
+      ctx.stroke();
+
+      ctx.fillStyle = 'rgba(120,120,120,0.8)';
+      ctx.beginPath();
+      if (isLeft) {
+        ctx.moveTo(px - SP/2, py); ctx.lineTo(px - SP/2 - 7, py - 3); ctx.lineTo(px - SP/2 - 4, py + 3);
+      } else {
+        ctx.moveTo(px + SP/2, py); ctx.lineTo(px + SP/2 + 7, py - 3); ctx.lineTo(px + SP/2 + 4, py + 3);
+      }
+      ctx.fill();
+
+      ctx.fillStyle = 'rgb(255,248,215)';
+      ctx.strokeStyle = 'rgb(195,170,75)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(lx, ly - tH / 2, tW, tH, 3);
+      ctx.fill(); ctx.stroke();
+
+      ctx.fillStyle = 'rgb(60,60,60)';
+      ctx.textAlign = 'left';
+      ctx.fillText(labelText, lx + 7, ly);
+    });
+  }
 }
