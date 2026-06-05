@@ -68,7 +68,9 @@ const page_S4 = {
 
       // 1초 단위 전역 캐싱 초기화
       tempBackspaceFlag = false;
-      tempText = "";
+      tempText = '';
+      const _ta = document.getElementById('typing-capture');
+      if (_ta) window._tempTextBaseline = _ta.value.length;
     }
 
     // 3. 바늘 보간 및 애니메이션 업데이트 (전역 변수 활용)

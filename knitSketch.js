@@ -47,7 +47,14 @@ function setup() {
     });
     ta.addEventListener('input', function() {
       if (!window.state || window.state.currentScreen !== 'p9') return;
-      window.tempText = ta.value;
+      const baseline = window._tempTextBaseline || 0;
+      if (ta.value.length < baseline) {
+        // 백스페이스로 이전 초 영역까지 삭제된 경우
+        window._tempTextBaseline = ta.value.length;
+        window.tempText = '';
+      } else {
+        window.tempText = ta.value.slice(baseline);
+      }
     });
   }
 
@@ -132,6 +139,7 @@ window.knitSketch_onP9Enter = function() {
   window.tempBackspaceFlag     = false;
   window.tempText              = '';
   window.knitstamp             = { seconds: [] };
+  window._tempTextBaseline     = 0;
 
   if (window.page_S4) window.page_S4._prevKnitstampLen = 0;
   if (window.page_S4) page_S4.initGridPath();
