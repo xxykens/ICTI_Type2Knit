@@ -52,7 +52,7 @@
     .top-brand {
       position: absolute;
       top: 28px; right: 36px;
-      font-size: 31px;
+      font-size: 26px;
       color: var(--mid-gray);
       letter-spacing: 0.05em;
       font-weight: 300;
@@ -117,7 +117,7 @@
     #p1 .desc {
       position: absolute;
       top: 400px; left: 85px;
-      font-size: 45px; line-height: 55px;
+      font-size: 32px; line-height: 50px;
       letter-spacing: 0.1em;
     }
 
