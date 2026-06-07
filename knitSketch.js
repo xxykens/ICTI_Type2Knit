@@ -105,7 +105,7 @@ function draw() {
         // 🌟 [여기를 수정하세요!] 
         // 980, 260 대신 패널 너비(pw)에서 30px 뺀 위치(우측 상단)에 배치합니다.
         if (window.LegendUI && typeof window.LegendUI.drawIcon === 'function') {
-          window.LegendUI.drawIcon(pw - 30, 40);
+          window.LegendUI.drawIcon(pw - 30, ph - 40);
         }
       }
     }
@@ -252,32 +252,47 @@ window.LegendUI = {
 
   drawTooltip: function(iconX, iconY) {
     push();
-    let boxW = 350; 
-    let boxH = 410; 
-    let tX = (iconX + boxW + 20 > width) ? iconX - boxW - 20 : iconX + 20;
-    let tY = (iconY + boxH > height) ? height - boxH - 20 : iconY;
+    // 툴팁 전체 크기를 기존(350x410)에서 약 3/4 수준으로 압축 (여백 최소화)
+    let boxW = 280; 
+    let boxH = 350; 
+    
+    let tX = iconX + 20; 
+    if (tX + boxW > width) tX = iconX - boxW - 20;
+    if (tX < 10) tX = 10;
+
+    let tY = iconY;
+    if (tY + boxH > height) tY = height - boxH - 10;
+    if (tY < 10) tY = 10;
 
     colorMode(RGB);
-    fill(255, 240); 
+    fill(255, 245); 
     stroke(200);
     strokeWeight(1);
     rectMode(CORNER);
     rect(tX, tY, boxW, boxH, 12);
     
-    fill(50);
-    noStroke();
     textAlign(LEFT, TOP);
+    noStroke();
     
-    textSize(16);
+    // 제목
+    fill(50);
+    textSize(15);
     textStyle(BOLD);
-    text("감정별 뜨개 패턴", tX + 20, tY + 20);
+    text("감정별 뜨개 패턴", tX + 15, tY + 15);
+
+    // (1) 추가된 설명 문구
+    fill(100);
+    textSize(10);
+    textStyle(NORMAL);
+    textLeading(14); // 줄간격
+    text("타이핑하는 동안 웹캠이 표정 변화(눈썹·눈·입)를 기준 표정과\n비교해 감정을 추정하고, 그 감정과 타이핑 속도에 따라\n코의 색과 형태 등이 달라져요.", tX + 15, tY + 36);
 
     // ----------------------------------------
     // [섹션 1] 감정별 베이스 색상
     // ----------------------------------------
-    textSize(13);
-    textStyle(NORMAL);
-    text("■ 감정 베이스 색상", tX + 20, tY + 55);
+    fill(50);
+    textSize(12);
+    text("■ 감정 베이스 색상", tX + 15, tY + 85);
     
     let emotions = [
       { name: '짜증', hue: 0 }, { name: '중립', hue: 51 },
@@ -290,18 +305,19 @@ window.LegendUI = {
     for (let i = 0; i < emotions.length; i++) {
       let col = i % 4;
       let row = Math.floor(i / 4);
-      let cx = tX + 20 + col * 75;
-      let cy = tY + 85 + row * 30;
+      let cx = tX + 15 + col * 65; // 간격 축소
+      let cy = tY + 105 + row * 24;
 
       fill(emotions[i].hue, 40, 90);
       stroke(emotions[i].hue, 50, 70);
       strokeWeight(1);
-      rect(cx, cy, 14, 14, 3);
+      rect(cx, cy, 13, 13, 3); // 컬러박스 살짝만 축소
 
       noStroke();
       fill(0, 0, 30);
       textAlign(LEFT, TOP);
-      text(emotions[i].name, cx + 20, cy + 1);
+      textSize(10.5);
+      text(emotions[i].name, cx + 18, cy + 1);
     }
 
     // ----------------------------------------
@@ -309,50 +325,50 @@ window.LegendUI = {
     // ----------------------------------------
     colorMode(RGB);
     fill(50);
+    textSize(12);
     textAlign(LEFT, TOP);
-    text("■ 형태 및 코 무늬", tX + 20, tY + 160);
+    text("■ 형태 및 코 무늬", tX + 15, tY + 158);
 
-    textSize(11); fill(100);
-    text("입꼬리 긴장도", tX + 20, tY + 185);
-    text("눈 표정", tX + 175, tY + 185);
+    textSize(10); fill(100);
+    text("입꼬리 긴장도", tX + 15, tY + 178);
+    text("눈 표정", tX + 130, tY + 178);
 
     textAlign(CENTER, TOP);
     
-    // (1) 예시 셀 색상을 어두운 회색('shape_gray')으로 변경
-    this.drawMiniCell(tX + 45, tY + 225, 'circle', 'NEUTRAL', true, 'shape_gray'); 
-    text("긍정", tX + 45, tY + 245);
-    this.drawMiniCell(tX + 105, tY + 225, 'square', 'NEUTRAL', true, 'shape_gray'); 
-    text("부정", tX + 105, tY + 245);
+    // 배치 간격 압축 (미니 셀 크기는 최대한 유지)
+    this.drawMiniCell(tX + 35, tY + 210, 'circle', 'NEUTRAL', true, 'shape_gray'); 
+    text("긍정", tX + 35, tY + 225);
+    this.drawMiniCell(tX + 85, tY + 210, 'square', 'NEUTRAL', true, 'shape_gray'); 
+    text("부정", tX + 85, tY + 225);
 
-    this.drawMiniCell(tX + 195, tY + 225, 'square', 'FROWN', true, 'shape_gray'); 
-    text("찌푸림", tX + 195, tY + 245);
-    this.drawMiniCell(tX + 250, tY + 225, 'square', 'SURPRISED', true, 'shape_gray'); 
-    text("충격", tX + 250, tY + 245);
-    this.drawMiniCell(tX + 305, tY + 225, 'square', 'NEUTRAL', true, 'shape_gray'); 
-    text("기본", tX + 305, tY + 245);
+    this.drawMiniCell(tX + 150, tY + 210, 'square', 'FROWN', true, 'shape_gray'); 
+    text("찌푸림", tX + 150, tY + 225);
+    this.drawMiniCell(tX + 200, tY + 210, 'square', 'SURPRISED', true, 'shape_gray'); 
+    text("충격", tX + 200, tY + 225);
+    this.drawMiniCell(tX + 250, tY + 210, 'square', 'NEUTRAL', true, 'shape_gray'); 
+    text("기본", tX + 250, tY + 225);
 
     // ----------------------------------------
     // [섹션 3] 타이핑 속도
     // ----------------------------------------
     textAlign(LEFT, TOP);
-    fill(50); textSize(13);
-    text("■ 타이핑 속도", tX + 20, tY + 285);
+    fill(50); textSize(12);
+    text("■ 타이핑 속도", tX + 15, tY + 255);
     
     textAlign(CENTER, TOP);
-    textSize(11); fill(100);
+    textSize(10); fill(100);
     
-    // (2) '채도/명도' 텍스트 수정 적용
-    this.drawMiniCell(tX + 60, tY + 335, 'square', 'NEUTRAL', true, 'fast'); 
-    text("빠름", tX + 60, tY + 355);
-    text("(채움, 채도/명도↑)", tX + 60, tY + 370);
+    this.drawMiniCell(tX + 45, tY + 295, 'square', 'NEUTRAL', true, 'fast'); 
+    text("빠름", tX + 45, tY + 310);
+    text("(채움, 채도/명도↑)", tX + 45, tY + 324);
     
-    this.drawMiniCell(tX + 175, tY + 335, 'square', 'NEUTRAL', false, 'medium'); 
-    text("보통", tX + 175, tY + 355);
-    text("(두꺼운 선)", tX + 175, tY + 370);
+    this.drawMiniCell(tX + 140, tY + 295, 'square', 'NEUTRAL', false, 'medium'); 
+    text("보통", tX + 140, tY + 310);
+    text("(두꺼운 선)", tX + 140, tY + 324);
 
-    this.drawMiniCell(tX + 290, tY + 335, 'square', 'NEUTRAL', false, 'slow'); 
-    text("느림", tX + 290, tY + 355);
-    text("(얇은 선, 채도/명도↓)", tX + 290, tY + 370);
+    this.drawMiniCell(tX + 235, tY + 295, 'square', 'NEUTRAL', false, 'slow'); 
+    text("느림", tX + 235, tY + 310);
+    text("(얇은 선, 채도/명도↓)", tX + 235, tY + 324);
 
     pop();
   },
@@ -361,24 +377,25 @@ window.LegendUI = {
     push();
     translate(x, y);
     colorMode(HSB, 360, 100, 100);
-    let size = 20;
+    
+    // 셀 크기를 20에서 18로 아주 살짝만 줄여 가독성 유지
+    let size = 18; 
     
     let hue = 0; 
     let sat = 0; 
-    
     let bri = 70;
-    let sw = 2;
+    let sw = 1.5; // 기본 선 두께 축소
 
     if (speedLevel === 'fast') { 
       bri = 85; 
     } else if (speedLevel === 'medium') { 
       bri = 55; 
-      sw = 3.5; 
+      sw = 3; // 두꺼운 테두리
     } else if (speedLevel === 'slow') { 
       bri = 30; 
-      sw = 1.2; 
+      sw = 1; // 얇은 테두리
     } else if (speedLevel === 'shape_gray') {
-      bri = 55; // 형태 예시용 어두운 회색
+      bri = 55; 
     }
 
     if (isFilled) {
@@ -398,7 +415,7 @@ window.LegendUI = {
     }
 
     stroke(hue, sat, min(bri + 20, 100)); 
-    strokeWeight(1.5);
+    strokeWeight(1.2);
     noFill();
     let r = size * 0.3;
 
