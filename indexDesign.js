@@ -55,6 +55,7 @@ function onScreenEnter(id) {
     if (countEl) countEl.textContent = `${count}초 후 기본 표정이 인식됩니다.`;
 
     const countInterval = setInterval(() => {
+      if (state.currentScreen !== 'p7') { clearInterval(countInterval); return; }
       count--;
       if (countEl) countEl.textContent = `${count}초 후 기본 표정이 인식됩니다.`;
       if (count <= 0) clearInterval(countInterval);
@@ -148,11 +149,12 @@ function showP7Fail() {
   if (failCountEl) failCountEl.textContent = `${failCount}초 후 홈으로 돌아갑니다.`;
 
   const failCountInterval = setInterval(() => {
+    if (state.currentScreen !== 'p7') { clearInterval(failCountInterval); return; }
     failCount--;
     if (failCountEl) failCountEl.textContent = `${failCount}초 후 홈으로 돌아갑니다.`;
     if (failCount <= 0) {
       clearInterval(failCountInterval);
-      if (state.currentScreen === 'p7') goTo('p1');
+      goTo('p1');
     }
   }, 1000);
 }
