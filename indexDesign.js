@@ -156,6 +156,12 @@ function onScreenEnter(id) {
     startKnitstampLoop();
   }
 
+  if (id === 'p10') {
+    if (window.page_S10 && typeof window.page_S10.render === 'function') {
+      window.page_S10.render();
+    }
+  }
+
   if (id === 'p11') {
     stopKnitstampLoop();
     setTimeout(finishAnimation, 2800);

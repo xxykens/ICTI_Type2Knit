@@ -13,6 +13,7 @@
 <div id="p1" class="screen active">
   <div class="top-brand">감정이∙패턴이∙되는∙순간</div>
   <div class="archive-tag" onclick="goTo('p18')">► 아카이브</div>
+  <div class="preview-tag" onclick="goTo('p10')">► 미리보기</div>
   <h1>Type to Knit_</h1>
   <div class="desc">
     화나는 일이 있었나요?<br>
@@ -225,6 +226,30 @@
   </div>
 </div>
 
+<!-- P10 – PREVIEW -->
+<div id="p10" class="screen preview-screen">
+  <div class="top-brand">감정이∙패턴이∙되는∙순간</div>
+  <span class="preview-home-link" onclick="goTo('p1')">▶ 홈으로</span>
+
+  <div class="preview-copy">
+    <h2>미리보기</h2>
+    <p>
+      예시 문장이 감정 태그와 만나<br>
+      뜨개 패턴으로 바뀌는 과정을<br>
+      살펴볼 수 있어요.
+    </p>
+    <div class="preview-example" aria-label="예시 텍스트">
+      <div class="preview-example-title">예시 텍스트</div>
+      <div id="p10-preview-text" class="preview-example-text"></div>
+    </div>
+    <div id="p10-preview-legend" class="preview-legend" aria-label="감정 태그 샘플"></div>
+  </div>
+
+  <div class="preview-sample">
+    <div id="p10-preview-grid" class="preview-grid" aria-label="샘플 뜨개 패턴"></div>
+  </div>
+</div>
+
 <!-- P11 – FINISHING -->
 <div id="p11" class="screen">
   <div class="top-brand">감정이∙패턴이∙되는∙순간</div>
@@ -357,6 +382,7 @@
 <script src="knitSketch.js"></script>
 <script src="page_S5.js"></script>
 <script src="page_S7_S8.js"></script>
+<script src="S10.js"></script>
 <script src="indexDesign.js"></script>
 </body>
 </html>
