@@ -351,6 +351,60 @@
     }
     .complete-screen .info-panel h2 {
       font-size: 44px; font-weight: 400; margin-bottom: 40px;
+      line-height: 1.2;
+    }
+    .complete-screen .tooltip-wrapper {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      margin-left: 14px;
+    }
+    .complete-screen .tooltip-trigger {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: none;
+      background: var(--accent-blue);
+      color: #fff;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      line-height: 1;
+    }
+    .complete-screen .tooltip-trigger:focus {
+      outline: 2px solid rgba(122, 184, 200, 0.8);
+      outline-offset: 2px;
+    }
+    .complete-screen .tooltip-box {
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      white-space: normal;
+      width: 260px;
+      padding: 16px;
+      border-radius: 12px;
+      background: #ffffff;
+      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.15);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      color: #333;
+      font-size: 15px;
+      line-height: 1.5;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      z-index: 10;
+      margin-top: 14px;
+    }
+    .complete-screen .tooltip-wrapper:hover .tooltip-box,
+    .complete-screen .tooltip-wrapper:focus-within .tooltip-box {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) translateY(0);
     }
     .complete-screen .info-row {
       font-size: 35px; line-height: 2.2;
