@@ -37,26 +37,52 @@ function onScreenEnter(id) {
   if (id === 'p3') startIntro(['p3-l1','p3-l2','p3-l3','p3-l4'], () => goTo('p4'));
   if (id === 'p4') startIntro(['p4-l1','p4-l2','p4-l3','p4-l4','p4-l5'], () => goTo('p5'));
   if (id === 'p5') startIntro(['p5-l1','p5-l2','p5-l3','p5-l4'], () => goTo('p6'));
-  if (id === 'p6') startIntro(['p6-l1','p6-l2','p6-l3','p6-l4'], () => {
-  document.getElementById('p6-start-btn').style.display = 'block';
-  });
+  if (id === 'p6') {
+    startIntro(['p6-l1','p6-l2','p6-l3','p6-l4'], () => {
+      document.getElementById('p6-start-btn').style.display = 'block';
+    });
+    // p7 진입 전 JSON만 미리 fetch (덜컥임 방지)
+    if (!window._p7AnimData) {
+      fetch('images/face_loading.json')
+        .then(r => r.json())
+        .then(animData => {
+          if (animData.assets) {
+            animData.assets.forEach(asset => {
+              if (asset.p && asset.p.startsWith('data:')) asset.e = 1;
+            });
+          }
+          window._p7AnimData = animData;
+        });
+    }
+  }
 
   if (id === 'p7') {
     knitstampInputController.faceTracker.baseline = null;
 
-    // Lottie 애니메이션 초기화 또는 재생
+    // Lottie 초기화 (p7이 visible 상태일 때 loadAnimation)
     const lottieContainer = document.getElementById('p7-lottie');
     if (lottieContainer) {
-      if (!window._p7Lottie) {
+      if (window._p7Lottie) {
+        window._p7Lottie.goToAndPlay(0, true);
+      } else if (window._p7AnimData) {
+        window._p7Lottie = lottie.loadAnimation({
+          container: lottieContainer,
+          renderer: 'svg',
+          loop: true,
+          autoplay: true,
+          animationData: window._p7AnimData
+        });
+      } else {
+        // p6를 건너뛰고 바로 p7 진입한 경우 fallback
         fetch('images/face_loading.json')
           .then(r => r.json())
           .then(animData => {
-            // base64 내장 이미지를 embedded로 표시 (e:0 → e:1)
             if (animData.assets) {
               animData.assets.forEach(asset => {
                 if (asset.p && asset.p.startsWith('data:')) asset.e = 1;
               });
             }
+            window._p7AnimData = animData;
             window._p7Lottie = lottie.loadAnimation({
               container: lottieContainer,
               renderer: 'svg',
@@ -65,8 +91,6 @@ function onScreenEnter(id) {
               animationData: animData
             });
           });
-      } else {
-        window._p7Lottie.goToAndPlay(0, true);
       }
     }
 
