@@ -42,34 +42,48 @@ function onScreenEnter(id) {
   });
 
   if (id === 'p7') {
-  knitstampInputController.faceTracker.baseline = null;
+    knitstampInputController.faceTracker.baseline = null;
 
-  let count = 5;
-  const countEl = document.getElementById('p7-countdown');
-  if (countEl) countEl.textContent = `${count}초 후 기본 표정이 인식됩니다.`;
+    // 재진입 시 실패 화면 초기화
+    const measuringEl = document.getElementById('p7-measuring');
+    const failEl = document.getElementById('p7-fail');
+    if (measuringEl) measuringEl.style.display = '';
+    if (failEl) failEl.style.display = 'none';
 
-  const countInterval = setInterval(() => {
-    count--;
+    let count = 5;
+    const countEl = document.getElementById('p7-countdown');
     if (countEl) countEl.textContent = `${count}초 후 기본 표정이 인식됩니다.`;
-    if (count <= 0) clearInterval(countInterval);
-  }, 1000);
 
-  setTimeout(() => {
-    if (state.currentScreen !== 'p7') return;
-    if (countEl) countEl.textContent = '';
+    const countInterval = setInterval(() => {
+      count--;
+      if (countEl) countEl.textContent = `${count}초 후 기본 표정이 인식됩니다.`;
+      if (count <= 0) clearInterval(countInterval);
+    }, 1000);
 
-    const updateInterval = setInterval(() => {
-      if (typeof registerFaceBaseline === 'function') {
-        const result = registerFaceBaseline();
-        if (result && result.success) {
-          clearInterval(updateInterval);
-          if (state.currentScreen === 'p7') goTo('p8');
+    setTimeout(() => {
+      if (state.currentScreen !== 'p7') return;
+      if (countEl) countEl.textContent = '';
+
+      const updateInterval = setInterval(() => {
+        if (typeof registerFaceBaseline === 'function') {
+          const result = registerFaceBaseline();
+          if (result && result.success) {
+            clearInterval(updateInterval);
+            clearTimeout(failTimeout);
+            if (state.currentScreen === 'p7') goTo('p8');
+          }
         }
-      }
-    }, 300);
+      }, 300);
 
-  }, 5000);
-}
+      // 15초 후 인식 실패 처리
+      const failTimeout = setTimeout(() => {
+        if (state.currentScreen !== 'p7') return;
+        clearInterval(updateInterval);
+        showP7Fail();
+      }, 15000);
+
+    }, 5000);
+  }
 
   if (id === 'p8') {
     // p8: 2.5초 후 p9로 이동
@@ -120,6 +134,27 @@ function onScreenEnter(id) {
       setTimeout(() => goTo('p17'), 4000);
     }, 5000);
   }
+}
+
+// ── P7 인식 실패 처리 ──
+function showP7Fail() {
+  const measuringEl = document.getElementById('p7-measuring');
+  const failEl = document.getElementById('p7-fail');
+  if (measuringEl) measuringEl.style.display = 'none';
+  if (failEl) failEl.style.display = 'flex';
+
+  let failCount = 5;
+  const failCountEl = document.getElementById('p7-fail-countdown');
+  if (failCountEl) failCountEl.textContent = `${failCount}초 후 홈으로 돌아갑니다.`;
+
+  const failCountInterval = setInterval(() => {
+    failCount--;
+    if (failCountEl) failCountEl.textContent = `${failCount}초 후 홈으로 돌아갑니다.`;
+    if (failCount <= 0) {
+      clearInterval(failCountInterval);
+      if (state.currentScreen === 'p7') goTo('p1');
+    }
+  }, 1000);
 }
 
 // ── knitstamp 루프 관리 ──
