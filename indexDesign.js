@@ -44,6 +44,32 @@ function onScreenEnter(id) {
   if (id === 'p7') {
     knitstampInputController.faceTracker.baseline = null;
 
+    // Lottie 애니메이션 초기화 또는 재생
+    const lottieContainer = document.getElementById('p7-lottie');
+    if (lottieContainer) {
+      if (!window._p7Lottie) {
+        fetch('images/face_loading.json')
+          .then(r => r.json())
+          .then(animData => {
+            // base64 내장 이미지를 embedded로 표시 (e:0 → e:1)
+            if (animData.assets) {
+              animData.assets.forEach(asset => {
+                if (asset.p && asset.p.startsWith('data:')) asset.e = 1;
+              });
+            }
+            window._p7Lottie = lottie.loadAnimation({
+              container: lottieContainer,
+              renderer: 'svg',
+              loop: true,
+              autoplay: true,
+              animationData: animData
+            });
+          });
+      } else {
+        window._p7Lottie.goToAndPlay(0, true);
+      }
+    }
+
     // 재진입 시 실패 화면 초기화
     const measuringEl = document.getElementById('p7-measuring');
     const failEl = document.getElementById('p7-fail');
