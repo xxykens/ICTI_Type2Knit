@@ -16,6 +16,14 @@ function goTo(id) {
   if (state.currentScreen === 'p9' && id !== 'p9') {
     if (typeof window.knitSketch_onP9Leave === 'function') window.knitSketch_onP9Leave();
   }
+  if (state.currentScreen === 'p2' && id !== 'p2') {
+    const input = document.getElementById('nickname-input');
+    if (input) { input.value = ''; input.disabled = false; input.placeholder = '닉네임 입력 (최대 12자)'; }
+    const countEl = document.getElementById('nickname-count');
+    if (countEl) countEl.textContent = '(0/12)';
+    state.nickname = '';
+    state.privacy = 'public';
+  }
 
   const cur = document.getElementById(state.currentScreen);
   const next = document.getElementById(id);
