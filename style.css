@@ -265,6 +265,15 @@
     #p9 .end-btn {
       position: absolute; bottom: 32px; right: 60px;
     }
+    #p9 .reset-face-hint {
+      position: absolute; bottom: 62px; left: 60px;
+      font-size: 14px; color: var(--mid-gray);
+    }
+    #p9 .reset-face-btn {
+      position: absolute; bottom: 32px; left: 60px;
+      font-size: 18px; color: var(--mid-gray);
+      cursor: pointer; text-decoration: underline;
+    }
 
     #p9 textarea {
       position: absolute; opacity: 0;
