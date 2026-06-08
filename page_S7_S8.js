@@ -369,10 +369,15 @@ const page_S7_S8 = {
 
   // [S8] 체크박스/닫기 클릭
   handleS8CheckboxClick: function(mx, my) {
-    const PANEL_Y  = height / 2 + 10;
-    const PANEL_H  = height - PANEL_Y;
+    const piece = this.selectedPiece;
+    if (!piece) return false;
+
     const INFO_W   = 220;
     const INFO_X   = width - INFO_W - 20;
+    // PANEL_Y는 "뜨개물 정보" 본문 길이에 따라 늘어날 수 있으므로
+    // drawS8SingleView와 동일한 공용 헬퍼로 계산해야 클릭 좌표가 어긋나지 않는다
+    const PANEL_Y  = this._computeS8PanelLayout(piece).panelY;
+    const PANEL_H  = height - PANEL_Y;
 
     // 닫기 버튼
     const closeX = INFO_X + INFO_W - 20;
@@ -384,8 +389,6 @@ const page_S7_S8 = {
     }
 
     // 체크박스 Y 계산 (drawS8SingleView와 동일한 로직)
-    const piece = this.selectedPiece;
-    if (!piece) return false;
     const eyeLabel = { FROWN: '짜증', SURPRISED: '놀람', BLURRY: '미묘함' };
     let eGroups = {};
     (piece.cells || []).forEach(c => {
@@ -415,6 +418,83 @@ const page_S7_S8 = {
     return false;
   },
 
+  // 현재 textSize 기준으로 maxWidth를 넘지 않도록 어절 단위 줄바꿈
+  _wrapTextLines: function(str, maxWidth) {
+    const words = String(str).split(' ');
+    const lines = [];
+    let cur = '';
+    words.forEach(w => {
+      const test = cur ? (cur + ' ' + w) : w;
+      if (cur && textWidth(test) > maxWidth) {
+        lines.push(cur);
+        cur = w;
+      } else {
+        cur = test;
+      }
+    });
+    if (cur) lines.push(cur);
+    return lines;
+  },
+
+  // 선택된 작품의 감정 태그·타이핑 속도를 분석해 "뜨개물 정보" 안내 문구를 만든다
+  _buildKnitInfo: function(piece) {
+    const posTags = ['해탈', '미묘함'];
+    const negTags = ['짜증', '놀람', '슬픔', '긴장'];
+    let emoOrder = [];
+    let emoCount = {};
+    let posCount = 0, negCount = 0;
+    let speedSum = 0, speedN = 0;
+    (piece.cells || piece.knitArray || []).forEach(c => {
+      const t = c.emotionTag;
+      if (t && t !== 'NEUTRAL' && t !== '중립') {
+        if (!emoCount[t]) { emoCount[t] = 0; emoOrder.push(t); }
+        emoCount[t]++;
+        if (posTags.indexOf(t) !== -1) posCount++;
+        else if (negTags.indexOf(t) !== -1) negCount++;
+      }
+      // piece.cells 항목은 typingSpeed, piece.knitArray 항목은 speed 필드를 쓴다 (KnitPiece.js 참고)
+      const sp = (typeof c.speed === 'number') ? c.speed : c.typingSpeed;
+      if (typeof sp === 'number') { speedSum += sp; speedN++; }
+    });
+    const avgSpeed = speedN ? speedSum / speedN : 0;
+    const knitName = piece.privacy === 'private' ? '익명의 니터' : (piece.nickname || 'anonymous');
+
+    let text = '';
+    if (emoOrder.length === 1) {
+      text = `${knitName}님이 느끼시는 지배적인 감정은 ${emoOrder[0]}입니다. 오늘 그럴만한 일이 있으셨나봐요.`;
+    } else if (emoOrder.length === 2) {
+      // {감정명1}→{감정명2}는 뜨개 코 배열에서 먼저 등장한 순서(emoOrder)를 그대로 사용해 "변화"를 표현
+      text = `${knitName}님, ${emoOrder[0]}에서 ${emoOrder[1]}로 감정이 변화하는 것을 보았어요. 오늘 하루를 잘 되짚어 보아요`;
+    } else if (emoOrder.length >= 3) {
+      // {감정명1}은 평균 강도가 아니라 등장 횟수(비중) 기준 1위
+      const byCount  = Object.keys(emoCount).sort((a, b) => emoCount[b] - emoCount[a]);
+      const polarity = posCount >= negCount ? '긍정' : '부정';
+      text = `${knitName}님이 느끼시는 지배적인 감정은 ${byCount[0]}입니다. ${byCount[1]}, ${byCount[2]}도 함께 묻어나는 복합적인 하루였네요. 전체적으로는 주로 ${polarity}적인 감정이 많이 담겼어요.`;
+    }
+    if (text) {
+      if (avgSpeed >= 0.6) {
+        text += ' 마음 속의 말을 술술 풀어내어 타이핑 속도가 꽤 빠르셨군요.';
+      } else if (avgSpeed > 0 && avgSpeed < 0.4) {
+        text += ' 마음 속으로 정리할 시간이 필요하셨나요? 타이핑 속도가 조금 느린 편이었어요.';
+      }
+    }
+
+    const eCount = Math.max(1, Math.min(3, Object.keys(emoCount).length));
+    textSize(11); textStyle(NORMAL);
+    const lines = this._wrapTextLines(text || '기록된 감정 정보가 부족해요.', 220 - 36);
+    return { text, lines, eCount };
+  },
+
+  // S8 상세 패널의 시작 Y(PANEL_Y)를 "뜨개물 정보" 본문 길이에 맞춰 동적으로 계산.
+  // drawS8SingleView(렌더링)와 handleS8CheckboxClick(히트테스트)이 같은 좌표를 쓰도록 공유한다.
+  // ※ 아래 173/80/14/22/17 오프셋은 drawS8SingleView의 실제 렌더링 좌표 계산식과 동일해야 함
+  _computeS8PanelLayout: function(piece) {
+    const ki = this._buildKnitInfo(piece);
+    const contentBottom = (173 + ki.eCount * 20) + 80 + 14 + 22 + ki.lines.length * 17;
+    const panelY = Math.max(60, Math.min(height / 2 + 10, height - 20 - contentBottom));
+    return { panelY: panelY, knitInfoLines: ki.lines };
+  },
+
   // [S8] 클릭한 작품 상세 패널 (S7 위에 오버레이)
   drawS8SingleView: function() {
     if (!this.selectedPiece || !this.showDetailPanel) return;
@@ -422,8 +502,15 @@ const page_S7_S8 = {
     const piece    = this.selectedPiece;
     const gridData = piece.knitArray || piece.cells || [];
 
-    // ── 패널 레이아웃 ──────────────────────────────
-    const PANEL_Y  = height / 2 + 10;  // 패널 시작 Y (화면 절반 아래)
+    // 정보창에 표시할 "뜨개물 정보" 문구 + 그에 맞춰 늘어난 패널 시작 Y
+    // (handleS8CheckboxClick의 히트테스트와 반드시 같은 값을 써야 하므로 공용 헬퍼로 계산)
+    push();
+    colorMode(RGB);
+    const _s8Layout = this._computeS8PanelLayout(piece);
+    pop();
+    const _knitInfoLines = _s8Layout.knitInfoLines;
+
+    const PANEL_Y  = _s8Layout.panelY;
     const PANEL_H  = height - PANEL_Y;
     const GRID_X   = 40;               // 뜨개 그리드 시작 X
     const INFO_W   = 220;              // 우측 정보창 너비
@@ -617,6 +704,23 @@ const page_S7_S8 = {
       fill(190); noStroke(); textSize(11); textStyle(NORMAL); textAlign(LEFT, TOP);
       text('니트 코 위에 마우스를 올리면\n정보가 표시됩니다.', px, infoY + 20);
     }
+
+    // ── 뜨개물 정보 ────────────────────────────────────
+    // "선택된 코 정보" 박스 아래에 새 섹션을 이어붙여, 같은 정보창 안에서
+    // 함께 늘어나는 한 덩어리처럼 보이도록 한다 (별도의 떠다니는 박스 X)
+    colorMode(RGB);
+    const knitInfoDividerY = infoY + 80;
+    stroke(215); strokeWeight(1);
+    line(INFO_X + 10, knitInfoDividerY, INFO_X + INFO_W - 10, knitInfoDividerY);
+
+    const knitInfoY = knitInfoDividerY + 14;
+    push();
+    fill(80); noStroke(); textSize(12); textStyle(BOLD); textAlign(LEFT, TOP);
+    text('뜨개물 정보', px, knitInfoY);
+    fill(110); textSize(11); textStyle(NORMAL);
+    textLeading(17);
+    text(_knitInfoLines.join('\n'), px, knitInfoY + 22);
+    pop();
 
     // 하단 안내
     colorMode(RGB);

@@ -635,6 +635,54 @@ function p18ScrollRight() {
   _updateP18TrackPos();
 }
 
+// 선택된 작품의 감정 태그·타이핑 속도를 분석해 "뜨개물 정보" 안내 문구를 생성
+function _buildKnitInfoText(piece) {
+  // [감정태그] 목록과 동일한 라벨 체계로 정규화 (찌푸림=레거시 FROWN 표기 → 짜증으로 통일)
+  const tagNorm = { FROWN: '짜증', SURPRISED: '놀람', BLURRY: '미묘함', NEUTRAL: '중립', '찌푸림': '짜증' };
+  const posTags = ['해탈', '미묘함'];
+  const negTags = ['짜증', '놀람', '슬픔', '긴장'];
+
+  let emoOrder = [];
+  let emoCount = {};
+  let posCount = 0, negCount = 0;
+  let speedSum = 0, speedN = 0;
+  (piece.cells || piece.knitArray || []).forEach(c => {
+    const t = c.emotionTagKo || tagNorm[c.emotionTag] || c.emotionTag || '';
+    if (t && t !== 'NEUTRAL' && t !== '중립') {
+      if (!emoCount[t]) { emoCount[t] = 0; emoOrder.push(t); }
+      emoCount[t]++;
+      if (posTags.indexOf(t) !== -1) posCount++;
+      else if (negTags.indexOf(t) !== -1) negCount++;
+    }
+    // piece.cells 항목은 typingSpeed, piece.knitArray 항목은 speed 필드를 쓴다 (KnitPiece.js 참고)
+    const sp = (typeof c.speed === 'number') ? c.speed : c.typingSpeed;
+    if (typeof sp === 'number') { speedSum += sp; speedN++; }
+  });
+  const avgSpeed = speedN ? speedSum / speedN : 0;
+  const knitName = piece.privacy === 'private' ? '익명의 니터' : (piece.nickname || '익명');
+
+  let text = '';
+  if (emoOrder.length === 1) {
+    text = `${knitName}님이 느끼시는 지배적인 감정은 ${emoOrder[0]}입니다. 오늘 그럴만한 일이 있으셨나봐요.`;
+  } else if (emoOrder.length === 2) {
+    // {감정명1}→{감정명2}는 뜨개 코 배열에서 먼저 등장한 순서(emoOrder)로 "변화"를 표현
+    text = `${knitName}님, ${emoOrder[0]}에서 ${emoOrder[1]}로 감정이 변화하는 것을 보았어요. 오늘 하루를 잘 되짚어 보아요`;
+  } else if (emoOrder.length >= 3) {
+    // {감정명1}은 평균 강도가 아니라 등장 횟수(비중) 기준 1위
+    const byCount  = Object.keys(emoCount).sort((a, b) => emoCount[b] - emoCount[a]);
+    const polarity = posCount >= negCount ? '긍정' : '부정';
+    text = `${knitName}님이 느끼시는 지배적인 감정은 ${byCount[0]}입니다. ${byCount[1]}, ${byCount[2]}도 함께 묻어나는 복합적인 하루였네요. 전체적으로는 주로 ${polarity}적인 감정이 많이 담겼어요.`;
+  }
+  if (text) {
+    if (avgSpeed >= 0.6) {
+      text += ' 마음 속의 말을 술술 풀어내어 타이핑 속도가 꽤 빠르셨군요.';
+    } else if (avgSpeed > 0 && avgSpeed < 0.4) {
+      text += ' 마음 속으로 정리할 시간이 필요하셨나요? 타이핑 속도가 조금 느린 편이었어요.';
+    }
+  }
+  return text || '기록된 감정 정보가 부족해요.';
+}
+
 // ── P18 오버레이 (클릭 시 상세뷰) ──
 function openP18Overlay(piece, sourceCvs) {
   closeP18Overlay();
@@ -813,6 +861,22 @@ function openP18Overlay(piece, sourceCvs) {
   selInfo.style.cssText = 'font-size:13px; color:#aaa; line-height:1.6;';
   selInfo.textContent = '니트 코 위에 마우스를 올리면 정보가 표시됩니다.';
   info.appendChild(selInfo);
+
+  // 구분선 — "선택된 코 정보" 박스 아래에 새 섹션을 이어붙여 같은 정보창 안에서
+  // 함께 늘어나는 한 덩어리처럼 보이도록 한다 (별도의 떠다니는 박스 X)
+  const hr3 = document.createElement('div');
+  hr3.style.cssText = 'border-top:1px solid #e0e0e0; margin:20px 0 10px;';
+  info.appendChild(hr3);
+
+  const knitInfoTitle = document.createElement('div');
+  knitInfoTitle.style.cssText = 'font-size:14px; font-weight:600; color:#333; margin-bottom:8px;';
+  knitInfoTitle.textContent = '뜨개물 정보';
+  info.appendChild(knitInfoTitle);
+
+  const knitInfoBody = document.createElement('div');
+  knitInfoBody.style.cssText = 'font-size:13px; color:#888; line-height:1.6;';
+  knitInfoBody.textContent = _buildKnitInfoText(piece);
+  info.appendChild(knitInfoBody);
 
   // 마우스 호버 → 선택된 코 정보 업데이트
   const _SP = Math.floor((overlayW - 8) / 10);
