@@ -848,10 +848,41 @@ function openP18Overlay(piece, sourceCvs) {
   cbWrap2.appendChild(document.createTextNode('감정 정보 보기'));
   info.appendChild(cbWrap2);
 
-  // 공통 redraw — 두 체크박스 상태를 함께 전달
-  const redrawBig = () => _p18DrawCardBig(bigCvs, piece, overlayW, overlayH, cb.checked, cb2.checked);
-  cb.addEventListener('change', redrawBig);
-  cb2.addEventListener('change', redrawBig);
+  // 감정 태그 hover whoosh — lerp 보간 오프셋
+  let _cvsMx = -9999, _cvsMy = -9999;
+  const _tagCurOffsets = {};
+  const _tagTgtOffsets = {};
+  let _textFade    = 0;   // 텍스트 보기 페이드 (0→1)
+  let _emotionFade = 1;   // 감정 정보 페이드 (cb2 초기값 true)
+  let _rafId = null;
+
+  const redrawBig = () => _p18DrawCardBig(bigCvs, piece, overlayW, overlayH, cb.checked, cb2.checked, _cvsMx, _cvsMy, _tagCurOffsets, _textFade, _emotionFade);
+
+  // RAF 애니메이션 루프 — 태그 오프셋 + 페이드 lerp
+  const startAnim = () => {
+    if (_rafId) return;
+    const tick = () => {
+      let active = false;
+      for (const k in _tagCurOffsets) {
+        const cur = _tagCurOffsets[k];
+        const tgt = _tagTgtOffsets[k] || { ox: 0, oy: 0 };
+        cur.ox += (tgt.ox - cur.ox) * 0.045;
+        cur.oy += (tgt.oy - cur.oy) * 0.045;
+        if (Math.abs(cur.ox - tgt.ox) > 0.1 || Math.abs(cur.oy - tgt.oy) > 0.1) active = true;
+      }
+      const tgtTF = cb.checked  ? 1 : 0;
+      const tgtEF = cb2.checked ? 1 : 0;
+      _textFade    += (tgtTF - _textFade)    * 0.1;
+      _emotionFade += (tgtEF - _emotionFade) * 0.1;
+      if (Math.abs(_textFade - tgtTF) > 0.01 || Math.abs(_emotionFade - tgtEF) > 0.01) active = true;
+      redrawBig();
+      _rafId = active ? requestAnimationFrame(tick) : null;
+    };
+    _rafId = requestAnimationFrame(tick);
+  };
+
+  cb.addEventListener('change',  startAnim);
+  cb2.addEventListener('change', startAnim);
   redrawBig();
 
   // 구분선
@@ -895,6 +926,48 @@ function openP18Overlay(piece, sourceCvs) {
     const r = bigCvs.getBoundingClientRect();
     const mx = (e.clientX - r.left) * (bigCvs.width / r.width);
     const my = (e.clientY - r.top) * (bigCvs.height / r.height);
+    _cvsMx = mx; _cvsMy = my;
+    if (cb2.checked) {
+      // 각 태그의 목표 오프셋 갱신
+      const PAD = 20;
+      const SP = Math.floor((overlayW - 8) / 10);
+      const startX = SP / 2 + 4;
+      const startY = SP / 2 + 10;
+      const gridData = piece.knitArray || piece.cells || [];
+      const _seenTmp = new Set();
+      const _tMapTmp = { FROWN: '찌푸림', SURPRISED: '놀람', BLURRY: '표정 변화', NEUTRAL: '중립' };
+      const CS = SP - 4;
+      const ctx2 = bigCvs.getContext('2d');
+      ctx2.font = `13px 'HSHwalkong', serif`;
+      gridData.forEach((cell, idx) => {
+        const col = idx % 10;
+        const row = Math.floor(idx / 10);
+        const px  = startX + col * SP;
+        const py  = startY + row * SP;
+        const eIntensity = cell.emotionIntensity !== undefined ? cell.emotionIntensity : (cell.tension || 0);
+        const eTag = cell.emotionTagKo || _tMapTmp[cell.emotionTag] || _tMapTmp[cell.eye] || cell.emotionTag || cell.eye || '';
+        if (eIntensity < 0.5 || !eTag || eTag === '중립' || eTag === 'NEUTRAL' || _seenTmp.has(eTag)) return;
+        _seenTmp.add(eTag);
+
+        const labelText = `${eTag}  ${(eIntensity * 100).toFixed(0)}%`;
+        const tW = ctx2.measureText(labelText).width + 24;
+        const lineLen = 10;
+        const lxLeft  = px - SP / 2 - lineLen - tW;
+        const lxRight = px + SP / 2 + lineLen;
+        let isLeft = col < 5;
+        if (isLeft  && lxLeft  < PAD)               isLeft = false;
+        if (!isLeft && lxRight + tW > overlayW - PAD) isLeft = true;
+
+        if (!_tagCurOffsets[eTag]) _tagCurOffsets[eTag] = { ox: 0, oy: 0 };
+        if (!_tagTgtOffsets[eTag]) _tagTgtOffsets[eTag] = { ox: 0, oy: 0 };
+
+        // 해당 셀 위에 마우스가 있을 때만 target 오프셋 설정
+        const onCell = (Math.abs(mx - px) <= CS / 2 && Math.abs(my - py) <= CS / 2);
+        _tagTgtOffsets[eTag].ox = onCell ? (isLeft ? -6 : 6) : 0;
+        _tagTgtOffsets[eTag].oy = onCell ? -8 : 0;
+      });
+      startAnim();
+    }
     const gd = piece.knitArray || piece.cells || [];
     let found = null;
     gd.forEach((cell, idx) => {
@@ -926,7 +999,12 @@ function closeP18Overlay() {
   backdrop.addEventListener('animationend', () => backdrop.remove(), { once: true });
 }
 
-function _p18DrawCardBig(cvs, piece, W, H, showText, showEmotionInfo) {
+function _p18DrawCardBig(cvs, piece, W, H, showText, showEmotionInfo, mx, my, tagOffsets, textFade, emotionFade) {
+  mx = (mx === undefined) ? -9999 : mx;
+  my = (my === undefined) ? -9999 : my;
+  tagOffsets  = tagOffsets  || {};
+  textFade    = textFade    !== undefined ? textFade    : (showText        ? 1 : 0);
+  emotionFade = emotionFade !== undefined ? emotionFade : (showEmotionInfo ? 1 : 0);
   const ctx = cvs.getContext('2d');
   ctx.clearRect(0, 0, W, H);
 
@@ -1023,16 +1101,27 @@ function _p18DrawCardBig(cvs, piece, W, H, showText, showEmotionInfo) {
       ctx.stroke();
     }
 
-    if (showText && cell.text && cell.text.trim().length > 0 && piece.privacy !== 'private' && piece.privacy !== 'partial') {
+    if (textFade > 0.01 && cell.text && cell.text.trim().length > 0 && piece.privacy !== 'private' && piece.privacy !== 'partial') {
+      ctx.save();
+      ctx.globalAlpha = textFade;
       ctx.fillStyle = 'rgba(0,0,0,0.75)';
       ctx.font = `bold ${Math.round(CS * 0.55)}px 'HSHwalkong', serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(cell.text.trim()[0], px, py + 1);
+      ctx.restore();
+    }
+
+    // 셀 호버 어둡게
+    if (Math.abs(mx - px) <= CS / 2 && Math.abs(my - py) <= CS / 2) {
+      ctx.fillStyle = 'rgba(0,0,0,0.18)';
+      ctx.beginPath();
+      ctx.roundRect(px - CS / 2, py - CS / 2, CS, CS, 5);
+      ctx.fill();
     }
 
     // 감정 정보 수집
-    if (showEmotionInfo) {
+    if (emotionFade > 0.01) {
       const eIntensity = cell.emotionIntensity !== undefined ? cell.emotionIntensity : (cell.tension || 0);
       const eTag = cell.emotionTagKo || _tagMapAnno[cell.emotionTag] || _tagMapAnno[cell.eye] || cell.emotionTag || cell.eye || '';
       if (eIntensity >= 0.5 && eTag && eTag !== '중립' && eTag !== 'NEUTRAL' && !_seenTags.has(eTag)) {
@@ -1043,47 +1132,70 @@ function _p18DrawCardBig(cvs, piece, W, H, showText, showEmotionInfo) {
   });
 
   // 감정 정보 화살표 어노테이션
-  if (showEmotionInfo && _emotionCells.length > 0) {
-    ctx.font = `11px 'HSHwalkong', serif`;
+  if (emotionFade > 0.01 && _emotionCells.length > 0) {
+    ctx.save();
+    ctx.globalAlpha = emotionFade;
+    ctx.font = `13px 'HSHwalkong', serif`;
     ctx.textBaseline = 'middle';
+    const PAD = 20;
     _emotionCells.forEach(({ px, py, eTag, eIntensity, col }) => {
-      const labelText = `${eTag} ${(eIntensity * 100).toFixed(0)}%`;
-      const tW = ctx.measureText(labelText).width + 14;
-      const tH = 18;
-      const lineLen = 35;
-      const rise    = SP * 0.5;
+      const labelText = `${eTag}  ${(eIntensity * 100).toFixed(0)}%`;
+      const tW = ctx.measureText(labelText).width + 24;
+      const tH = 28;
+      const lineLen = 10;
+      const rise    = SP * 0.35;
       const lxLeft  = px - SP / 2 - lineLen - tW;
       const lxRight = px + SP / 2 + lineLen;
-      const isLeft  = col < 5 && lxLeft >= 4;
-      const lx = isLeft ? lxLeft : lxRight;
-      const ly = py - rise;
 
-      ctx.strokeStyle = 'rgba(120,120,120,0.8)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      if (isLeft) { ctx.moveTo(px - SP/2, py); ctx.lineTo(lx + tW, ly); }
-      else         { ctx.moveTo(px + SP/2, py); ctx.lineTo(lx,      ly); }
-      ctx.stroke();
+      // 좌우 스마트 배치: 기본 방향 → 벗어나면 반대로
+      let isLeft = col < 5;
+      if (isLeft  && lxLeft  < PAD)         isLeft = false;
+      if (!isLeft && lxRight + tW > W - PAD) isLeft = true;
+      let lx = Math.max(PAD, Math.min(W - PAD - tW, isLeft ? lxLeft : lxRight));
 
-      ctx.fillStyle = 'rgba(120,120,120,0.8)';
-      ctx.beginPath();
-      if (isLeft) {
-        ctx.moveTo(px - SP/2, py); ctx.lineTo(px - SP/2 - 7, py - 3); ctx.lineTo(px - SP/2 - 4, py + 3);
-      } else {
-        ctx.moveTo(px + SP/2, py); ctx.lineTo(px + SP/2 + 7, py - 3); ctx.lineTo(px + SP/2 + 4, py + 3);
-      }
-      ctx.fill();
+      // 상하 스마트 배치: 기본 위 → 벗어나면 아래로
+      let ly = py - rise;
+      if (ly - tH / 2 < PAD) ly = py + rise;
+      ly = Math.max(PAD + tH / 2, Math.min(H - PAD - tH / 2, ly));
 
-      ctx.fillStyle = 'rgb(255,248,215)';
-      ctx.strokeStyle = 'rgb(195,170,75)';
-      ctx.lineWidth = 1;
+      // lerp된 오프셋 적용 (RAF 루프에서 셀 호버 시 보간)
+      const off = tagOffsets[eTag] || { ox: 0, oy: 0 };
+      lx = Math.max(PAD, Math.min(W - PAD - tW, lx + off.ox));
+      ly = Math.max(PAD + tH / 2, Math.min(H - PAD - tH / 2, ly + off.oy));
+
+      // 태그에 가장 가까운 셀 꼭짓점에서 x/y 각 6px 안쪽
+      const dotX = isLeft ? px - CS/2 + 3 : px + CS/2 - 3;
+      const dotY = ly < py ? py - CS/2 + 3 : py + CS/2 - 3;
+      ctx.save();
+      ctx.shadowBlur = 6;
+      ctx.shadowColor = 'rgba(0,0,0,0.1)';
+      ctx.shadowOffsetY = 1;
       ctx.beginPath();
-      ctx.roundRect(lx, ly - tH / 2, tW, tH, 3);
+      ctx.arc(dotX, dotY, 6.5, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgb(255,255,255)';
+      ctx.strokeStyle = 'rgba(215,208,198,1)';
+      ctx.lineWidth = 1.5;
       ctx.fill(); ctx.stroke();
+      ctx.restore();
 
-      ctx.fillStyle = 'rgb(60,60,60)';
+      // 태그 배경 + 그림자
+      ctx.save();
+      ctx.shadowBlur = 12;
+      ctx.shadowColor = 'rgba(0,0,0,0.13)';
+      ctx.shadowOffsetY = 3;
+      ctx.fillStyle = 'rgb(255,255,255)';
+      ctx.strokeStyle = 'rgba(200,193,183,1)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(lx, ly - tH / 2, tW, tH, 10);
+      ctx.fill(); ctx.stroke();
+      ctx.restore();
+
+      // 태그 텍스트
+      ctx.fillStyle = 'rgb(60,52,42)';
       ctx.textAlign = 'left';
-      ctx.fillText(labelText, lx + 7, ly);
+      ctx.fillText(labelText, lx + 11, ly);
     });
+    ctx.restore();
   }
 }

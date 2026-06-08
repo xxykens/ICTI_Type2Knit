@@ -39,6 +39,9 @@ const page_S7_S8 = {
   showEmotionInfo: true,
   scrollY: 0,
   s7ScrollX: 0,
+  _emotionTagOffsets: {},   // { eTag: { ox, oy } } — lerp 보간용 현재 오프셋
+  _textFade:    0,           // 텍스트 보기 페이드 (0→1)
+  _emotionFade: 0,           // 감정 정보 페이드 (0→1)
 
   // Dexie 데이터 로드
   loadDataFromDB: function() {
@@ -625,16 +628,25 @@ const page_S7_S8 = {
     drawingContext.rect(GRID_X, PANEL_Y, INFO_X - GRID_X - 10, PANEL_H);
     drawingContext.clip();
 
+    // 토글 페이드 lerp
+    this._textFade    = lerp(this._textFade,    this.showText        ? 1 : 0, 0.1);
+    this._emotionFade = lerp(this._emotionFade, this.showEmotionInfo ? 1 : 0, 0.1);
+
     this.drawKnitGrid(gridData, gStartX, gStartY, cellSize, spacing, {
-      showText:        this.showText,
-      showEmotionInfo: this.showEmotionInfo,
+      showText:        this._textFade > 0.01,
+      textAlpha:       this._textFade,
+      showEmotionInfo: this._emotionFade > 0.01,
       privacy:         piece.privacy,
       clipMinY:        PANEL_Y,
       clipMaxY:        height + spacing,
       seenEmotionTags: seenEmotionTags,
       onHover: (cell, posX, posY) => {
         hoveredCellInfo = cell;
-        stroke(0, 0, 85); strokeWeight(2); noFill();
+        // 셀 어둡게 호버 오버레이
+        fill(0, 0, 0, 55); noStroke();
+        rectMode(CENTER); rect(posX, posY, cellSize, cellSize, 6);
+        // 테두리
+        stroke(0, 0, 88); strokeWeight(2); noFill();
         rectMode(CENTER); rect(posX, posY, cellSize + 6, cellSize + 6, 6);
       },
       onEmotionCell: (info) => {
@@ -646,42 +658,74 @@ const page_S7_S8 = {
     pop();
 
     // ── 감정 정보 태그 화살표 어노테이션 ──────────────
-    if (this.showEmotionInfo && emotionCells.length > 0) {
+    if (this._emotionFade > 0.01 && emotionCells.length > 0) {
+      drawingContext.globalAlpha = this._emotionFade;
       colorMode(RGB);
-      textSize(10); textStyle(NORMAL);
+      textSize(13); textStyle(NORMAL);
       const _labelToKo = { FROWN: '찌푸림', SURPRISED: '놀람', BLURRY: '표정 변화', NEUTRAL: '중립' };
+      const PAD_LEFT   = GRID_X + 20;
+      const PAD_RIGHT  = INFO_X - 30;
+      const PAD_TOP    = PANEL_Y + 20;
+      const PAD_BOTTOM = height - 20;
       emotionCells.forEach(({ posX, posY, eTag, eIntensity, col }) => {
         let displayTag = _labelToKo[eTag] || eTag;
-        let labelText = `${displayTag} ${(eIntensity * 100).toFixed(0)}%`;
-        let tW = textWidth(labelText) + 14;
-        let tH = 18;
-        let lineLen = 40;
-        let rise    = spacing * 0.5;
+        let labelText = `${displayTag}  ${(eIntensity * 100).toFixed(0)}%`;
+        let tW = textWidth(labelText) + 24;
+        let tH = 28;
+        let lineLen = 10;
+        let rise    = spacing * 0.35;
         let lxLeft  = posX - cellSize / 2 - lineLen - tW;
         let lxRight = posX + cellSize / 2 + lineLen;
-        let isLeft  = col < 5 && lxLeft >= GRID_X;
-        let lx = isLeft ? lxLeft : lxRight;
+
+        // 좌우 스마트 배치: 기본 방향 → 벗어나면 반대로
+        let isLeft = col < 5;
+        if (isLeft  && lxLeft  < PAD_LEFT)       isLeft = false;
+        if (!isLeft && lxRight + tW > PAD_RIGHT)  isLeft = true;
+        let lx = constrain(isLeft ? lxLeft : lxRight, PAD_LEFT, PAD_RIGHT - tW);
+
+        // 상하 스마트 배치: 기본 위 → 벗어나면 아래로
         let ly = posY - rise;
+        if (ly - tH / 2 < PAD_TOP) ly = posY + rise;
+        ly = constrain(ly, PAD_TOP + tH / 2, PAD_BOTTOM - tH / 2);
 
-        stroke(120); strokeWeight(1.2); noFill();
-        if (isLeft) {
-          line(posX - cellSize / 2, posY, lx + tW, ly);
-        } else {
-          line(posX + cellSize / 2, posY, lx, ly);
-        }
+        // 해당 셀 호버 시에만 태그 살짝 이동 (lerp 보간)
+        if (!this._emotionTagOffsets[eTag]) this._emotionTagOffsets[eTag] = { ox: 0, oy: 0 };
+        const off = this._emotionTagOffsets[eTag];
+        const onCell = (mouseX >= posX - cellSize / 2 && mouseX <= posX + cellSize / 2 &&
+                        mouseY >= posY - cellSize / 2 && mouseY <= posY + cellSize / 2);
+        const targetOx = onCell ? (isLeft ? -6 : 6) : 0;
+        const targetOy = onCell ? -8 : 0;
+        off.ox = lerp(off.ox, targetOx, 0.055);
+        off.oy = lerp(off.oy, targetOy, 0.055);
+        lx = constrain(lx + off.ox, PAD_LEFT, PAD_RIGHT - tW);
+        ly = constrain(ly + off.oy, PAD_TOP + tH / 2, PAD_BOTTOM - tH / 2);
 
-        fill(120); noStroke();
-        if (isLeft) {
-          triangle(posX - cellSize/2, posY, posX - cellSize/2 - 9, posY - 3, posX - cellSize/2 - 5, posY + 4);
-        } else {
-          triangle(posX + cellSize/2, posY, posX + cellSize/2 + 9, posY - 3, posX + cellSize/2 + 5, posY + 4);
-        }
+        // 태그에 가장 가까운 셀 꼭짓점에서 x/y 각 6px 안쪽
+        const dotX = isLeft ? posX - cellSize / 2 + 3 : posX + cellSize / 2 - 3;
+        const dotY = ly < posY ? posY - cellSize / 2 + 3 : posY + cellSize / 2 - 3;
+        drawingContext.shadowBlur = 6;
+        drawingContext.shadowColor = 'rgba(0,0,0,0.1)';
+        drawingContext.shadowOffsetY = 1;
+        fill(255, 255, 255); stroke(215, 208, 198); strokeWeight(1.5);
+        ellipseMode(CENTER);
+        circle(dotX, dotY, 13);
+        drawingContext.shadowBlur = 0;
+        drawingContext.shadowOffsetY = 0;
 
-        fill(255, 248, 215); stroke(195, 170, 75); strokeWeight(1);
-        rectMode(CORNER); rect(lx, ly - tH / 2, tW, tH, 4);
-        fill(60); noStroke(); textAlign(LEFT, CENTER);
-        text(labelText, lx + 7, ly);
+        // 태그 배경 + 그림자
+        drawingContext.shadowBlur = 12;
+        drawingContext.shadowColor = 'rgba(0,0,0,0.14)';
+        drawingContext.shadowOffsetY = 3;
+        fill(255, 255, 255); stroke(215, 208, 198); strokeWeight(1);
+        rectMode(CORNER); rect(lx, ly - tH / 2, tW, tH, 10);
+        drawingContext.shadowBlur = 0;
+        drawingContext.shadowOffsetY = 0;
+
+        // 태그 텍스트
+        fill(60, 52, 42); noStroke(); textAlign(LEFT, CENTER);
+        text(labelText, lx + 11, ly);
       });
+      drawingContext.globalAlpha = 1;
     }
 
     // ── 선택된 코 정보 ────────────────────────────────
@@ -741,6 +785,7 @@ const page_S7_S8 = {
     const seenEmotionTags = opts.seenEmotionTags  || new Set();
     const onHover         = opts.onHover          || null;
     const onEmotionCell   = opts.onEmotionCell    || null;
+    const textAlpha       = opts.textAlpha        !== undefined ? opts.textAlpha : 1;
 
     // colorMode(HSB) 는 호출부에서 이미 설정했다고 가정
     gridData.forEach((cell, idx) => {
@@ -813,11 +858,13 @@ const page_S7_S8 = {
         } else if (showText && privacy !== 'partial' && cell.text && cell.text.trim().length > 0) {
           const textChar = cell.text.trim()[0];
           textSize(18); textStyle(BOLD); textAlign(CENTER, CENTER); noStroke();
+          drawingContext.globalAlpha = textAlpha;
           drawingContext.shadowBlur = 6;
           drawingContext.shadowColor = 'rgba(255,255,255,0.85)';
           fill(0, 0, 10);
           text(textChar, posX, posY + 1);
           drawingContext.shadowBlur = 0;
+          drawingContext.globalAlpha = 1;
         }
 
         // 감정 정보 수집
