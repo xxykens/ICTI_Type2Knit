@@ -16,14 +16,6 @@ function goTo(id) {
   if (state.currentScreen === 'p9' && id !== 'p9') {
     if (typeof window.knitSketch_onP9Leave === 'function') window.knitSketch_onP9Leave();
   }
-  if (state.currentScreen === 'p2' && id !== 'p2') {
-    const input = document.getElementById('nickname-input');
-    if (input) { input.value = ''; input.disabled = false; input.placeholder = '닉네임 입력 (최대 12자)'; }
-    const countEl = document.getElementById('nickname-count');
-    if (countEl) countEl.textContent = '(0/12)';
-    state.nickname = '';
-    state.privacy = 'public';
-  }
 
   const cur = document.getElementById(state.currentScreen);
   const next = document.getElementById(id);
@@ -41,6 +33,17 @@ function onScreenEnter(id) {
     state.charCount = 0;
     document.getElementById('typing-capture').value = '';
     document.getElementById('char-count').textContent = '0';
+  }
+  if (id === 'p2') {
+    const input = document.getElementById('nickname-input');
+    if (input) { input.value = ''; input.disabled = false; input.placeholder = '닉네임 입력 (최대 12자)'; }
+    const countEl = document.getElementById('nickname-count');
+    if (countEl) countEl.textContent = '(0/12)';
+    state.nickname = '';
+    state.privacy = 'public';
+    ['public', 'partial', 'private'].forEach(t =>
+      document.getElementById('card-' + t).classList.toggle('selected', t === 'public')
+    );
   }
   if (id === 'p3') startIntro(['p3-l1','p3-l2','p3-l3','p3-l4'], () => goTo('p4'));
   if (id === 'p4') startIntro(['p4-l1','p4-l2','p4-l3','p4-l4','p4-l5'], () => goTo('p5'));
@@ -766,14 +769,16 @@ function openP18Overlay(piece, sourceCvs) {
   info.appendChild(hr);
 
   // 텍스트 보기 체크박스
+  const textProtected = piece.privacy === 'partial';
   const cbWrap = document.createElement('label');
-  cbWrap.style.cssText = 'display:flex; align-items:center; gap:8px; cursor:pointer; font-size:14px; color:#555;';
+  cbWrap.style.cssText = `display:flex; align-items:center; gap:8px; font-size:14px; color:${textProtected ? '#bbb' : '#555'}; cursor:${textProtected ? 'default' : 'pointer'};`;
   const cb = document.createElement('input');
   cb.type = 'checkbox';
   cb.checked = false;
-  cb.style.cssText = 'width:16px; height:16px; cursor:pointer;';
+  cb.disabled = textProtected;
+  cb.style.cssText = `width:16px; height:16px; cursor:${textProtected ? 'default' : 'pointer'};`;
   cbWrap.appendChild(cb);
-  cbWrap.appendChild(document.createTextNode('텍스트 보기'));
+  cbWrap.appendChild(document.createTextNode(textProtected ? '원문은 보호됩니다' : '텍스트 보기'));
   info.appendChild(cbWrap);
 
   // 감정 정보 보기 체크박스
@@ -942,7 +947,7 @@ function _p18DrawCardBig(cvs, piece, W, H, showText, showEmotionInfo) {
       ctx.stroke();
     }
 
-    if (showText && cell.text && cell.text.trim().length > 0 && piece.privacy !== 'private') {
+    if (showText && cell.text && cell.text.trim().length > 0 && piece.privacy !== 'private' && piece.privacy !== 'partial') {
       ctx.fillStyle = 'rgba(0,0,0,0.75)';
       ctx.font = `bold ${Math.round(CS * 0.55)}px 'HSHwalkong', serif`;
       ctx.textAlign = 'center';

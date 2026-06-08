@@ -403,7 +403,7 @@ const page_S7_S8 = {
 
     // 텍스트 보기 토글
     if (mx >= cbX && mx <= cbX + cbSz + 90 && my >= cbY && my <= cbY + cbSz) {
-      if (piece.privacy !== 'anonymous') this.showText = !this.showText;
+      if (piece.privacy !== 'partial') this.showText = !this.showText;
       return true;
     }
     // 감정 정보 보기 토글
@@ -496,15 +496,16 @@ const page_S7_S8 = {
     const cbX  = px;
     const cbY  = afterTagY + 10;
     const cbSz = 15;
+    const textProtected = piece.privacy === 'partial';
     noStroke();
-    fill(this.showText ? color(90, 185, 100) : color(220));
+    fill(textProtected ? color(235) : (this.showText ? color(90, 185, 100) : color(220)));
     rectMode(CORNER); rect(cbX, cbY, cbSz, cbSz, 3);
-    if (this.showText) {
+    if (this.showText && !textProtected) {
       stroke(255); strokeWeight(2); noFill();
       line(cbX+3, cbY+8, cbX+6, cbY+11); line(cbX+6, cbY+11, cbX+12, cbY+4);
     }
-    fill(50); noStroke(); textSize(12); textStyle(NORMAL); textAlign(LEFT, CENTER);
-    text('텍스트 보기', cbX + cbSz + 8, cbY + cbSz/2);
+    fill(textProtected ? color(190) : color(50)); noStroke(); textSize(12); textStyle(NORMAL); textAlign(LEFT, CENTER);
+    text(textProtected ? '원문은 보호됩니다' : '텍스트 보기', cbX + cbSz + 8, cbY + cbSz/2);
 
     // ── 감정 정보 보기 체크박스 ──────────────────────
     const cbY2 = cbY + 28;
@@ -705,7 +706,7 @@ const page_S7_S8 = {
           text('🔒', posX, posY + 1);
 
         // 글자 오버레이
-        } else if (showText && privacy !== 'anonymous' && cell.text && cell.text.trim().length > 0) {
+        } else if (showText && privacy !== 'partial' && cell.text && cell.text.trim().length > 0) {
           const textChar = cell.text.trim()[0];
           textSize(18); textStyle(BOLD); textAlign(CENTER, CENTER); noStroke();
           drawingContext.shadowBlur = 6;
