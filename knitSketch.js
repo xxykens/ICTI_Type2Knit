@@ -20,6 +20,7 @@ window.tempText              = '';
 
 function setup() {
   let cvs = createCanvas(1280, 832);
+  cvs.elt.id = 'p5-knit-canvas';
   cvs.parent('knit-canvas-container');
   cvs.style('position', 'absolute');
   cvs.style('top', '0');
@@ -160,7 +161,7 @@ function mouseWheel(event) {
 // ── indexDesign.js에서 호출하는 훅 ──
 
 window.knitSketch_onP9Enter = function() {
-  const p5cvs = document.querySelector('canvas');
+  const p5cvs = document.getElementById('p5-knit-canvas');
   const container = document.getElementById('knit-canvas-container');
   if (p5cvs && container) {
     container.appendChild(p5cvs);
@@ -197,7 +198,7 @@ window.knitSketch_renderPreview = function() {
   const panel = document.querySelector('.complete-screen.active .preview-panel');
   if (!panel) return;
 
-  const p5cvs = document.querySelector('canvas');
+  const p5cvs = document.getElementById('p5-knit-canvas');
   if (!p5cvs) return;
 
   panel.style.position = 'relative';
