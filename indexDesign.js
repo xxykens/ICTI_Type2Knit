@@ -436,19 +436,23 @@ function renderP18Cards(pieces) {
   // 카드 높이: 헤더(160px) 제외한 나머지, 위아래 여백 48px
   const CARD_H = 832-160-90;
 
-  pieces.forEach((piece) => {
+  pieces.forEach((piece, i) => {
     const card = document.createElement('div');
     card.style.cssText = `
       flex: 0 0 ${P18_CARD_W}px;
-      width: ${P18_CARD_W}px; 
+      width: ${P18_CARD_W}px;
       height: ${CARD_H}px;
-      background: #e9e9e9;
+      // background: #e9e9e9;
       border-radius: 14px;
       position: relative;
       overflow: hidden;
       cursor: default;
-      transition: transform 0.2s ease;
+      transition: transform 0.25s cubic-bezier(0.22, 0.61, 0.36, 1);
+      animation: archiveCardIn 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) ${i * 0.055}s both;
     `;
+    card.addEventListener('animationend', () => {
+      card.style.animation = 'none';
+    });
     card.addEventListener('mouseenter', () => {
       card.style.transform = 'translateY(-6px)';
     });
@@ -477,7 +481,8 @@ function renderP18Cards(pieces) {
       height: 48px;
       display: flex; align-items: center;
       padding: 0 16px;
-      background: linear-gradient(transparent, rgba(232,229,224,0.95));
+      border-top: 1px solid rgba(200,200,200,0.75);
+      // background: linear-gradient(transparent, rgba(232,229,224,0.95));
       font-size: 17px; color: #888;
       font-family: 'HSHwalkong', serif;
       letter-spacing: 0.04em;
@@ -696,7 +701,8 @@ function openP18Overlay(piece, sourceCvs) {
   backdrop.style.cssText = `
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.3);
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(4px);
     z-index: 50;
     display: flex;
     align-items: flex-start;
@@ -704,9 +710,10 @@ function openP18Overlay(piece, sourceCvs) {
     overflow-y: auto;
     padding: 40px 0;
     box-sizing: border-box;
+    animation: overlayFadeIn 0.3s cubic-bezier(0.22, 0.61, 0.36, 1) both;
   `;
   backdrop.addEventListener('click', (e) => {
-    if (e.target === backdrop) closeP18Overlay();
+    if (e.target === backdrop || e.target === panel) closeP18Overlay();
   });
 
   // 오버레이 내부 패널 (카드와 동일 너비, 스크롤 가능)
@@ -717,7 +724,8 @@ function openP18Overlay(piece, sourceCvs) {
     gap: 32px;
     align-items: flex-start;
     pointer-events: auto;
-    min-height : min-content;
+    min-height: min-content;
+    animation: overlayPanelIn 0.35s cubic-bezier(0.22, 0.61, 0.36, 1) 0.05s both;
   `;
 
   // 오버레이 카드 너비: 화면 높이 기준 비율 유지
@@ -736,7 +744,7 @@ function openP18Overlay(piece, sourceCvs) {
   bigCvs.style.cssText = `
     display: block;
     border-radius: 14px;
-    background: #E8E5E0;
+    // background: #E8E5E0;
     flex-shrink: 0;
     width: ${overlayW}px;
     height: ${overlayH}px;
@@ -752,7 +760,7 @@ function openP18Overlay(piece, sourceCvs) {
   // 우측 정보 패널
   const info = document.createElement('div');
   info.style.cssText = `
-    width: 220px;
+    width: 260px;
     flex-shrink: 0;
     position: sticky;
     top: 40px;
@@ -911,7 +919,11 @@ function openP18Overlay(piece, sourceCvs) {
 
 function closeP18Overlay() {
   const backdrop = document.getElementById('p18-overlay-backdrop');
-  if (backdrop) backdrop.remove();
+  if (!backdrop) return;
+  const panel = backdrop.querySelector('div');
+  if (panel) panel.style.animation = 'overlayPanelOut 0.25s cubic-bezier(0.22, 0.61, 0.36, 1) both';
+  backdrop.style.animation = 'overlayFadeOut 0.3s cubic-bezier(0.22, 0.61, 0.36, 1) both';
+  backdrop.addEventListener('animationend', () => backdrop.remove(), { once: true });
 }
 
 function _p18DrawCardBig(cvs, piece, W, H, showText, showEmotionInfo) {
