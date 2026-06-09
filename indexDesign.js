@@ -16,6 +16,9 @@ function goTo(id) {
   if (state.currentScreen === 'p9' && id !== 'p9') {
     if (typeof window.knitSketch_onP9Leave === 'function') window.knitSketch_onP9Leave();
   }
+  if (state.currentScreen === 'p18' && id !== 'p18') {
+    if (typeof window.knitSketch_onP18Leave === 'function') window.knitSketch_onP18Leave();
+  }
 
   const cur = document.getElementById(state.currentScreen);
   const next = document.getElementById(id);
@@ -171,6 +174,7 @@ function onScreenEnter(id) {
   }
 
   if (id === 'p18') {
+    if (typeof window.knitSketch_onP18Enter === 'function') window.knitSketch_onP18Enter();
     if (!window.page_S7_S8 || !window.page_S5) return;
     const doLoad = () => {
       window.page_S7_S8.loadDataFromDB().then((pieces) => {

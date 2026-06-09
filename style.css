@@ -520,12 +520,27 @@
       font-size: 44px; font-weight: 400; margin-bottom: 40px;
       line-height: 1.2;
     }
+    .screen .tooltip-wrapper,
     .complete-screen .tooltip-wrapper {
       position: relative;
       display: inline-flex;
       align-items: center;
       margin-left: 14px;
     }
+    #p18 .archive-header {
+      position: relative;
+      z-index: 10;
+    }
+    #p18 .archive-header h2 {
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+    }
+    #p18 .archive-header .tooltip-wrapper {
+      position: relative;
+      top: -5px;
+    }
+    .screen .tooltip-trigger,
     .complete-screen .tooltip-trigger {
       width: 34px;
       height: 34px;
@@ -542,10 +557,12 @@
       padding: 0;
       line-height: 1;
     }
+    .screen .tooltip-trigger:focus,
     .complete-screen .tooltip-trigger:focus {
       outline: 2px solid rgba(122, 184, 200, 0.8);
       outline-offset: 2px;
     }
+    .screen .tooltip-box,
     .complete-screen .tooltip-box {
       position: absolute;
       top: 100%;
@@ -567,6 +584,8 @@
       z-index: 10;
       margin-top: 14px;
     }
+    .screen .tooltip-wrapper:hover .tooltip-box,
+    .screen .tooltip-wrapper:focus-within .tooltip-box,
     .complete-screen .tooltip-wrapper:hover .tooltip-box,
     .complete-screen .tooltip-wrapper:focus-within .tooltip-box {
       opacity: 1;

@@ -113,9 +113,8 @@ function draw() {
   }
 
   if (window.state.currentScreen === 'p18') {
-    if (window.page_S7_S8) {
-      page_S7_S8.drawS7Timeline();
-      if (page_S7_S8.showDetailPanel) page_S7_S8.drawS8SingleView();
+    if (window.LegendUI && window.LegendUI.canvasTooltip && window.LegendUI.canvasTooltip.active) {
+      window.LegendUI.drawTooltip(window.LegendUI.canvasTooltip.x, window.LegendUI.canvasTooltip.y);
     }
   }
 }
@@ -193,6 +192,28 @@ window.knitSketch_onP9Leave = function() {
   clear();
 };
 
+window.knitSketch_onP18Enter = function() {
+  const p5cvs = document.getElementById('p5-knit-canvas');
+  const container = document.getElementById('p18-canvas-container');
+  if (p5cvs && container) {
+    container.appendChild(p5cvs);
+    p5cvs.style.position = 'absolute';
+    p5cvs.style.top = '0';
+    p5cvs.style.left = '0';
+    p5cvs.style.width = '100%';
+    p5cvs.style.height = '100%';
+    p5cvs.style.pointerEvents = 'none';
+  }
+  if (window.state && window.state.currentScreen === 'p18') {
+    loop();
+    redraw();
+  }
+};
+
+window.knitSketch_onP18Leave = function() {
+  noLoop();
+};
+
 // ── p12/p14 미리보기 ──
 window.knitSketch_renderPreview = function() {
   const panel = document.querySelector('.complete-screen.active .preview-panel');
@@ -228,6 +249,7 @@ window.knitSketch_renderPreview = function() {
 window.LegendUI = {
   iconRadius: 15,
   isHovered: false,
+  canvasTooltip: { active: false, x: 0, y: 0 },
 
   drawIcon: function(x, y) {
     push();
@@ -272,6 +294,12 @@ window.LegendUI = {
     rectMode(CORNER);
     rect(tX, tY, boxW, boxH, 12);
     
+    textFont('HSHwalkong');
+    textWrap(WORD);
+    const margin = 15;
+    const contentX = tX + margin;
+    const contentW = boxW - margin * 2;
+
     textAlign(LEFT, TOP);
     noStroke();
     
@@ -279,21 +307,21 @@ window.LegendUI = {
     fill(50);
     textSize(15);
     textStyle(BOLD);
-    text("감정별 뜨개 패턴", tX + 15, tY + 15);
+    text("감정별 뜨개 패턴", contentX, tY + margin, contentW);
 
     // (1) 추가된 설명 문구
     fill(100);
     textSize(10);
     textStyle(NORMAL);
-    textLeading(14); // 줄간격
-    text("타이핑하는 동안 웹캠이 표정 변화(눈썹·눈·입)를 기준 표정과\n비교해 감정을 추정하고, 그 감정과 타이핑 속도에 따라\n코의 색과 형태 등이 달라져요.", tX + 15, tY + 36);
+    textLeading(14);
+    text("타이핑하는 동안 웹캠이 표정 변화(눈썹·눈·입)를\n기준 표정과 비교해 추출한 감정과 타이핑 속도에 따라\n코의 색과 형태 등이 달라져요.", contentX, tY + margin + 24, contentW);
 
     // ----------------------------------------
     // [섹션 1] 감정별 베이스 색상
     // ----------------------------------------
     fill(50);
     textSize(12);
-    text("■ 감정 베이스 색상", tX + 15, tY + 85);
+    text("■ 감정 베이스 색상", tX + 15, tY + 95, contentW);
     
     let emotions = [
       { name: '짜증', hue: 0 }, { name: '중립', hue: 51 },
@@ -307,7 +335,7 @@ window.LegendUI = {
       let col = i % 4;
       let row = Math.floor(i / 4);
       let cx = tX + 15 + col * 65; // 간격 축소
-      let cy = tY + 105 + row * 24;
+      let cy = tY + 115 + row * 24;
 
       fill(emotions[i].hue, 40, 90);
       stroke(emotions[i].hue, 50, 70);
@@ -328,48 +356,51 @@ window.LegendUI = {
     fill(50);
     textSize(12);
     textAlign(LEFT, TOP);
-    text("■ 형태 및 코 무늬", tX + 15, tY + 158);
+    text("■ 형태 및 코 무늬", contentX, tY + 168, contentW);
 
-    textSize(10); fill(100);
-    text("입꼬리 긴장도", tX + 15, tY + 178);
-    text("눈 표정", tX + 130, tY + 178);
+    textSize(10);
+    fill(100);
+    text("입꼬리 긴장도", contentX, tY + 188);
+    text("눈 표정", contentX + contentW * 0.45, tY + 188);
 
     textAlign(CENTER, TOP);
     
     // 배치 간격 압축 (미니 셀 크기는 최대한 유지)
-    this.drawMiniCell(tX + 35, tY + 210, 'circle', 'NEUTRAL', true, 'shape_gray'); 
-    text("긍정", tX + 35, tY + 225);
-    this.drawMiniCell(tX + 85, tY + 210, 'square', 'NEUTRAL', true, 'shape_gray'); 
-    text("부정", tX + 85, tY + 225);
+    this.drawMiniCell(contentX + 20, tY + 220, 'circle', 'NEUTRAL', true, 'shape_gray'); 
+    text("긍정", contentX + 20, tY + 235);
+    this.drawMiniCell(contentX + 60, tY + 220, 'square', 'NEUTRAL', true, 'shape_gray'); 
+    text("부정", contentX + 60, tY + 235);
 
-    this.drawMiniCell(tX + 150, tY + 210, 'square', 'FROWN', true, 'shape_gray'); 
-    text("찌푸림", tX + 150, tY + 225);
-    this.drawMiniCell(tX + 200, tY + 210, 'square', 'SURPRISED', true, 'shape_gray'); 
-    text("충격", tX + 200, tY + 225);
-    this.drawMiniCell(tX + 250, tY + 210, 'square', 'NEUTRAL', true, 'shape_gray'); 
-    text("기본", tX + 250, tY + 225);
+    this.drawMiniCell(contentX + 125, tY + 220, 'square', 'FROWN', true, 'shape_gray'); 
+    text("찌푸림", contentX + 125, tY + 235);
+    this.drawMiniCell(contentX + 167.5, tY + 220, 'square', 'SURPRISED', true, 'shape_gray'); 
+    text("충격", contentX + 167.5, tY + 235);
+    this.drawMiniCell(contentX + 210, tY + 220, 'square', 'NEUTRAL', true, 'shape_gray'); 
+    text("기본", contentX + 210, tY + 235);
 
     // ----------------------------------------
     // [섹션 3] 타이핑 속도
     // ----------------------------------------
     textAlign(LEFT, TOP);
-    fill(50); textSize(12);
-    text("■ 타이핑 속도", tX + 15, tY + 255);
+    fill(50);
+    textSize(12);
+    text("■ 타이핑 속도", contentX, tY + 265, contentW);
     
     textAlign(CENTER, TOP);
-    textSize(10); fill(100);
+    textSize(10);
+    fill(100);
     
-    this.drawMiniCell(tX + 45, tY + 295, 'square', 'NEUTRAL', true, 'fast'); 
-    text("빠름", tX + 45, tY + 310);
-    text("(채움, 채도/명도↑)", tX + 45, tY + 324);
+    this.drawMiniCell(contentX + 30, tY + 295, 'square', 'NEUTRAL', true, 'fast'); 
+    text("빠름", contentX + 30, tY + 310);
+    text("(채움, 채도/명도↑)", contentX + 30, tY + 324);
     
-    this.drawMiniCell(tX + 140, tY + 295, 'square', 'NEUTRAL', false, 'medium'); 
-    text("보통", tX + 140, tY + 310);
-    text("(두꺼운 선)", tX + 140, tY + 324);
+    this.drawMiniCell(contentX + 105, tY + 295, 'square', 'NEUTRAL', false, 'medium'); 
+    text("보통", contentX + 105, tY + 310);
+    text("(두꺼운 선)", contentX + 105, tY + 324);
 
-    this.drawMiniCell(tX + 235, tY + 295, 'square', 'NEUTRAL', false, 'slow'); 
-    text("느림", tX + 235, tY + 310);
-    text("(얇은 선, 채도/명도↓)", tX + 235, tY + 324);
+    this.drawMiniCell(contentX + 180, tY + 295, 'square', 'NEUTRAL', false, 'slow'); 
+    text("느림", contentX + 180, tY + 310);
+    text("(얇은 선, 채도/명도↓)", contentX + 180, tY + 324);
 
     pop();
   },
@@ -439,5 +470,48 @@ window.LegendUI = {
       endShape();
     }
     pop();
+  },
+
+  setCanvasTooltipState: function(active, x, y) {
+    this.canvasTooltip = this.canvasTooltip || { active: false, x: 0, y: 0 };
+    this.canvasTooltip.active = active;
+    if (typeof x === 'number') this.canvasTooltip.x = x;
+    if (typeof y === 'number') this.canvasTooltip.y = y;
+  },
+
+  updateCanvasTooltipPosition: function() {
+    const button = document.getElementById('p18-tooltip-button');
+    const canvas = document.getElementById('p5-knit-canvas');
+    if (!button || !canvas) return;
+    const btnRect = button.getBoundingClientRect();
+    const canvasRect = canvas.getBoundingClientRect();
+    this.setCanvasTooltipState(true,
+      btnRect.left - canvasRect.left + btnRect.width / 2,
+      btnRect.top - canvasRect.top + btnRect.height / 2
+    );
   }
 };
+
+window.addEventListener('DOMContentLoaded', () => {
+  const p18TooltipButton = document.getElementById('p18-tooltip-button');
+  if (!p18TooltipButton) return;
+
+  p18TooltipButton.addEventListener('mouseenter', () => {
+    if (window.LegendUI) {
+      window.LegendUI.updateCanvasTooltipPosition();
+      if (window.state && window.state.currentScreen === 'p18') redraw();
+    }
+  });
+  p18TooltipButton.addEventListener('mousemove', () => {
+    if (window.LegendUI && window.LegendUI.canvasTooltip && window.LegendUI.canvasTooltip.active) {
+      window.LegendUI.updateCanvasTooltipPosition();
+      if (window.state && window.state.currentScreen === 'p18') redraw();
+    }
+  });
+  p18TooltipButton.addEventListener('mouseleave', () => {
+    if (window.LegendUI) {
+      window.LegendUI.setCanvasTooltipState(false);
+      if (window.state && window.state.currentScreen === 'p18') redraw();
+    }
+  });
+});

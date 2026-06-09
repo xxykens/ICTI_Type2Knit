@@ -189,9 +189,8 @@
 </div>
 
 <!-- P9 – TYPING + 뜨개 캔버스 -->
-<div id="p9" class="screen" onclick="focusTyping()">
+<div id="p9" class="screen" onclick="focusTyping()" style="position:relative; flex-direction:column;">
   <div class="top-brand">감정이∙패턴이∙되는∙순간</div>
-  <div id="knit-canvas-container" style="position:absolute; top:0; left:0; width:100%; height:100%;"></div> <!-- ✅ 추가 -->
   <div class="hint-text">타이핑하는 글자는 화면에 보이지 않아요.</div>
   <div class="hint-text2">지금 떠오르는 생각과 감정을 타이핑해봐요.</div>
   <div id="lang-indicator" class="lang-indicator">A</div>
@@ -327,13 +326,24 @@
 </div>
 
 <!-- P18 – ARCHIVE -->
-<div id="p18" class="screen" style="flex-direction:column;">
+<div id="p18" class="screen" style="position:relative; flex-direction:column;">
   <div class="top-brand">감정이∙패턴이∙되는∙순간</div>
+  <div id="p18-canvas-container" style="
+    position:absolute;
+    top:0; left:0;
+    width:100%; height:100%;
+    pointer-events:none;
+    z-index:5;
+  "></div>
   <div class="archive-header">
-    <h2>아카이브</h2>
+    <h2>
+      아카이브
+      <span class="tooltip-wrapper">
+        <button id="p18-tooltip-button" type="button" class="tooltip-trigger">?</button>
+      </span>
+    </h2>
     <span class="home-link" onclick="goTo('p1')">▶ 홈으로</span>
   </div>
-
   <!-- 왼쪽 화살표 -->
   <div onclick="p18ScrollLeft()" style="
     position:absolute; left:14px; top:60%; transform:translateY(-50%);
