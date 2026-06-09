@@ -828,6 +828,22 @@ function openP18Overlay(piece, sourceCvs) {
   hr.style.cssText = 'border-top:1px solid #e0e0e0; margin:20px 0;';
   info.appendChild(hr);
 
+  // 뜨개물 정보
+  const knitInfoTitle = document.createElement('div');
+  knitInfoTitle.style.cssText = 'font-size:14px; font-weight:600; color:#333; margin-bottom:8px;';
+  knitInfoTitle.textContent = '뜨개물 정보';
+  info.appendChild(knitInfoTitle);
+
+  const knitInfoBody = document.createElement('div');
+  knitInfoBody.style.cssText = 'font-size:13px; color:#888; line-height:1.6;';
+  knitInfoBody.textContent = _buildKnitInfoText(piece);
+  info.appendChild(knitInfoBody);
+
+  // 구분선
+  const hr2 = document.createElement('div');
+  hr2.style.cssText = 'border-top:1px solid #e0e0e0; margin:20px 0;';
+  info.appendChild(hr2);
+
   // 텍스트 보기 체크박스
   const textProtected = piece.privacy === 'partial';
   const cbWrap = document.createElement('label');
@@ -890,9 +906,9 @@ function openP18Overlay(piece, sourceCvs) {
   redrawBig();
 
   // 구분선
-  const hr2 = document.createElement('div');
-  hr2.style.cssText = 'border-top:1px solid #e0e0e0; margin:20px 0 10px;';
-  info.appendChild(hr2);
+  const hr3 = document.createElement('div');
+  hr3.style.cssText = 'border-top:1px solid #e0e0e0; margin:20px 0 10px;';
+  info.appendChild(hr3);
 
   // 선택된 코 정보
   const selTitle = document.createElement('div');
@@ -904,22 +920,6 @@ function openP18Overlay(piece, sourceCvs) {
   selInfo.style.cssText = 'font-size:13px; color:#aaa; line-height:1.6;';
   selInfo.textContent = '니트 코 위에 마우스를 올리면 정보가 표시됩니다.';
   info.appendChild(selInfo);
-
-  // 구분선 — "선택된 코 정보" 박스 아래에 새 섹션을 이어붙여 같은 정보창 안에서
-  // 함께 늘어나는 한 덩어리처럼 보이도록 한다 (별도의 떠다니는 박스 X)
-  const hr3 = document.createElement('div');
-  hr3.style.cssText = 'border-top:1px solid #e0e0e0; margin:20px 0 10px;';
-  info.appendChild(hr3);
-
-  const knitInfoTitle = document.createElement('div');
-  knitInfoTitle.style.cssText = 'font-size:14px; font-weight:600; color:#333; margin-bottom:8px;';
-  knitInfoTitle.textContent = '뜨개물 정보';
-  info.appendChild(knitInfoTitle);
-
-  const knitInfoBody = document.createElement('div');
-  knitInfoBody.style.cssText = 'font-size:13px; color:#888; line-height:1.6;';
-  knitInfoBody.textContent = _buildKnitInfoText(piece);
-  info.appendChild(knitInfoBody);
 
   // 마우스 호버 → 선택된 코 정보 업데이트
   const _SP = Math.floor((overlayW - 8) / 10);

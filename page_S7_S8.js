@@ -381,9 +381,9 @@ const page_S7_S8 = {
 
     const INFO_W   = 220;
     const INFO_X   = width - INFO_W - 20;
-    // PANEL_Y는 "뜨개물 정보" 본문 길이에 따라 늘어날 수 있으므로
-    // drawS8SingleView와 동일한 공용 헬퍼로 계산해야 클릭 좌표가 어긋나지 않는다
-    const PANEL_Y  = this._computeS8PanelLayout(piece).panelY;
+    // PANEL_Y와 knitInfoLines는 drawS8SingleView와 동일한 공용 헬퍼로 계산해야 클릭 좌표가 어긋나지 않는다
+    const _s8Layout = this._computeS8PanelLayout(piece);
+    const PANEL_Y  = _s8Layout.panelY;
     const PANEL_H  = height - PANEL_Y;
 
     // 닫기 버튼
@@ -396,7 +396,6 @@ const page_S7_S8 = {
     }
 
     // 체크박스 Y 계산 (drawS8SingleView와 동일한 로직)
-    const eyeLabel = { FROWN: '짜증', SURPRISED: '놀람', BLURRY: '미묘함' };
     let eGroups = {};
     (piece.cells || []).forEach(c => {
       const t = c.emotionTag;
@@ -406,9 +405,11 @@ const page_S7_S8 = {
     });
     const eListLen = Math.min(3, Object.keys(eGroups).filter(k => eGroups[k]).length) || 1;
     const afterTagY = PANEL_Y + 92 + max(1, eListLen) * 20 + 8;
+    const _knitInfoLines = _s8Layout.knitInfoLines;
     const cbX  = INFO_X + 18;
     const cbSz = 15;
-    const cbY  = afterTagY + 10;
+    const knitInfoBottomY = afterTagY + 14 + 22 + _knitInfoLines.length * 17;
+    const cbY  = knitInfoBottomY + 18;
     const cbY2 = cbY + 28;
 
     // 텍스트 보기 토글
@@ -492,12 +493,12 @@ const page_S7_S8 = {
     return { text, lines, eCount };
   },
 
-  // S8 상세 패널의 시작 Y(PANEL_Y)를 "뜨개물 정보" 본문 길이에 맞춰 동적으로 계산.
+  // S8 상세 패널의 시작 Y(PANEL_Y)를 콘텐츠 길이에 맞춰 동적으로 계산.
   // drawS8SingleView(렌더링)와 handleS8CheckboxClick(히트테스트)이 같은 좌표를 쓰도록 공유한다.
-  // ※ 아래 173/80/14/22/17 오프셋은 drawS8SingleView의 실제 렌더링 좌표 계산식과 동일해야 함
+  // ※ 아래 오프셋은 drawS8SingleView의 실제 렌더링 순서([감정태그]→뜨개물정보→텍스트보기→선택된코)와 동일해야 함
   _computeS8PanelLayout: function(piece) {
     const ki = this._buildKnitInfo(piece);
-    const contentBottom = (173 + ki.eCount * 20) + 80 + 14 + 22 + ki.lines.length * 17;
+    const contentBottom = 287 + ki.eCount * 20 + ki.lines.length * 17;
     const panelY = Math.max(60, Math.min(height / 2 + 10, height - 20 - contentBottom));
     return { panelY: panelY, knitInfoLines: ki.lines };
   },
@@ -586,9 +587,25 @@ const page_S7_S8 = {
     stroke(220); strokeWeight(1);
     line(INFO_X + 10, afterTagY, INFO_X + INFO_W - 10, afterTagY);
 
+    // ── 뜨개물 정보 ────────────────────────────────────
+    const knitInfoY = afterTagY + 14;
+    push();
+    fill(80); noStroke(); textSize(12); textStyle(BOLD); textAlign(LEFT, TOP);
+    text('뜨개물 정보', px, knitInfoY);
+    fill(110); textSize(11); textStyle(NORMAL);
+    textLeading(17);
+    text(_knitInfoLines.join('\n'), px, knitInfoY + 22);
+    pop();
+
+    const knitInfoBottomY = knitInfoY + 22 + _knitInfoLines.length * 17;
+
+    // 구분선
+    stroke(220); strokeWeight(1);
+    line(INFO_X + 10, knitInfoBottomY + 8, INFO_X + INFO_W - 10, knitInfoBottomY + 8);
+
     // ── 텍스트 보기 체크박스 ────────────────────────
     const cbX  = px;
-    const cbY  = afterTagY + 10;
+    const cbY  = knitInfoBottomY + 18;
     const cbSz = 15;
     const textProtected = piece.privacy === 'partial';
     noStroke();
@@ -752,23 +769,6 @@ const page_S7_S8 = {
       fill(190); noStroke(); textSize(11); textStyle(NORMAL); textAlign(LEFT, TOP);
       text('니트 코 위에 마우스를 올리면\n정보가 표시됩니다.', px, infoY + 20);
     }
-
-    // ── 뜨개물 정보 ────────────────────────────────────
-    // "선택된 코 정보" 박스 아래에 새 섹션을 이어붙여, 같은 정보창 안에서
-    // 함께 늘어나는 한 덩어리처럼 보이도록 한다 (별도의 떠다니는 박스 X)
-    colorMode(RGB);
-    const knitInfoDividerY = infoY + 80;
-    stroke(215); strokeWeight(1);
-    line(INFO_X + 10, knitInfoDividerY, INFO_X + INFO_W - 10, knitInfoDividerY);
-
-    const knitInfoY = knitInfoDividerY + 14;
-    push();
-    fill(80); noStroke(); textSize(12); textStyle(BOLD); textAlign(LEFT, TOP);
-    text('뜨개물 정보', px, knitInfoY);
-    fill(110); textSize(11); textStyle(NORMAL);
-    textLeading(17);
-    text(_knitInfoLines.join('\n'), px, knitInfoY + 22);
-    pop();
 
     // 하단 안내
     colorMode(RGB);
