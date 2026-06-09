@@ -19,8 +19,10 @@ window.tempText              = '';
 // ── p5 라이프사이클 ──
 
 function setup() {
+  pixelDensity(displayDensity());
   let cvs = createCanvas(1280, 832);
   cvs.elt.id = 'p5-knit-canvas';
+
   cvs.parent('knit-canvas-container');
   cvs.style('position', 'absolute');
   cvs.style('top', '0');
@@ -120,6 +122,7 @@ function draw() {
 }
 
 function windowResized() {
+  pixelDensity(displayDensity());
   resizeCanvas(1280, 832);
 }
 
