@@ -170,6 +170,9 @@ window.knitSketch_onP9Enter = function() {
     p5cvs.style.position = 'absolute';
     p5cvs.style.top = '0';
     p5cvs.style.left = '0';
+    p5cvs.style.width = '1280px';
+    p5cvs.style.height = '832px';
+    p5cvs.style.pointerEvents = 'none';
   }
 
   window.cells                 = [];
@@ -230,7 +233,7 @@ window.knitSketch_renderPreview = function() {
   p5cvs.style.position = 'absolute';
   p5cvs.style.top = '0';
   p5cvs.style.left = '0';
-  p5cvs.style.pointerEvents = 'auto';
+  p5cvs.style.pointerEvents = 'none';
   panel.appendChild(p5cvs);
 
   const pw = panel.offsetWidth;

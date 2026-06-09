@@ -201,10 +201,18 @@ function onScreenEnter(id) {
     }, 100);
   }
   if (id === 'p16') {
-    setTimeout(() => {
-      document.getElementById('p16-text').style.opacity = '0';
-      setTimeout(() => goTo('p17'), 4000);
+    _cleanupP16();
+    const textEl = document.getElementById('p16-text');
+    textEl.style.transition = 'none';
+    textEl.style.opacity = '1';
+
+    const t1 = setTimeout(() => {
+      textEl.style.transition = 'opacity 1.5s';
+      textEl.style.opacity = '0';
+      const t2 = setTimeout(() => startP16UnravelAnimation(), 1800);
+      window._p16Timers.push(t2);
     }, 5000);
+    window._p16Timers.push(t1);
   }
 }
 
@@ -391,6 +399,7 @@ function fillCompleteScreen() {
 }
 
 function retryKnit() {
+  _cleanupP16();
   state.charCount = 0;
   document.getElementById('typing-capture').value = '';
   document.getElementById('char-count').textContent = '0';
@@ -405,6 +414,243 @@ function retryKnit() {
 }
 
 function unravelKnit() { goTo('p16'); }
+
+function _cleanupP16() {
+  if (window._p16Timers) window._p16Timers.forEach(t => clearTimeout(t));
+  window._p16Timers = [];
+  if (window._p16RafId) { cancelAnimationFrame(window._p16RafId); window._p16RafId = null; }
+  const cvs = document.getElementById('p16-knit-canvas');
+  if (cvs) cvs.remove();
+}
+
+function startP16UnravelAnimation() {
+  const p16 = document.getElementById('p16');
+  if (!p16) return;
+
+  const existing = document.getElementById('p16-knit-canvas');
+  if (existing) existing.remove();
+
+  const piece = window._knitSketchPreviewPiece;
+  const cells = (piece && (piece.knitArray || piece.cells)) || [];
+
+  const W = 340;
+  const ROWS = Math.ceil(cells.length / 10);
+  const SP = Math.floor((W - 8) / 10);
+  const H = Math.min(560, ROWS * SP + SP + 20);
+
+  const cvs = document.createElement('canvas');
+  cvs.id = 'p16-knit-canvas';
+  cvs.width  = W;
+  cvs.height = H;
+  cvs.style.cssText = `
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    transition: opacity 1s;
+    border-radius: 16px;
+  `;
+  p16.appendChild(cvs);
+
+  requestAnimationFrame(() => requestAnimationFrame(() => { cvs.style.opacity = '1'; }));
+
+  const cellStates = cells.map(() => ({ phase: 'idle', t: 0 }));
+  const SQUASH_DUR = 180;
+  const LINE_DUR   = 140;
+  const startTimes = new Array(cells.length).fill(null);
+  window._p16RafId = null;
+  let finished = false;
+
+  const totalRows = Math.ceil(cells.length / 10);
+  const unravelOrder = [];
+  for (let r = totalRows - 1; r >= 0; r--) {
+    const fromBottom = (totalRows - 1) - r;
+    const leftToRight = (fromBottom % 2 === 1);
+    const rowStart = r * 10;
+    const rowEnd   = Math.min(rowStart + 10, cells.length);
+    const cols = [];
+    for (let c = rowStart; c < rowEnd; c++) cols.push(c);
+    if (!leftToRight) cols.reverse();
+    unravelOrder.push(...cols);
+  }
+  const orderIndex = new Array(cells.length);
+  unravelOrder.forEach((cellIdx, pos) => { orderIndex[cellIdx] = pos; });
+
+  const triggerByOrder = (pos) => {
+    if (pos < 0 || pos >= unravelOrder.length) return;
+    const cellIdx = unravelOrder[pos];
+    if (cellStates[cellIdx].phase !== 'idle') return;
+    cellStates[cellIdx].phase = 'squash';
+    startTimes[cellIdx] = performance.now();
+  };
+
+  const t = setTimeout(() => {
+    triggerByOrder(0);
+    window._p16RafId = requestAnimationFrame(tick);
+  }, 800);
+  window._p16Timers.push(t);
+
+  function tick(now) {
+    if (finished) return;
+    let anyActive = false;
+
+    for (let idx = 0; idx < cells.length; idx++) {
+      const cs = cellStates[idx];
+      if (cs.phase === 'idle' || cs.phase === 'done') continue;
+      const elapsed = now - startTimes[idx];
+      anyActive = true;
+
+      if (cs.phase === 'squash') {
+        cs.t = Math.min(elapsed / SQUASH_DUR, 1);
+        if (cs.t >= 1) {
+          cs.phase = 'line';
+          startTimes[idx] = now;
+          cs.t = 0;
+          triggerByOrder(orderIndex[idx] + 1);
+        }
+      } else if (cs.phase === 'line') {
+        cs.t = Math.min(elapsed / LINE_DUR, 1);
+        if (cs.t >= 1) cs.phase = 'done';
+      }
+    }
+
+    drawFrame();
+
+    const noneIdle = cellStates.every(cs => cs.phase !== 'idle');
+    if (noneIdle && !anyActive) {
+      finished = true;
+      window._p16RafId = null;
+      cvs.style.transition = 'opacity 0.8s';
+      cvs.style.opacity = '0';
+      const t2 = setTimeout(() => goTo('p17'), 900);
+      window._p16Timers.push(t2);
+      return;
+    }
+
+    window._p16RafId = requestAnimationFrame(tick);
+  }
+
+  function drawFrame() {
+    const ctx = cvs.getContext('2d');
+    ctx.clearRect(0, 0, W, H);
+
+    const startX = SP / 2 + 4;
+    const startY = SP / 2 + 10;
+    const CS_base = SP - 4;
+
+    for (let idx = 0; idx < cells.length; idx++) {
+      const cell = cells[idx];
+      const cs   = cellStates[idx];
+      if (cs.phase === 'done') continue;
+
+      const col = idx % 10;
+      const row = Math.floor(idx / 10);
+      const px  = startX + col * SP;
+      const py  = startY + row * SP;
+      if (py > H + SP) continue;
+
+      let h, s, b, stitchH, stitchBri;
+      if (cell.bgHue !== undefined) {
+        h = cell.bgHue; s = cell.sat; b = cell.bgBri;
+        stitchH = cell.stitchHue; stitchBri = cell.stitchBri;
+      } else {
+        h = 154; s = 20; b = 65; stitchH = 184; stitchBri = 75;
+      }
+      const [bgR, bgG, bgBl] = _hsbToRgb(h, s / 100, b / 100);
+      const [stR, stG, stBl] = _hsbToRgb(stitchH, s / 100, stitchBri / 100);
+
+      const speed   = cell.speed   || 0;
+      const tension = cell.tension !== undefined ? cell.tension : 0.5;
+      const isFilled   = speed >= 0.6;
+      const CS = isFilled ? CS_base : CS_base - 3;
+
+      if (cs.phase === 'idle') {
+        _p16DrawCell(ctx, px, py, CS, cell, bgR, bgG, bgBl, stR, stG, stBl, tension, isFilled, 1, 1);
+      } else if (cs.phase === 'squash') {
+        const ease = cs.t * cs.t;
+        _p16DrawCell(ctx, px, py, CS, cell, bgR, bgG, bgBl, stR, stG, stBl, tension, isFilled, 1 - ease, 1);
+      } else if (cs.phase === 'line') {
+        const halfW = (CS / 2) * (1 - cs.t);
+        ctx.save();
+        ctx.globalAlpha = 1 - cs.t;
+        ctx.strokeStyle = `rgb(${bgR},${bgG},${bgBl})`;
+        ctx.lineWidth = Math.max(1.2, SP * 0.07);
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(px - halfW, py);
+        ctx.lineTo(px + halfW, py);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+  }
+}
+
+function _p16DrawCell(ctx, px, py, CS, cell, bgR, bgG, bgBl, stR, stG, stBl, tension, isFilled, scaleY, alpha) {
+  if (scaleY <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(px, py);
+  ctx.scale(1, scaleY);
+  ctx.translate(-px, -py);
+
+  const hw = CS / 2;
+
+  if (cell.isBackspace) {
+    ctx.strokeStyle = `rgb(${bgR},${bgG},${bgBl})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(px - CS*0.4, py - CS*0.4); ctx.lineTo(px + CS*0.15, py);
+    ctx.moveTo(px - CS*0.4, py + CS*0.4); ctx.lineTo(px + CS*0.1,  py);
+    ctx.stroke();
+    ctx.restore();
+    return;
+  }
+
+  ctx.beginPath();
+  if (tension >= 0.5) {
+    ctx.roundRect(px - hw, py - hw, CS, CS, 5);
+  } else {
+    ctx.arc(px, py, hw, 0, Math.PI * 2);
+  }
+  if (isFilled) {
+    ctx.fillStyle = `rgb(${bgR},${bgG},${bgBl})`;
+    ctx.fill();
+  } else {
+    ctx.strokeStyle = `rgb(${bgR},${bgG},${bgBl})`;
+    ctx.lineWidth = Math.max(1, CS * 0.08);
+    ctx.stroke();
+  }
+
+  const r2 = CS * 0.28;
+  ctx.strokeStyle = `rgb(${stR},${stG},${stBl})`;
+  ctx.lineWidth = Math.max(1.5, CS * 0.1);
+  const eye = cell.eye || '';
+  if (eye === 'FROWN' || eye === '찌푸림' || eye === '짜증') {
+    ctx.beginPath();
+    ctx.moveTo(px - r2, py - r2); ctx.lineTo(px + r2, py + r2);
+    ctx.moveTo(px + r2, py - r2); ctx.lineTo(px - r2, py + r2);
+    ctx.stroke();
+  } else if (eye === 'SURPRISED' || eye === '놀람') {
+    ctx.beginPath();
+    for (let k = 0; k < 8; k++) {
+      const rad   = k % 2 === 0 ? r2 : r2 * 0.4;
+      const angle = (Math.PI / 4) * k;
+      k === 0
+        ? ctx.moveTo(px + Math.cos(angle)*rad, py + Math.sin(angle)*rad)
+        : ctx.lineTo(px + Math.cos(angle)*rad, py + Math.sin(angle)*rad);
+    }
+    ctx.closePath(); ctx.stroke();
+  } else {
+    ctx.beginPath();
+    ctx.moveTo(px - r2, py - r2 * 0.6);
+    ctx.lineTo(px,      py + r2 * 0.8);
+    ctx.lineTo(px + r2, py - r2 * 0.6);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
 
 // ── P12 등록 버튼 ──
 function handleRegister() {
