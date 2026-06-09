@@ -198,9 +198,11 @@ window.knitSketch_onP9Leave = function() {
   clear();
 };
 
+// ── 아카이브(p18) 진입 훅 ──
 window.knitSketch_onP18Enter = function() {
   const p5cvs = document.getElementById('p5-knit-canvas');
   const container = document.getElementById('p18-canvas-container');
+  
   if (p5cvs && container) {
     container.appendChild(p5cvs);
     p5cvs.style.position = 'absolute';
@@ -210,6 +212,11 @@ window.knitSketch_onP18Enter = function() {
     p5cvs.style.height = '100%';
     p5cvs.style.pointerEvents = 'none';
   }
+
+  // 🌟 [핵심 수정] p12/p14에서 작게 줄어들었던 p5.js 내부 도화지 해상도를 
+  // 다시 원래 마스터 크기(1280 x 832)로 팽팽하게 복구해줍니다!
+  resizeCanvas(1280, 832);
+
   if (window.state && window.state.currentScreen === 'p18') {
     loop();
     redraw();
