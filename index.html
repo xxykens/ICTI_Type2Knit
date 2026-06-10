@@ -8,6 +8,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
   </head>
   <body>
+    <button class="site-logo-placeholder" type="button" onclick="goTo('p1')" aria-label="홈으로"></button>
 
 <!-- P1 – LANDING -->
 <div id="p1" class="screen active">
@@ -85,7 +86,7 @@
       <span>🪡 다른 사람이 당신의 닉네임을 볼 수 있어요</span>
       <span id="nickname-count">(0/12)</span>
     </div>
-    <div class="p2-cards" style="width:900px; padding-top:10px;">
+    <div class="p2-cards">
       <div class="p2-card selected" id="card-public" onclick="selectPrivacy('public')">
         <div class="p2-card-title">전체 공개</div>
         <div class="p2-card-items">
@@ -164,11 +165,11 @@
 <!-- P7 – MEASURING -->
 <div id="p7" class="screen">
   <!-- 정상 인식 대기 상태 -->
-  <div id="p7-measuring" style="position:absolute; top:0; left:0; width:100%; height:100%;">
+  <div id="p7-measuring" class="face-recognition-center">
     <div class="top-brand">감정이∙패턴이∙되는∙순간</div>
-    <div id="p7-lottie" style="position:absolute;left:430px;top:138px;width:380px;height:380px;opacity:0.8;"></div>
-    <div id="p7-countdown" style="position:absolute; left:50%; transform:translateX(-50%); bottom:120px; font-size:32px; color:#888;"></div>
-    <div style="position:absolute; left:50%; transform:translateX(-50%); bottom:180px; font-size:35px; color:#1a1a1a;">정면을 바라보고 편안한 표정을 지어주세요.</div>
+    <div id="p7-lottie" class="face-lottie"></div>
+    <div class="face-message">정면을 바라보고 편안한 표정을 지어주세요.</div>
+    <div id="p7-countdown" class="face-countdown"></div>
   </div>
 
   <!-- 인식 실패 상태 (기본 숨김) -->
@@ -182,10 +183,10 @@
 </div>
 
 <!-- P8 – MEASURING DONE -->
-<div id="p8" class="screen">
+<div id="p8" class="screen face-done-screen">
   <div class="top-brand">감정이∙패턴이∙되는∙순간</div>
-  <img src="images/face_detact.png" style="position:absolute;left:430px;top:138px;width:380px;height:380px;object-fit:contain;">
-  <div style="position:absolute; left:50%; transform:translateX(-50%); bottom:180px; font-size:35px; color:#1a1a1a;">측정완료!</div>
+  <img class="face-done-image" src="images/face_detact.png">
+  <div class="face-message">측정완료!</div>
 </div>
 
 <!-- P9 – TYPING + 뜨개 캔버스 -->

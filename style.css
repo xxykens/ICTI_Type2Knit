@@ -16,22 +16,42 @@
       --mid-gray: #b0ada8;
       --border: #d0cdc8;
       --accent-blue: #7ab8c8;
+      --stage-min-width: 1080px;
+      --stage-min-height: 832px;
     }
 
-    html, body {
-      width: 1280px;
-      height: 832px;
+    html {
+      min-width: var(--stage-min-width);
+      min-height: var(--stage-min-height);
+      overflow: hidden;
+    }
+
+    body {
+      position: relative;
+      width: max(100vw, var(--stage-min-width));
+      height: max(100vh, var(--stage-min-height));
+      min-width: var(--stage-min-width);
+      min-height: var(--stage-min-height);
       font-family: 'HSHwalkong', 'Noto Serif KR', serif;
       background: #e0e0e0;
       color: var(--text);
-      overflow: hidden;
+      overflow: visible;
+    }
+
+    @media (max-width: 1079px), (max-height: 831px) {
+      html {
+        overflow: auto;
+      }
     }
 
     /* ── SCREENS ── */
     .screen {
       position: absolute;
       top: 0; left: 0;
-      width: 1280px; height: 832px;
+      width: max(100vw, var(--stage-min-width));
+      height: max(100vh, var(--stage-min-height));
+      min-width: var(--stage-min-width);
+      min-height: var(--stage-min-height);
       background: #FAFAFA;
       display: none;
       opacity: 0;
@@ -49,6 +69,27 @@
     }
 
     /* ── COMMON ── */
+    .site-logo-placeholder {
+      position: fixed;
+      top: 24px;
+      left: 32px;
+      width: 190px;
+      height: 58px;
+      border: 1.5px solid rgba(124, 119, 113, 0.55);
+      background: rgba(255, 255, 255, 0.72);
+      border-radius: 4px;
+      cursor: pointer;
+      z-index: 1000;
+      padding: 0;
+      appearance: none;
+      transition: background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+    }
+
+    .site-logo-placeholder:hover {
+      background: #ffffff;
+      border-color: rgba(124, 119, 113, 0.85);
+    }
+
     .top-brand {
       position: absolute;
       top: 28px; right: 36px;
@@ -304,20 +345,26 @@
        P2 – NICKNAME / PRIVACY
     ════════════════════════════════ */
     #p2 { position: relative; }
+    #p2 { --p2-content-width: 840px; }
 
     .p2-inner {
       position: absolute;
-      top: 84px; left: 99px; right: 99px; bottom: 60px;
+      top: 50%; left: 50%;
+      width: var(--p2-content-width);
+      height: 576px;
+      transform: translate(-50%, -50%);
       display: flex; flex-direction: column;
+      align-items: center;
     }
 
     .p2-title {
-      font-size: 50px; font-weight: 400;
+      width: var(--p2-content-width);
+      font-size: 44px; font-weight: 400;
       letter-spacing: 0; margin-bottom: 24px;
     }
 
     .p2-input-wrap {
-      width: 100%; height: 109px;
+      width: var(--p2-content-width); height: 92px;
       border: 1.82px solid #7C7771;
       border-radius: 11px;
       display: flex; align-items: center;
@@ -337,6 +384,7 @@
     .p2-input:disabled {color:#8a8a8a}
 
     .p2-hint {
+      width: var(--p2-content-width);
       font-size: 24px; color: #8a8a8a;
       margin-bottom: 24px;
       display: flex; align-items: center;
@@ -345,9 +393,13 @@
     .p2-hint span:last-child { margin-left: auto; color: #aaa; }
 
     .p2-cards {
+      width: var(--p2-content-width);
+      padding-top: 10px;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 24px; flex: 1;
+      gap: 24px;
+      flex: 0 0 auto;
+      align-items: start;
     }
 
     .p2-card {
@@ -384,10 +436,14 @@
 
     .p2-confirm {
       position: absolute;
-      left: 1062px; top: 619px;
-      width: 213px; height: 207px;
+      right: 60px; bottom: 32px;
+      width: 120px; height: 121px;
       cursor: pointer;
       display: flex; align-items: center; justify-content: center;
+    }
+    .p2-confirm img {
+      width: 120px;
+      display: block;
     }
     .p2-confirm:hover { opacity: 0.85; }
 
@@ -396,6 +452,50 @@
     ════════════════════════════════ */
     #p6 .measure-btn {
       position: absolute; bottom: 32px; right: 60px;
+    }
+
+    /* ════════════════════════════════
+       P7/P8 – FACE RECOGNITION
+    ════════════════════════════════ */
+    .face-recognition-center,
+    .face-done-screen {
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      text-align: center;
+    }
+
+    .face-recognition-center {
+      position: absolute;
+      inset: 0;
+      display: flex;
+    }
+
+    .face-lottie,
+    .face-done-image {
+      width: min(380px, 44vw, 44vh);
+      height: min(380px, 44vw, 44vh);
+      object-fit: contain;
+    }
+
+    .face-lottie {
+      opacity: 0.8;
+    }
+
+    .face-message {
+      max-width: min(900px, calc(100vw - 80px));
+      font-size: 35px;
+      line-height: 1.35;
+      color: #1a1a1a;
+      word-break: keep-all;
+    }
+
+    .face-countdown {
+      min-height: 40px;
+      font-size: 32px;
+      line-height: 1.25;
+      color: #888;
     }
 
     /* ════════════════════════════════
@@ -663,7 +763,7 @@
     #p18 { flex-direction: column; }
 
     #p18 .archive-header {
-      padding: 90px 60px 20px;
+      padding: 110px 60px 20px;
       display: flex; align-items: baseline; justify-content: space-between;
     }
     #p18 .archive-header h2 {
@@ -672,7 +772,7 @@
     }
 
     #p18 .home-link {
-      position: absolute; top: 100px; right: 62px;
+      position: absolute; top: 120px; right: 62px;
       font-size: 40px; font-weight: 600;
       color: rgba(0,0,0,0.50); cursor: pointer;
       animation: archiveHeaderIn 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) 0.1s both;

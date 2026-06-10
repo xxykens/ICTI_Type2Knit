@@ -668,6 +668,15 @@ let _p18ScrollIndex = 0;
 const P18_CARD_W = 250;
 const P18_CARD_H_RATIO = 0.78; // scroll area 높이 대비
 
+function getP18ScreenSize() {
+  const screen = document.getElementById('p18');
+
+  return {
+    w: Math.max(1, Math.round((screen && screen.clientWidth) || window.innerWidth || 1280)),
+    h: Math.max(1, Math.round((screen && screen.clientHeight) || window.innerHeight || 832))
+  };
+}
+
 function renderP18Cards(pieces) {
   const track = document.getElementById('p18-track');
   const empty = document.getElementById('p18-empty');
@@ -684,7 +693,7 @@ function renderP18Cards(pieces) {
   if (empty) empty.style.display = 'none';
 
   // 카드 높이: 헤더(160px) 제외한 나머지, 위아래 여백 48px
-  const CARD_H = 832-160-90;
+  const CARD_H = Math.max(360, getP18ScreenSize().h - 160 - 90);
 
   pieces.forEach((piece, i) => {
     const card = document.createElement('div');
@@ -884,7 +893,7 @@ function p18ScrollRight() {
   const track = document.getElementById('p18-track');
   if (!track) return;
   const total   = track.children.length;
-  const visible = Math.floor((1280 - 120) / (P18_CARD_W + 20));
+  const visible = Math.max(1, Math.floor((getP18ScreenSize().w - 120) / (P18_CARD_W + 20)));
   const maxIdx  = Math.max(0, total - visible);
   _p18ScrollIndex = Math.min(maxIdx, _p18ScrollIndex + 1);
   _updateP18TrackPos();
@@ -953,7 +962,7 @@ function openP18Overlay(piece, sourceCvs) {
     top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.65);
     backdrop-filter: blur(4px);
-    z-index: 50;
+    z-index: 1200;
     display: flex;
     align-items: flex-start;
     justify-content: center;
@@ -979,14 +988,13 @@ function openP18Overlay(piece, sourceCvs) {
   `;
 
   // 오버레이 카드 너비: 화면 높이 기준 비율 유지
-  const CARD_H   = 832 - 160 - 90; // renderP18Cards와 동일한 값
   const overlayW = Math.round(P18_CARD_W * 1.5);
 
   // 패턴 실제 행 수로 높이 동적 계산
   const gridData = piece.knitArray || piece.cells || [];
   const totalRows = Math.ceil(gridData.length / 10);
   const SP = Math.floor((overlayW - 8) / 10);
-  const overlayH = Math.max(832 - 80, totalRows * SP + SP);
+  const overlayH = Math.max(getP18ScreenSize().h - 80, totalRows * SP + SP);
 
   const bigCvs = document.createElement('canvas');
   bigCvs.width  = overlayW;

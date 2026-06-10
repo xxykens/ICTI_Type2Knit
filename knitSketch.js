@@ -6,6 +6,8 @@
 // ── 전역 상수/변수 ──
 const CELL_SIZE = 26;
 const SPACING   = 30;
+const DEFAULT_STAGE_W = 1280;
+const DEFAULT_STAGE_H = 832;
 
 window.cells                 = [];
 window.archiveData           = [];
@@ -16,11 +18,35 @@ window.lastSecondSpeedTarget = 0;
 window.tempBackspaceFlag     = false;
 window.tempText              = '';
 
+function getCanvasContainerSize(containerId) {
+  const container = document.getElementById(containerId);
+  const w = container ? container.clientWidth : window.innerWidth;
+  const h = container ? container.clientHeight : window.innerHeight;
+
+  return {
+    w: Math.max(1, Math.round(w || DEFAULT_STAGE_W)),
+    h: Math.max(1, Math.round(h || DEFAULT_STAGE_H))
+  };
+}
+
+function fitP5CanvasToContainer(containerId) {
+  const { w, h } = getCanvasContainerSize(containerId);
+  const p5cvs = document.getElementById('p5-knit-canvas');
+
+  if (width !== w || height !== h) resizeCanvas(w, h);
+  if (p5cvs) {
+    p5cvs.style.width = `${w}px`;
+    p5cvs.style.height = `${h}px`;
+  }
+
+  return { w, h };
+}
+
 // ── p5 라이프사이클 ──
 
 function setup() {
   pixelDensity(displayDensity());
-  let cvs = createCanvas(1280, 832);
+  let cvs = createCanvas(DEFAULT_STAGE_W, DEFAULT_STAGE_H);
   cvs.elt.id = 'p5-knit-canvas';
 
   cvs.parent('knit-canvas-container');
@@ -123,7 +149,17 @@ function draw() {
 
 function windowResized() {
   pixelDensity(displayDensity());
-  resizeCanvas(1280, 832);
+  if (!window.state) return;
+
+  if (window.state.currentScreen === 'p9') {
+    fitP5CanvasToContainer('knit-canvas-container');
+    redraw();
+  } else if (window.state.currentScreen === 'p18') {
+    fitP5CanvasToContainer('p18-canvas-container');
+    redraw();
+  } else if (window.state.currentScreen === 'p12' || window.state.currentScreen === 'p14') {
+    if (typeof window.knitSketch_renderPreview === 'function') window.knitSketch_renderPreview();
+  }
 }
 
 function mousePressed() {
@@ -170,8 +206,6 @@ window.knitSketch_onP9Enter = function() {
     p5cvs.style.position = 'absolute';
     p5cvs.style.top = '0';
     p5cvs.style.left = '0';
-    p5cvs.style.width = '1280px';
-    p5cvs.style.height = '832px';
     p5cvs.style.pointerEvents = 'none';
   }
 
@@ -189,7 +223,7 @@ window.knitSketch_onP9Enter = function() {
   if (window.page_S4) window.page_S4._prevKnitstampLen = 0;
   if (window.page_S4) page_S4.initGridPath();
 
-  resizeCanvas(1280, 832);
+  fitP5CanvasToContainer('knit-canvas-container');
   loop();
 };
 
@@ -213,9 +247,7 @@ window.knitSketch_onP18Enter = function() {
     p5cvs.style.pointerEvents = 'none';
   }
 
-  // 🌟 [핵심 수정] p12/p14에서 작게 줄어들었던 p5.js 내부 도화지 해상도를 
-  // 다시 원래 마스터 크기(1280 x 832)로 팽팽하게 복구해줍니다!
-  resizeCanvas(1280, 832);
+  fitP5CanvasToContainer('p18-canvas-container');
 
   if (window.state && window.state.currentScreen === 'p18') {
     loop();
