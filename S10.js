@@ -1,21 +1,11 @@
 (function () {
-  const emotionLegend = [
-    { name: '짜증', hue: 0 },
-    { name: '중립', hue: 51 },
-    { name: '해탈', hue: 103 },
-    { name: '미묘함', hue: 154 },
-    { name: '슬픔', hue: 206 },
-    { name: '긴장', hue: 257 },
-    { name: '놀람', hue: 309 }
-  ];
-
   const exampleParts = [
-    { text: '아니 자료 어디감', tag: '놀람', speed: 0.72, tension: 0.64 },
-    { text: '나 분명히 올렸는데', tag: '중립', speed: 0.46, tension: 0.32 },
-    { text: '내 거만 없어짐', tag: '짜증', speed: 0.82, tension: 0.78 },
-    { text: '마감 두 시간 남았는데', tag: '긴장', speed: 0.66, tension: 0.72 },
-    { text: '하 일단 다시 할게', tag: '해탈', speed: 0.58, tension: 0.28 },
-    { text: '진짜 개빡치네', tag: '짜증', speed: 0.86, tension: 0.82 }
+    { text: '아니 팀플 파일 어디감', tag: '놀람', speed: 0.72, tension: 0.64 },
+    { text: '나 진짜 분명히 올렸다고', tag: '짜증', speed: 0.82, tension: 0.78 },
+    { text: '왜 내 파트만 증발함', tag: '짜증', speed: 0.86, tension: 0.82 },
+    { text: '마감 두시간 남은거 실화냐', tag: '긴장', speed: 0.66, tension: 0.72 },
+    { text: '하 일단 내가 다시 함', tag: '해탈', speed: 0.58, tension: 0.28 },
+    { text: '근데 진짜 개열받음', tag: '짜증', speed: 0.90, tension: 0.86 }
   ];
 
   function clamp(value, min, max) {
@@ -56,14 +46,6 @@
     if (tag === '슬픔') return 206;
     if (tag === '긴장') return 257;
     return 154;
-  }
-
-  function colorForTag(tag) {
-    const matchingPart = exampleParts.find((part) => part.tag === tag);
-    const samplePart = matchingPart || { tag, speed: 0.62, tension: 0.5 };
-    const sampleCell = makeCell('', samplePart, 0);
-    const [r, g, b] = hsbToRgb(sampleCell.bgHue, sampleCell.sat / 100, sampleCell.bgBri / 100);
-    return `rgb(${r},${g},${b})`;
   }
 
   function stitchHueShift(index) {
@@ -110,48 +92,35 @@
     return cells;
   }
 
-  function renderLegend() {
-    const legend = document.getElementById('p10-preview-legend');
-    if (!legend || legend.dataset.rendered === 'true') return;
+  function buildPreviewPath(count) {
+    const path = [];
 
-    const frag = document.createDocumentFragment();
-    emotionLegend.forEach((sample) => {
-      const item = document.createElement('div');
-      item.className = 'preview-legend-item';
+    path.push({ r: 0, c: 0, w: 1 });
+    for (let c = 0; c < 3; c += 1) path.push({ r: 1, c, w: 3 });
+    for (let c = 0; c < 5; c += 1) path.push({ r: 2, c, w: 5 });
+    for (let c = 0; c < 7; c += 1) path.push({ r: 3, c, w: 7 });
+    for (let c = 0; c < 9; c += 1) path.push({ r: 4, c, w: 9 });
 
-      const swatch = document.createElement('span');
-      swatch.className = 'preview-swatch';
-      swatch.style.backgroundColor = colorForTag(sample.name);
+    let row = 5;
+    while (path.length < count) {
+      for (let c = 0; c < 10 && path.length < count; c += 1) path.push({ r: row, c, w: 10 });
+      row += 1;
+    }
 
-      const label = document.createElement('span');
-      label.textContent = sample.name;
-
-      item.appendChild(swatch);
-      item.appendChild(label);
-      frag.appendChild(item);
-    });
-
-    legend.appendChild(frag);
-    legend.dataset.rendered = 'true';
+    return path.slice(0, count);
   }
 
-  function renderExampleText() {
-    const target = document.getElementById('p10-preview-text');
-    if (!target || target.dataset.rendered === 'true') return;
-
-    const frag = document.createDocumentFragment();
-    exampleParts.forEach((part) => {
-      const segment = document.createElement('span');
-      segment.className = 'preview-text-segment';
-      segment.style.borderColor = colorForTag(part.tag);
-      segment.style.color = colorForTag(part.tag);
-      segment.textContent = part.text;
-      segment.title = part.tag;
-      frag.appendChild(segment);
+  function buildPreviewPositions(count, metrics) {
+    return buildPreviewPath(count).map((pos) => {
+      const startX = metrics.centerX - ((pos.w - 1) * metrics.spacing) / 2;
+      return {
+        x: startX + pos.c * metrics.spacing,
+        y: metrics.baseY + pos.r * metrics.spacing,
+        r: pos.r,
+        c: pos.c,
+        w: pos.w
+      };
     });
-
-    target.appendChild(frag);
-    target.dataset.rendered = 'true';
   }
 
   function drawRoundedRect(ctx, x, y, w, h, radius) {
@@ -171,10 +140,11 @@
   }
 
   function drawKnitCell(ctx, cell, idx, metrics) {
-    const col = idx % 10;
-    const row = Math.floor(idx / 10);
-    const px = metrics.startX + col * metrics.spacing;
-    const py = metrics.startY + row * metrics.spacing;
+    const position = metrics.positions[idx];
+    if (!position) return;
+
+    const px = position.x;
+    const py = position.y;
     const [bgR, bgG, bgB] = hsbToRgb(cell.bgHue, cell.sat / 100, cell.bgBri / 100);
     const [stR, stG, stB] = hsbToRgb(cell.stitchHue, cell.sat / 100, cell.stitchBri / 100);
     const isFilled = cell.speed >= 0.6;
@@ -237,42 +207,101 @@
     }
   }
 
-  function drawThreadBase(ctx, metrics, cellCount) {
-    const rows = Math.ceil(cellCount / 10);
-    const left = metrics.startX - metrics.cellSize * 0.72;
-    const right = metrics.startX + 9 * metrics.spacing + metrics.cellSize * 0.72;
+  function drawThreadBase(ctx, metrics) {
+    const rows = [];
+
+    metrics.positions.forEach((position) => {
+      if (!rows[position.r]) rows[position.r] = [];
+      rows[position.r].push(position);
+    });
 
     ctx.save();
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
-    for (let row = 0; row < rows; row += 1) {
-      const y = metrics.startY + row * metrics.spacing;
+    rows.forEach((rowPositions, row) => {
+      const sorted = rowPositions.slice().sort((a, b) => a.x - b.x);
+      const y = sorted[0].y;
+      const left = sorted[0].x - metrics.cellSize * 0.72;
+      const right = sorted[sorted.length - 1].x + metrics.cellSize * 0.72;
+
       ctx.strokeStyle = row % 2 === 0 ? 'rgba(182,158,122,0.36)' : 'rgba(231,225,216,0.74)';
       ctx.lineWidth = 7;
       ctx.beginPath();
       ctx.moveTo(left, y + 1);
-      for (let col = 0; col < 10; col += 1) {
-        const x = metrics.startX + col * metrics.spacing;
+      sorted.forEach((position) => {
+        const x = position.x;
         ctx.quadraticCurveTo(x - 12, y - 8, x, y + 1);
         ctx.quadraticCurveTo(x + 12, y + 10, x + 24, y + 1);
-      }
+      });
       ctx.lineTo(right, y + 1);
       ctx.stroke();
-    }
+    });
 
     ctx.strokeStyle = 'rgba(182,158,122,0.28)';
     ctx.lineWidth = 4;
     for (let col = 0; col < 10; col += 1) {
-      const x = metrics.startX + col * metrics.spacing;
+      const x = metrics.centerX - 4.5 * metrics.spacing + col * metrics.spacing;
       ctx.beginPath();
-      ctx.moveTo(x - 2, metrics.startY - 28);
-      for (let row = 0; row < rows; row += 1) {
-        const y = metrics.startY + row * metrics.spacing;
+      ctx.moveTo(x - 2, metrics.baseY - 28);
+      rows.forEach((rowPositions) => {
+        const y = rowPositions[0].y;
         ctx.quadraticCurveTo(x + 7, y - 12, x - 2, y + 4);
-      }
+      });
       ctx.stroke();
     }
+
+    ctx.restore();
+  }
+
+  function drawSingleNeedle(ctx, heatIntensity, length) {
+    const grad = ctx.createLinearGradient(0, -25, 0, length);
+    const r = Math.round(225 + (255 - 225) * heatIntensity);
+    const g = Math.round(215 + (80 - 215) * heatIntensity);
+    const b = Math.round(195 + (80 - 195) * heatIntensity);
+
+    grad.addColorStop(0, `rgb(${r}, ${g}, ${b})`);
+    grad.addColorStop(1, 'rgb(225, 205, 175)');
+
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(-3, -25);
+    ctx.lineTo(3, -25);
+    ctx.lineTo(7, length);
+    ctx.lineTo(-7, length);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(0, -25, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = 'rgb(225, 215, 195)';
+    ctx.beginPath();
+    ctx.arc(0, length, 7, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawNeedles(ctx, metrics) {
+    const centerX = metrics.centerX;
+    const centerY = metrics.baseY - metrics.cellSize * 0.8 - 18;
+    const length = 410;
+
+    ctx.save();
+    ctx.translate(centerX, centerY);
+    ctx.globalAlpha = 0.9;
+
+    ctx.save();
+    ctx.rotate(Math.PI / 4 - 0.04);
+    ctx.translate(0, 6);
+    drawSingleNeedle(ctx, 0, length);
+    ctx.restore();
+
+    ctx.save();
+    ctx.rotate(-Math.PI / 4 + 0.04);
+    ctx.translate(0, -3);
+    drawSingleNeedle(ctx, 0, length);
+    ctx.restore();
 
     ctx.restore();
   }
@@ -280,30 +309,68 @@
   function drawPreviewGrid(container) {
     container.innerHTML = '';
     const canvas = document.createElement('canvas');
-    canvas.width = 500;
-    canvas.height = 430;
+    canvas.width = 660;
+    canvas.height = 540;
     canvas.className = 'preview-canvas';
     container.appendChild(canvas);
+
+    const facePreview = document.createElement('div');
+    facePreview.className = 'preview-face-popover';
+
+    const faceFrame = document.createElement('div');
+    faceFrame.className = 'preview-face-frame';
+
+    const faceImg = document.createElement('img');
+    faceImg.src = 'images/face_detact.png';
+    faceImg.alt = '';
+    faceFrame.appendChild(faceImg);
+
+    const faceText = document.createElement('div');
+    faceText.className = 'preview-face-text';
+    faceText.innerHTML = '<strong>캠 예시 화면</strong><span>실제 입력시 카메라는 보이지 않아요!</span>';
+
+    facePreview.appendChild(faceFrame);
+    facePreview.appendChild(faceText);
+    const screen = document.getElementById('p10');
+    (screen || container).appendChild(facePreview);
 
     const ctx = canvas.getContext('2d');
     const metrics = {
       spacing: 42,
       cellSize: 36,
-      startX: 40,
-      startY: 38
+      centerX: canvas.width / 2,
+      baseY: 150,
+      positions: []
     };
 
     const cells = buildCells();
+    metrics.positions = buildPreviewPositions(cells.length, metrics);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawThreadBase(ctx, metrics, cells.length);
+    drawThreadBase(ctx, metrics);
     cells.forEach((cell, idx) => drawKnitCell(ctx, cell, idx, metrics));
+    drawNeedles(ctx, metrics);
+
+    canvas.addEventListener('mousemove', (event) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const x = (event.clientX - rect.left) * scaleX;
+      const y = (event.clientY - rect.top) * scaleY;
+      const hit = metrics.positions.some((position) => {
+        return Math.abs(x - position.x) <= metrics.cellSize / 2 &&
+          Math.abs(y - position.y) <= metrics.cellSize / 2;
+      });
+
+      facePreview.classList.toggle('visible', hit);
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      facePreview.classList.remove('visible');
+    });
   }
 
   window.page_S10 = {
     render: function () {
-      renderLegend();
-      renderExampleText();
-
       const grid = document.getElementById('p10-preview-grid');
       if (!grid) return;
       drawPreviewGrid(grid);

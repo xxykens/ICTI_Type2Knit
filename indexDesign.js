@@ -682,6 +682,28 @@ function getP18ScreenSize() {
   };
 }
 
+function _setupHiDPICanvas(cvs, cssW, cssH) {
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  cvs.width = Math.round(cssW * dpr);
+  cvs.height = Math.round(cssH * dpr);
+  cvs.style.width = `${cssW}px`;
+  cvs.style.height = `${cssH}px`;
+  cvs._cssWidth = cssW;
+  cvs._cssHeight = cssH;
+  cvs._dpr = dpr;
+
+  const ctx = cvs.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return ctx;
+}
+
+function _getCanvasCssSize(cvs) {
+  return {
+    w: Math.max(1, cvs._cssWidth || Math.round(cvs.clientWidth) || cvs.width),
+    h: Math.max(1, cvs._cssHeight || Math.round(cvs.clientHeight) || cvs.height)
+  };
+}
+
 function renderP18Cards(pieces) {
   const track = document.getElementById('p18-track');
   const empty = document.getElementById('p18-empty');
@@ -726,14 +748,14 @@ function renderP18Cards(pieces) {
 
     // 뜨개 패턴 canvas — 카드 실제 픽셀 크기로
     const cvs = document.createElement('canvas');
-    cvs.width  = P18_CARD_W;
-    cvs.height = CARD_H - 90; // 하단 라벨 영역 제외
+    const cardCanvasH = CARD_H - 60;
+    _setupHiDPICanvas(cvs, P18_CARD_W, cardCanvasH);
     cvs.style.cssText = `
       display: block;
       position: absolute;
       top: 0; left: 0;
-      width: 100%;
-      height: calc(100% - 60px);
+      width: ${P18_CARD_W}px;
+      height: ${cardCanvasH}px;
     `;
     card.appendChild(cvs);
 
@@ -768,8 +790,9 @@ function renderP18Cards(pieces) {
 
 function _drawCardPattern(cvs, piece) {
   const ctx = cvs.getContext('2d');
-  const W = cvs.width;
-  const H = cvs.height;
+  const dpr = cvs._dpr || 1;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const { w: W, h: H } = _getCanvasCssSize(cvs);
   ctx.clearRect(0, 0, W, H);
 
   const gridData = piece.knitArray || piece.cells || [];
@@ -1002,8 +1025,7 @@ function openP18Overlay(piece, sourceCvs) {
   const overlayH = Math.max(getP18ScreenSize().h - 80, totalRows * SP + SP);
 
   const bigCvs = document.createElement('canvas');
-  bigCvs.width  = overlayW;
-  bigCvs.height = overlayH;
+  _setupHiDPICanvas(bigCvs, overlayW, overlayH);
   bigCvs.style.cssText = `
     display: block;
     border-radius: 14px;
@@ -1187,8 +1209,8 @@ function openP18Overlay(piece, sourceCvs) {
   const _tagMapKo = { FROWN: '짜증', SURPRISED: '놀람', BLURRY: '미묘함', NEUTRAL: '중립' };
   bigCvs.addEventListener('mousemove', (e) => {
     const r = bigCvs.getBoundingClientRect();
-    const mx = (e.clientX - r.left) * (bigCvs.width / r.width);
-    const my = (e.clientY - r.top) * (bigCvs.height / r.height);
+    const mx = e.clientX - r.left;
+    const my = e.clientY - r.top;
     _cvsMx = mx; _cvsMy = my;
     if (cb2.checked) {
       // 각 태그의 목표 오프셋 갱신
@@ -1269,6 +1291,8 @@ function _p18DrawCardBig(cvs, piece, W, H, showText, showEmotionInfo, mx, my, ta
   textFade    = textFade    !== undefined ? textFade    : (showText        ? 1 : 0);
   emotionFade = emotionFade !== undefined ? emotionFade : (showEmotionInfo ? 1 : 0);
   const ctx = cvs.getContext('2d');
+  const dpr = cvs._dpr || 1;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, W, H);
 
   ctx.fillStyle = '#E8E5E0';
