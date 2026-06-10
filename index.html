@@ -8,7 +8,12 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
   </head>
   <body class="is-landing">
-    <button class="site-logo-placeholder" type="button" onclick="goTo('p1')" aria-label="홈으로"></button>
+    <header class="site-header">
+      <nav class="site-nav" aria-label="상단 네비게이션">
+        <button class="site-logo-placeholder" type="button" onclick="goTo('p1')" aria-label="홈으로"></button>
+        <div class="site-tagline">감정이∙패턴이∙되는∙순간</div>
+      </nav>
+    </header>
 
 <!-- P1 – LANDING -->
 <div id="p1" class="screen active">
@@ -107,9 +112,9 @@
         </div>
         <div class="p2-card-desc">이름과 내용없이<br>뜨개작품만 남습니다.</div>
       </div>
-      <div class="p2-card" id="card-private" onclick="selectPrivacy('private')" style="padding-left:10px;padding-right:10px;">
+      <div class="p2-card" id="card-private" onclick="selectPrivacy('private')">
         <div class="p2-card-title">비공개</div>
-        <div class="p2-card-items" style="padding:0 20px;">
+        <div class="p2-card-items">
           <span class="always-gray">• 닉네임</span><span class="always-gray">• 텍스트</span>
           <span class="always-gray">• 뜨개</span><span class="always-gray">• 태그</span>
         </div>

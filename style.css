@@ -19,7 +19,7 @@
       --landing-button-width: 318px;
       --landing-button-height: 80px;
       --stage-min-width: 1080px;
-      --stage-min-height: 832px;
+      --stage-min-height: 700px;
     }
 
     html {
@@ -40,7 +40,7 @@
       overflow: visible;
     }
 
-    @media (max-width: 1079px), (max-height: 831px) {
+    @media (max-width: 1079px), (max-height: 699px) {
       html {
         overflow: auto;
       }
@@ -71,17 +71,28 @@
     }
 
     /* ── COMMON ── */
-    .site-logo-placeholder {
-      position: fixed;
+    .site-header {
+      position: absolute;
       top: 24px;
       left: 32px;
+      right: 36px;
+      z-index: 1000;
+    }
+
+    .site-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .site-logo-placeholder {
       width: 190px;
       height: 58px;
       border: 1.5px solid rgba(124, 119, 113, 0.55);
       background: rgba(255, 255, 255, 0.72);
       border-radius: 4px;
       cursor: pointer;
-      z-index: 1000;
       padding: 0;
       appearance: none;
       transition: background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
@@ -92,17 +103,23 @@
       border-color: rgba(124, 119, 113, 0.85);
     }
 
+    body.is-landing .site-nav {
+      justify-content: flex-end;
+    }
+
     body.is-landing .site-logo-placeholder {
       display: none;
     }
 
-    .top-brand {
-      position: absolute;
-      top: 28px; right: 36px;
+    .site-tagline {
       font-size: 26px;
       color: var(--mid-gray);
       letter-spacing: 0.05em;
       font-weight: 300;
+    }
+
+    .top-brand {
+      display: none;
     }
 
     /* ── INTRO ANIMATIONS ── */
@@ -154,27 +171,32 @@
     }
     #p1 .preview-tag:hover { color: rgba(0,0,0,0.8); }
 
-    #p1 h1 {
+    #p1 .p1-title {
       position: absolute;
-      top: 260px; left: 80px;
+      top: 50%;
+      left: 80px;
+      transform: translateY(-50%);
+      z-index: 2;
+    }
+
+    #p1 h1 {
       font-size: 90px; font-weight: 700;
       line-height: 1; letter-spacing: 0.1em;
     }
 
     #p1 .desc {
-      position: absolute;
-      top: 400px; left: 85px;
+      margin-top: 50px;
+      margin-left: 5px;
       font-size: 32px; line-height: 50px;
       letter-spacing: 0.1em;
     }
 
     #p1 .p1-actions {
-      position: absolute;
-      left: 85px; top: 627px;
+      margin-top: 77px;
+      margin-left: 5px;
       display: flex;
       gap: 20px;
       align-items: center;
-      z-index: 2;
     }
 
     #p1 .enter-btn,
@@ -369,108 +391,133 @@
     /* ════════════════════════════════
        P2 – NICKNAME / PRIVACY
     ════════════════════════════════ */
-    #p2 { position: relative; }
-    #p2 { --p2-content-width: 840px; }
+    #p2 {
+      position: relative;
+      --p2-content-width: 720px;
+      --p2-border-width: 1.5px;
+      --p2-selected-border-width: 2px;
+      --p2-border-color: #7C7771;
+      --p2-selected-border-color: #333;
+    }
 
-    .p2-inner {
+    #p2 .p2-inner {
       position: absolute;
       top: 50%; left: 50%;
       width: var(--p2-content-width);
-      height: 576px;
+      height: auto;
       transform: translate(-50%, -50%);
       display: flex; flex-direction: column;
       align-items: center;
     }
 
-    .p2-title {
+    #p2 .p2-title {
       width: var(--p2-content-width);
-      font-size: 44px; font-weight: 400;
-      letter-spacing: 0; margin-bottom: 24px;
+      font-size: 40px;
+      font-weight: 400;
+      letter-spacing: 0;
+      margin-bottom: 12px;
     }
 
-    .p2-input-wrap {
-      width: var(--p2-content-width); height: 92px;
-      border: 1.82px solid #7C7771;
+    #p2 .p2-input-wrap {
+      width: var(--p2-content-width);
+      padding: 16px 12px;
+      border: var(--p2-border-width) solid var(--p2-border-color);
       border-radius: 11px;
       display: flex; align-items: center;
       margin-bottom: 14px;
+      transition: border-color 0.2s, border-width 0.2s, background 0.2s;
     }
 
-    .p2-input {
+    #p2 .p2-input-wrap:focus-within {
+      border-color: var(--p2-selected-border-color);
+      border-width: var(--p2-selected-border-width);
+    }
+
+    #p2 .p2-input {
       border: none; outline: none;
-      font-size: 30px; font-family: inherit;
+      font-size: 28px; font-family: inherit;
       width: 100%; background: transparent;
       padding-left: 3%; letter-spacing: 0.1em;
     }
-    .p2-input-wrap:has(input:disabled) {
+    #p2 .p2-input-wrap:has(input:disabled) {
       background: #e9e8e8;
     }
 
-    .p2-input:disabled {color:#8a8a8a}
+    #p2 .p2-input:disabled {color:#8a8a8a}
 
-    .p2-hint {
+    #p2 .p2-hint {
       width: var(--p2-content-width);
-      font-size: 24px; color: #8a8a8a;
+      font-size: 22px; color: #8a8a8a;
       margin-bottom: 24px;
       display: flex; align-items: center;
       letter-spacing: 0.05em;
     }
-    .p2-hint span:last-child { margin-left: auto; color: #aaa; }
+    #p2 .p2-hint span:last-child { margin-left: auto; color: #aaa; }
 
-    .p2-cards {
+    #p2 .p2-cards {
       width: var(--p2-content-width);
       padding-top: 10px;
       display: flex;
-      gap: auto;
+      gap: 12px;
       flex: 0 0 auto;
-      align-items: start;
+      align-items: flex-start;
       justify-content: space-between;    
     }
 
-    .p2-card {
-      border: 2px solid #7C7771;
+    #p2 .p2-card {
+      border: var(--p2-border-width) solid var(--p2-border-color);
       border-radius: 12px;
-      padding: 34px 32px;
+      padding: 32px 10px;
       cursor: pointer;
       display: flex; flex-direction: column; gap: 25px;
-      width: 268px; height: 330px;
-      transition: background 0.2s;
+      width: 232px;
+      transition: background 0.2s, border-color 0.2s, border-width 0.2s;
     }
-    .p2-card:hover { background: #f5f3f0; }
-    .p2-card.selected { border-color: #333; background: #f5f3f0; }
+    #p2 .p2-card:hover { background: #f5f3f0; }
+    #p2 .p2-card.selected {
+      border-color: var(--p2-selected-border-color);
+      border-width: var(--p2-selected-border-width);
+      background: #f5f3f0;
+    }
 
-    .p2-card-title {
-      font-size: 36px; font-weight: 400;
+    #p2 .p2-card-title {
+      font-size: 32px; font-weight: 400;
       text-align: center; letter-spacing: 0.1em;
+      color: #9a9a9a;
     }
 
-    .p2-card-items {
+    #p2 .p2-card.selected .p2-card-title {
+      color: #333;
+    }
+
+    #p2 .p2-card-items {
       display: grid; grid-template-columns: 1fr 1fr;
-      gap: 6px 8px; font-size: 20px;
+      gap: 6px 8px; font-size: 18px;
+      padding: 0px 16px;
       color: #bbb; letter-spacing: 0.05em;
     }
-    .p2-card.selected .p2-card-items { color: #555; }
-    .p2-card-items span.always-gray { color: #bbb !important; }
+    #p2 .p2-card.selected .p2-card-items { color: #555; }
+    #p2 .p2-card-items span.always-gray { color: #bbb !important; }
 
-    .p2-card-desc {
-      font-size: 20px; color: #aaa;
+    #p2 .p2-card-desc {
+      font-size: 18px; color: #aaa;
       text-align: center; line-height: 1.7;
       letter-spacing: 0.05em;
     }
-    .p2-card.selected .p2-card-desc { color: #555; }
+    #p2 .p2-card.selected .p2-card-desc { color: #555; }
 
-    .p2-confirm {
+    #p2 .p2-confirm {
       position: absolute;
       right: 60px; bottom: 32px;
       width: 120px; height: 121px;
       cursor: pointer;
       display: flex; align-items: center; justify-content: center;
     }
-    .p2-confirm img {
+    #p2 .p2-confirm img {
       width: 120px;
       display: block;
     }
-    .p2-confirm:hover { opacity: 0.85; }
+    #p2 .p2-confirm:hover { opacity: 0.85; }
 
     /* ════════════════════════════════
        P6 – CALIBRATION
