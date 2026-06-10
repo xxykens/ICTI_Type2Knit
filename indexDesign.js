@@ -4,6 +4,7 @@ const state = {
   charCount: 0,
   currentScreen: 'p1'
 };
+const LOGO_HIDDEN_SCREENS = new Set(['p1', 'p11', 'p12', 'p14']);
 window.state = state;
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && document.getElementById('p18-overlay-backdrop')) {
@@ -29,6 +30,7 @@ function goTo(id) {
   next.classList.add('active');
   state.currentScreen = id;
   document.body.classList.toggle('is-landing', id === 'p1');
+  document.body.classList.toggle('is-logo-hidden', LOGO_HIDDEN_SCREENS.has(id));
   onScreenEnter(id);
 }
 
@@ -658,7 +660,9 @@ function handleRegister() {
   if (!window.page_S5) return;
   const doUpload = () => window.page_S5.handleUpload(state.nickname, state.privacy);
   if (!window.page_S5.db) {
-    window.page_S5.initDB().then(doUpload);
+    window.page_S5.initDB()
+      .then(doUpload)
+      .catch(() => alert('아카이브 저장소를 열 수 없습니다. 잠시 후 다시 시도해주세요.'));
   } else {
     doUpload();
   }
