@@ -369,7 +369,7 @@
       width: 104px;
       height: 104px;
       flex: 0 0 104px;
-      border-radius: 18px;
+      border-radius: 22px;
       background: #fff;
       border: 2px solid rgba(182,158,122,0.34);
       display: flex;
@@ -378,10 +378,39 @@
       overflow: hidden;
     }
 
-    #p10 .preview-face-frame img {
-      width: 78px;
+    #p10 .preview-face-icon {
+      width: 96px;
       height: auto;
       display: block;
+      overflow: visible;
+    }
+
+    #p10 .preview-face-icon .face-corners,
+    #p10 .preview-face-icon .face-lines {
+      fill: none;
+      stroke: #756f68;
+      stroke-width: 4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    #p10 .preview-face-icon .face-corners {
+      stroke-width: 4;
+    }
+
+    #p10 .preview-face-icon .face-brow {
+      stroke-width: 3.2;
+    }
+
+    #p10 .preview-face-icon .face-eye {
+      stroke-width: 5;
+    }
+
+    #p10 .preview-face-icon .face-open-eye,
+    #p10 .preview-face-icon .face-open-mouth {
+      fill: none;
+      stroke: #756f68;
+      stroke-width: 3.8;
     }
 
     #p10 .preview-face-text {
@@ -397,6 +426,19 @@
       font-size: 26px;
       font-weight: 700;
       color: rgba(0,0,0,0.72);
+    }
+
+    #p10 .preview-face-text em {
+      display: inline-flex;
+      align-items: center;
+      align-self: flex-start;
+      min-height: 26px;
+      padding: 0 10px 2px;
+      border-radius: 999px;
+      background: rgba(122,184,200,0.12);
+      color: rgba(0,0,0,0.58);
+      font-size: 17px;
+      font-style: normal;
     }
 
     #p10 .preview-face-text span {

@@ -1,11 +1,10 @@
 (function () {
   const exampleParts = [
-    { text: '아니 팀플 파일 어디감', tag: '놀람', speed: 0.72, tension: 0.64 },
-    { text: '나 진짜 분명히 올렸다고', tag: '짜증', speed: 0.82, tension: 0.78 },
-    { text: '왜 내 파트만 증발함', tag: '짜증', speed: 0.86, tension: 0.82 },
-    { text: '마감 두시간 남은거 실화냐', tag: '긴장', speed: 0.66, tension: 0.72 },
-    { text: '하 일단 내가 다시 함', tag: '해탈', speed: 0.58, tension: 0.28 },
-    { text: '근데 진짜 개열받음', tag: '짜증', speed: 0.90, tension: 0.86 }
+    { text: '아니파일보내라고한지가언젠데', tag: '긴장', speed: 0.86, tension: 0.82 },
+    { text: '눈감아주는것도하루이틀이지', tag: '짜증', speed: 0.82, tension: 0.78 },
+    { text: '잠수타고연락씹고', tag: '긴장', speed: 0.68, tension: 0.74 },
+    { text: '수업안오면해결이되나', tag: '놀람', speed: 0.72, tension: 0.64 },
+    { text: '그냥내가해야되나', tag: '슬픔', speed: 0.46, tension: 0.42 }
   ];
 
   function clamp(value, min, max) {
@@ -306,6 +305,82 @@
     ctx.restore();
   }
 
+  function faceSvgForTag(tag) {
+    const label = tag || '미묘함';
+    const faceBase = `
+      <path class="face-corner" d="M22 50 V34 C22 27 27 22 34 22 H50"/>
+      <path class="face-corner" d="M90 22 H106 C113 22 118 27 118 34 V50"/>
+      <path class="face-corner" d="M118 90 V106 C118 113 113 118 106 118 H90"/>
+      <path class="face-corner" d="M50 118 H34 C27 118 22 113 22 106 V90"/>
+    `;
+    const nose = `<path class="face-nose" d="M70 58 C68 70 79 76 70 83 C66 86 62 86 58 86"/>`;
+    const parts = {
+      '짜증': `
+        <path class="face-brow" d="M48 50 L62 55"/>
+        <path class="face-brow" d="M92 50 L78 55"/>
+        <path class="face-eye" d="M56 64 V72"/>
+        <path class="face-eye" d="M84 64 V72"/>
+        ${nose}
+        <path class="face-mouth" d="M57 101 C64 95 77 95 84 101"/>
+      `,
+      '긴장': `
+        <path class="face-brow" d="M48 48 C53 45 59 45 64 48"/>
+        <path class="face-brow" d="M76 48 C82 45 88 45 93 48"/>
+        <path class="face-eye" d="M56 64 V72"/>
+        <path class="face-eye" d="M84 64 V72"/>
+        ${nose}
+        <path class="face-mouth" d="M57 99 C62 97 66 101 70 99 C75 97 79 101 84 99"/>
+      `,
+      '놀람': `
+        <path class="face-brow" d="M49 47 C54 44 60 44 65 47"/>
+        <path class="face-brow" d="M75 47 C81 44 87 44 92 47"/>
+        <circle class="face-open-eye" cx="56" cy="67" r="3.5"/>
+        <circle class="face-open-eye" cx="84" cy="67" r="3.5"/>
+        <path class="face-nose" d="M70 59 C68 68 76 73 70 80"/>
+        <ellipse class="face-open-mouth" cx="70" cy="98" rx="8.5" ry="10"/>
+      `,
+      '슬픔': `
+        <path class="face-brow" d="M48 53 C54 49 60 49 65 53"/>
+        <path class="face-brow" d="M75 53 C81 49 87 49 93 53"/>
+        <path class="face-eye" d="M56 64 V72"/>
+        <path class="face-eye" d="M84 64 V72"/>
+        ${nose}
+        <path class="face-mouth" d="M57 103 C64 97 77 97 85 103"/>
+      `,
+      '해탈': `
+        <path class="face-brow" d="M49 51 C55 49 61 49 66 51"/>
+        <path class="face-brow" d="M74 51 C80 49 86 49 92 51"/>
+        <path class="face-eye" d="M51 68 C56 71 61 71 66 68"/>
+        <path class="face-eye" d="M74 68 C80 71 85 71 90 68"/>
+        ${nose}
+        <path class="face-mouth" d="M57 96 C64 101 77 101 85 96"/>
+      `,
+      '중립': `
+        <path class="face-eye" d="M56 63 V72"/>
+        <path class="face-eye" d="M84 63 V72"/>
+        ${nose}
+        <path class="face-mouth" d="M59 98 C66 101 76 101 83 98"/>
+      `,
+      '미묘함': `
+        <path class="face-brow" d="M49 50 H64"/>
+        <path class="face-brow" d="M77 48 L91 52"/>
+        <path class="face-eye" d="M56 63 V72"/>
+        <path class="face-eye" d="M84 63 V72"/>
+        ${nose}
+        <path class="face-mouth" d="M58 99 C65 102 75 96 84 99"/>
+      `
+    };
+
+    return `
+      <svg class="preview-face-icon" viewBox="0 0 140 140" role="img" aria-label="${label} 표정">
+        <g class="face-corners">${faceBase}</g>
+        <g class="face-lines">
+          ${parts[label] || parts['미묘함']}
+        </g>
+      </svg>
+    `;
+  }
+
   function drawPreviewGrid(container) {
     container.innerHTML = '';
     const canvas = document.createElement('canvas');
@@ -314,24 +389,24 @@
     canvas.className = 'preview-canvas';
     container.appendChild(canvas);
 
+    const screen = document.getElementById('p10');
+    const oldFacePreview = screen && screen.querySelector('.preview-face-popover');
+    if (oldFacePreview) oldFacePreview.remove();
+
     const facePreview = document.createElement('div');
     facePreview.className = 'preview-face-popover';
 
     const faceFrame = document.createElement('div');
     faceFrame.className = 'preview-face-frame';
 
-    const faceImg = document.createElement('img');
-    faceImg.src = 'images/face_detact.png';
-    faceImg.alt = '';
-    faceFrame.appendChild(faceImg);
+    faceFrame.innerHTML = faceSvgForTag('중립');
 
     const faceText = document.createElement('div');
     faceText.className = 'preview-face-text';
-    faceText.innerHTML = '<strong>캠 예시 화면</strong><span>실제 입력시 카메라는 보이지 않아요!</span>';
+    faceText.innerHTML = '<strong>캠 예시 화면</strong><em>중립</em><span>실제 입력시 카메라는 보이지 않아요!</span>';
 
     facePreview.appendChild(faceFrame);
     facePreview.appendChild(faceText);
-    const screen = document.getElementById('p10');
     (screen || container).appendChild(facePreview);
 
     const ctx = canvas.getContext('2d');
@@ -350,17 +425,29 @@
     cells.forEach((cell, idx) => drawKnitCell(ctx, cell, idx, metrics));
     drawNeedles(ctx, metrics);
 
+    let currentFaceTag = '';
+    const updateFacePreview = (tag) => {
+      if (!tag || currentFaceTag === tag) return;
+      currentFaceTag = tag;
+      faceFrame.innerHTML = faceSvgForTag(tag);
+      const emotion = faceText.querySelector('em');
+      if (emotion) emotion.textContent = tag;
+      facePreview.dataset.emotion = tag;
+    };
+
     canvas.addEventListener('mousemove', (event) => {
       const rect = canvas.getBoundingClientRect();
       const scaleX = canvas.width / rect.width;
       const scaleY = canvas.height / rect.height;
       const x = (event.clientX - rect.left) * scaleX;
       const y = (event.clientY - rect.top) * scaleY;
-      const hit = metrics.positions.some((position) => {
+      const hoveredIndex = metrics.positions.findIndex((position) => {
         return Math.abs(x - position.x) <= metrics.cellSize / 2 &&
           Math.abs(y - position.y) <= metrics.cellSize / 2;
       });
+      const hit = hoveredIndex !== -1;
 
+      if (hit) updateFacePreview(cells[hoveredIndex].tag);
       facePreview.classList.toggle('visible', hit);
     });
 
