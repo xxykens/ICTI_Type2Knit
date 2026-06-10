@@ -28,6 +28,7 @@ function goTo(id) {
   next.style.display = 'flex';
   next.classList.add('active');
   state.currentScreen = id;
+  document.body.classList.toggle('is-landing', id === 'p1');
   onScreenEnter(id);
 }
 

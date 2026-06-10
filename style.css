@@ -16,6 +16,8 @@
       --mid-gray: #b0ada8;
       --border: #d0cdc8;
       --accent-blue: #7ab8c8;
+      --landing-button-width: 318px;
+      --landing-button-height: 80px;
       --stage-min-width: 1080px;
       --stage-min-height: 832px;
     }
@@ -90,6 +92,10 @@
       border-color: rgba(124, 119, 113, 0.85);
     }
 
+    body.is-landing .site-logo-placeholder {
+      display: none;
+    }
+
     .top-brand {
       position: absolute;
       top: 28px; right: 36px;
@@ -138,19 +144,9 @@
     ════════════════════════════════ */
     #p1 { position: relative; overflow: hidden; }
 
-    #p1 .archive-tag {
-      position: absolute;
-      top: 100px; right: 62px;
-      font-size: 40px; font-weight: 600;
-      color: rgba(0,0,0,0.50);
-      cursor: pointer;
-      z-index: 1;
-    }
-    #p1 .archive-tag:hover { color: rgba(0,0,0,0.8); }
-
     #p1 .preview-tag {
       position: absolute;
-      top: 154px; right: 62px;
+      top: 100px; right: 62px;
       font-size: 40px; font-weight: 600;
       color: rgba(0,0,0,0.50);
       cursor: pointer;
@@ -172,19 +168,48 @@
       letter-spacing: 0.1em;
     }
 
-    #p1 .enter-btn {
+    #p1 .p1-actions {
       position: absolute;
       left: 85px; top: 627px;
-      width: 318px; height: 80px;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      z-index: 2;
+    }
+
+    #p1 .enter-btn,
+    #p1 .archive-tag {
+      flex: 0 0 var(--landing-button-width);
+      width: var(--landing-button-width);
+      height: var(--landing-button-height);
       background: #E7E1D8;
       border: none; border-radius: 10px;
+      color: var(--text);
       font-size: 35px; font-family: inherit;
       letter-spacing: 0.1em;
       cursor: pointer;
-      transition: background 0.2s;
+      position: relative;
+      overflow: hidden;
       display: flex; align-items: center; justify-content: center;
     }
-    #p1 .enter-btn:hover { background: #d5cfc6; }
+    #p1 .enter-btn::after,
+    #p1 .archive-tag::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: #AEA089;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    #p1 .secondary-btn {
+      background: #FAFAFA;
+      border: 1.5px solid #E7E1D8;
+    }
+    #p1 .enter-btn:hover::after,
+    #p1 .archive-tag:hover::after { opacity: 0.08; }
+    #p1 .enter-btn:active::after,
+    #p1 .archive-tag:active::after { opacity: 0.16; }
 
     #p1 .right {
       position: absolute;
@@ -395,11 +420,11 @@
     .p2-cards {
       width: var(--p2-content-width);
       padding-top: 10px;
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 24px;
+      display: flex;
+      gap: auto;
       flex: 0 0 auto;
       align-items: start;
+      justify-content: space-between;    
     }
 
     .p2-card {
