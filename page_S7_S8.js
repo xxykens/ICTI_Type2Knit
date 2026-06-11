@@ -779,6 +779,9 @@ const page_S7_S8 = {
     const textAlpha       = opts.textAlpha        !== undefined ? opts.textAlpha : 1;
 
     // colorMode(HSB) 는 호출부에서 이미 설정했다고 가정
+    // push/pop으로 감싸 fill/stroke/noFill 등 드로잉 상태가
+    // 호출부 바깥(p9 대바늘 렌더링 등)으로 새어나가지 않도록 함
+    push();
     gridData.forEach((cell, idx) => {
       const col  = idx % 10;
       const row  = Math.floor(idx / 10);
@@ -877,6 +880,7 @@ const page_S7_S8 = {
         onHover(cell, posX, posY);
       }
     });
+    pop();
   }
 
 };

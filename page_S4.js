@@ -165,8 +165,9 @@ const page_S4 = {
     grad.addColorStop(0, `rgb(${r}, ${g}, ${b})`);
     grad.addColorStop(1, 'rgb(225, 205, 175)');
 
-    ctx.fillStyle = grad;
+    fill(255);
     noStroke();
+    ctx.fillStyle = grad;
     
     beginShape();
     vertex(-3, -25);   
