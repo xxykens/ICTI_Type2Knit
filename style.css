@@ -16,10 +16,12 @@
       --mid-gray: #b0ada8;
       --border: #d0cdc8;
       --accent-blue: #7ab8c8;
-      --landing-button-width: 318px;
-      --landing-button-height: 80px;
+      --landing-button-width: 270px;
+      --landing-button-height: 68px;
       --stage-min-width: 1080px;
       --stage-min-height: 700px;
+      --stage-width: max(100vw, var(--stage-min-width));
+      --stage-height: max(100vh, var(--stage-min-height));
     }
 
     html {
@@ -30,8 +32,8 @@
 
     body {
       position: relative;
-      width: max(100vw, var(--stage-min-width));
-      height: max(100vh, var(--stage-min-height));
+      width: var(--stage-width);
+      height: var(--stage-height);
       min-width: var(--stage-min-width);
       min-height: var(--stage-min-height);
       font-family: 'HSHwalkong', 'Noto Serif KR', serif;
@@ -50,8 +52,8 @@
     .screen {
       position: absolute;
       top: 0; left: 0;
-      width: max(100vw, var(--stage-min-width));
-      height: max(100vh, var(--stage-min-height));
+      width: var(--stage-width);
+      height: var(--stage-height);
       min-width: var(--stage-min-width);
       min-height: var(--stage-min-height);
       background: #FAFAFA;
@@ -178,19 +180,20 @@
     ════════════════════════════════ */
     #p1 {
       position: relative;
-      width: max(100vw, var(--stage-min-width));
-      height: max(100vh, var(--stage-min-height));
+      width: var(--stage-width);
+      height: var(--stage-height);
       min-width: var(--stage-min-width);
       min-height: var(--stage-min-height);
       overflow: hidden;
       align-items: center;
       justify-content: center;
-      padding: 112px 56px 56px;
+      padding: 112px 40px 56px;
+      background: #FAFAFA url("images/landing-cover.png") center / cover no-repeat;
     }
 
     #p1 .preview-tag {
       position: absolute;
-      top: 100px; right: 62px;
+      top: 100px; right: 48px;
       font-size: 40px; font-weight: 600;
       color: rgba(0,0,0,0.50);
       cursor: pointer;
@@ -199,11 +202,11 @@
     #p1 .preview-tag:hover { color: rgba(0,0,0,0.8); }
 
     #p1 .p1-hero {
-      width: min(100%, 1160px);
+      width: min(100%, 1240px);
       margin: 0 auto;
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: space-between;
       gap: 72px;
       z-index: 2;
     }
@@ -245,7 +248,7 @@
       background: #E7E1D8;
       border: none; border-radius: 10px;
       color: var(--text);
-      font-size: 35px; font-family: inherit;
+      font-size: 30px; font-family: inherit;
       letter-spacing: 0;
       cursor: pointer;
       position: relative;
@@ -274,22 +277,24 @@
     #p1 .right {
       position: relative;
       flex: 0 1 380px;
-      width: min(32vw, 380px);
+      width: min(max(32vw, 346px), 380px);
       min-width: 240px;
-      max-height: min(68vh, 700px);
-      display: flex; align-items: center; justify-content: center;
+      max-height: min(max(68vh, 476px), 700px);
+      display: none;
+      align-items: center;
+      justify-content: center;
     }
 
     #p1 .knit-graphic {
       display: block;
       width: 100%;
       height: auto;
-      max-height: min(68vh, 700px);
+      max-height: min(max(68vh, 476px), 700px);
     }
 
-    @media (max-width: 1180px) {
+    @media (min-width: 1080px) and (max-width: 1180px) {
       #p1 {
-        padding-inline: 40px;
+        padding-inline: 32px;
       }
 
       #p1 .p1-hero {
@@ -307,8 +312,8 @@
 
       #p1 .enter-btn,
       #p1 .archive-tag {
-        flex-basis: 280px;
-        width: 280px;
+        flex-basis: 238px;
+        width: 238px;
       }
 
       #p1 .right {
@@ -318,168 +323,10 @@
       }
     }
 
-    @media (max-width: 1020px) {
-      #p1 .p1-hero {
-        gap: 40px;
-      }
-
-      #p1 h1 {
-        font-size: 64px;
-      }
-
-      #p1 .desc {
-        margin-top: 42px;
-        font-size: 27px;
-        line-height: 42px;
-      }
-
-      #p1 .p1-actions {
-        margin-top: 56px;
-      }
-
-      #p1 .enter-btn,
-      #p1 .archive-tag {
-        flex-basis: 260px;
-        width: 260px;
-        height: 70px;
-        font-size: 30px;
-      }
-
-      #p1 .right {
-        flex-basis: 250px;
-        width: 250px;
-        min-width: 200px;
-      }
-    }
-
-    @media (max-width: 860px) {
-      body.is-landing .site-header {
-        top: 18px;
-        left: 22px;
-        right: 22px;
-      }
-
-      body.is-landing .site-tagline {
-        height: auto;
-        font-size: 20px;
-      }
-
-      #p1 {
-        min-height: 100dvh;
-        padding: 112px 22px 36px;
-      }
-
-      #p1 .preview-tag {
-        top: 66px;
-        right: 22px;
-        font-size: 24px;
-      }
-
-      #p1 .p1-hero {
-        flex-direction: column;
-        gap: 30px;
-      }
-
-      #p1 .p1-title {
-        flex: 0 1 auto;
-        width: 100%;
-        text-align: center;
-      }
-
-      #p1 h1 {
-        font-size: 58px;
-      }
-
-      #p1 .desc {
-        margin-top: 30px;
-        margin-left: 0;
-        font-size: 26px;
-        line-height: 39px;
-      }
-
-      #p1 .p1-actions {
-        margin-top: 38px;
-        margin-left: 0;
-        justify-content: center;
-        gap: 12px;
-      }
-
-      #p1 .enter-btn,
-      #p1 .archive-tag {
-        flex: 1 1 260px;
-        width: min(100%, 318px);
-        max-width: 318px;
-        height: 68px;
-        font-size: 28px;
-      }
-
-      #p1 .right {
-        flex: 0 1 auto;
-        width: min(58vw, 240px);
-        min-width: 0;
-        max-height: 250px;
-      }
-
-      #p1 .knit-graphic {
-        max-height: 250px;
-      }
-    }
-
-    @media (max-width: 480px) {
-      body.is-landing .site-tagline {
-        font-size: 17px;
-      }
-
-      #p1 {
-        padding: 104px 18px 28px;
-      }
-
-      #p1 .preview-tag {
-        top: 58px;
-        right: 18px;
-        font-size: 20px;
-      }
-
-      #p1 .p1-hero {
-        gap: 24px;
-      }
-
-      #p1 h1 {
-        font-size: 42px;
-      }
-
-      #p1 .desc {
-        margin-top: 24px;
-        font-size: 23px;
-        line-height: 34px;
-      }
-
-      #p1 .p1-actions {
-        margin-top: 28px;
-        gap: 10px;
-      }
-
-      #p1 .enter-btn,
-      #p1 .archive-tag {
-        flex-basis: 100%;
-        height: 56px;
-        font-size: 23px;
-      }
-
-      #p1 .right {
-        width: min(50vw, 170px);
-        max-height: 200px;
-      }
-
-      #p1 .knit-graphic {
-        max-height: 200px;
-      }
-    }
-
-    @media (max-width: 1079px), (max-height: 699px) {
+    @media (max-width: 1079px) {
       body.is-landing {
-        width: max(100vw, var(--stage-min-width));
-        height: max(100vh, var(--stage-min-height));
+        width: var(--stage-width);
+        height: var(--stage-height);
         min-width: var(--stage-min-width);
         min-height: var(--stage-min-height);
         overflow: visible;
@@ -497,22 +344,22 @@
       }
 
       #p1 {
-        width: max(100vw, var(--stage-min-width));
-        height: max(100vh, var(--stage-min-height));
+        width: var(--stage-width);
+        height: var(--stage-height);
         min-width: var(--stage-min-width);
         min-height: var(--stage-min-height);
-        padding: 112px 40px 56px;
+        padding: 112px 32px 56px;
         overflow: hidden;
       }
 
       #p1 .preview-tag {
         top: 100px;
-        right: 62px;
+        right: 48px;
         font-size: 40px;
       }
 
       #p1 .p1-hero {
-        width: min(100%, 1000px);
+        width: min(100%, 1016px);
         flex-direction: row;
         gap: 48px;
       }
@@ -521,6 +368,7 @@
         width: auto;
         flex: 0 1 590px;
         text-align: left;
+        transform: none;
       }
 
       #p1 h1 {
@@ -543,11 +391,11 @@
 
       #p1 .enter-btn,
       #p1 .archive-tag {
-        flex: 0 0 280px;
-        width: 280px;
+        flex: 0 0 238px;
+        width: 238px;
         max-width: none;
-        height: 70px;
-        font-size: 30px;
+        height: 60px;
+        font-size: 26px;
       }
 
       #p1 .right {
@@ -581,8 +429,8 @@
         minmax(390px, 2fr)
         minmax(300px, 1fr);
       grid-template-rows: minmax(0, 1fr) auto;
-      column-gap: clamp(20px, 3.2vw, 56px);
-      row-gap: clamp(18px, 2.8vh, 32px);
+      column-gap: clamp(20px, max(3.2vw, 34.56px), 56px);
+      row-gap: clamp(18px, max(2.8vh, 19.6px), 32px);
       padding: 110px 60px 50px;
     }
 
@@ -680,7 +528,7 @@
       padding: 24px;
       background: #ffffff;
       border-radius: 24px;
-      max-height: calc(max(100vh, var(--stage-min-height)) - 152px);
+      max-height: calc(var(--stage-height) - 152px);
       overflow-y: auto;
       overscroll-behavior: contain;
     }
@@ -693,7 +541,7 @@
     }
 
     #p10 .legend-desc {
-      margin: 0 0 clamp(26px, 4vh, 42px);
+      margin: 0 0 clamp(26px, max(4vh, 28px), 42px);
       font-size: clamp(14px, 1.05vw, 17px);
       line-height: 1.55;
       color: rgba(0,0,0,0.46);
@@ -701,7 +549,7 @@
     }
 
     #p10 .legend-section {
-      margin-top: clamp(22px, 4vh, 40px);
+      margin-top: clamp(22px, max(4vh, 28px), 40px);
     }
 
     #p10 .legend-section:first-of-type {
@@ -763,7 +611,7 @@
     #p10 .legend-row {
       display: flex;
       align-items: flex-start;
-      gap: clamp(24px, 3vw, 44px);
+      gap: clamp(24px, max(3vw, 32.4px), 44px);
       flex-wrap: wrap;
     }
 
@@ -773,7 +621,7 @@
 
     #p10 .legend-shape-row {
       align-items: center;
-      gap: clamp(14px, 2vw, 28px);
+      gap: clamp(14px, max(2vw, 21.6px), 28px);
     }
 
     #p10 .legend-mini-item {
@@ -986,7 +834,7 @@
       #p10 #p10-legend-container {
         padding: 18px;
         border-radius: 20px;
-        max-height: calc(max(100vh, var(--stage-min-height)) - 126px);
+        max-height: calc(var(--stage-height) - 126px);
       }
 
       #p10 .legend-section-title {
@@ -1215,8 +1063,8 @@
 
     .face-lottie,
     .face-done-image {
-      width: min(380px, 44vw, 44vh);
-      height: min(380px, 44vw, 44vh);
+      width: min(380px, max(44vw, 475px), max(44vh, 308px));
+      height: min(380px, max(44vw, 475px), max(44vh, 308px));
       object-fit: contain;
     }
 
@@ -1225,7 +1073,7 @@
     }
 
     .face-message {
-      max-width: min(900px, calc(100vw - 80px));
+      max-width: min(900px, calc(var(--stage-width) - 80px));
       font-size: 35px;
       line-height: 1.35;
       color: #1a1a1a;
