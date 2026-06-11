@@ -354,6 +354,42 @@ window.LegendUI = {
     const margin = 15;
     const contentX = tX + margin;
     const contentW = boxW - margin * 2;
+    const legendSpec = window.KnitLegendSpec || {
+      title: '감정별 뜨개 패턴',
+      descriptionLines: [
+        '타이핑하는 동안 웹캠이 표정 변화(눈썹·눈·입)를',
+        '기준 표정과 비교해 추출한 감정과 타이핑 속도에 따라',
+        '코의 색과 형태 등이 달라져요.'
+      ],
+      emotions: [
+        { name: '짜증', hue: 0 }, { name: '중립', hue: 51 },
+        { name: '해탈', hue: 103 }, { name: '미묘', hue: 154 },
+        { name: '슬픔', hue: 206 }, { name: '긴장', hue: 257 },
+        { name: '놀람', hue: 309 }
+      ],
+      shapeExamples: [
+        {
+          title: '입꼬리 긴장도',
+          items: [
+            { label: '긍정', shape: 'circle', eye: 'NEUTRAL', filled: true, speedLevel: 'shape_gray' },
+            { label: '부정', shape: 'square', eye: 'NEUTRAL', filled: true, speedLevel: 'shape_gray' }
+          ]
+        },
+        {
+          title: '눈 표정',
+          items: [
+            { label: '찌푸림', shape: 'square', eye: 'FROWN', filled: true, speedLevel: 'shape_gray' },
+            { label: '충격', shape: 'square', eye: 'SURPRISED', filled: true, speedLevel: 'shape_gray' },
+            { label: '기본', shape: 'square', eye: 'NEUTRAL', filled: true, speedLevel: 'shape_gray' }
+          ]
+        }
+      ],
+      speedExamples: [
+        { label: '빠름', note: '(채움, 채도/명도↑)', shape: 'square', eye: 'NEUTRAL', filled: true, speedLevel: 'fast' },
+        { label: '보통', note: '(두꺼운 선)', shape: 'square', eye: 'NEUTRAL', filled: false, speedLevel: 'medium' },
+        { label: '느림', note: '(얇은 선, 채도/명도↓)', shape: 'square', eye: 'NEUTRAL', filled: false, speedLevel: 'slow' }
+      ]
+    };
 
     textAlign(LEFT, TOP);
     noStroke();
@@ -362,14 +398,14 @@ window.LegendUI = {
     fill(50);
     textSize(15);
     textStyle(BOLD);
-    text("감정별 뜨개 패턴", contentX, tY + margin, contentW);
+    text(legendSpec.title, contentX, tY + margin, contentW);
 
     // (1) 추가된 설명 문구
     fill(100);
     textSize(10);
     textStyle(NORMAL);
     textLeading(14);
-    text("타이핑하는 동안 웹캠이 표정 변화(눈썹·눈·입)를\n기준 표정과 비교해 추출한 감정과 타이핑 속도에 따라\n코의 색과 형태 등이 달라져요.", contentX, tY + margin + 24, contentW);
+    text(legendSpec.descriptionLines.join('\n'), contentX, tY + margin + 24, contentW);
 
     // ----------------------------------------
     // [섹션 1] 감정별 베이스 색상
@@ -378,12 +414,7 @@ window.LegendUI = {
     textSize(12);
     text("■ 감정 베이스 색상", tX + 15, tY + 95, contentW);
     
-    let emotions = [
-      { name: '짜증', hue: 0 }, { name: '중립', hue: 51 },
-      { name: '해탈', hue: 103 }, { name: '미묘', hue: 154 },
-      { name: '슬픔', hue: 206 }, { name: '긴장', hue: 257 },
-      { name: '놀람', hue: 309 }
-    ];
+    let emotions = legendSpec.emotions;
 
     colorMode(HSB, 360, 100, 100);
     for (let i = 0; i < emotions.length; i++) {
@@ -415,23 +446,28 @@ window.LegendUI = {
 
     textSize(10);
     fill(100);
-    text("입꼬리 긴장도", contentX, tY + 188);
-    text("눈 표정", contentX + contentW * 0.45, tY + 188);
+    const shapeExamples = legendSpec.shapeExamples;
+    const mouthExamples = shapeExamples[0] && shapeExamples[0].items ? shapeExamples[0].items : [];
+    const eyeExamples = shapeExamples[1] && shapeExamples[1].items ? shapeExamples[1].items : [];
+    text(shapeExamples[0] ? shapeExamples[0].title : "입꼬리 긴장도", contentX, tY + 188);
+    text(shapeExamples[1] ? shapeExamples[1].title : "눈 표정", contentX + contentW * 0.45, tY + 188);
 
     textAlign(CENTER, TOP);
     
     // 배치 간격 압축 (미니 셀 크기는 최대한 유지)
-    this.drawMiniCell(contentX + 20, tY + 220, 'circle', 'NEUTRAL', true, 'shape_gray'); 
-    text("긍정", contentX + 20, tY + 235);
-    this.drawMiniCell(contentX + 60, tY + 220, 'square', 'NEUTRAL', true, 'shape_gray'); 
-    text("부정", contentX + 60, tY + 235);
+    [20, 60].forEach((offset, idx) => {
+      const item = mouthExamples[idx];
+      if (!item) return;
+      this.drawMiniCell(contentX + offset, tY + 220, item.shape, item.eye, item.filled, item.speedLevel); 
+      text(item.label, contentX + offset, tY + 235);
+    });
 
-    this.drawMiniCell(contentX + 125, tY + 220, 'square', 'FROWN', true, 'shape_gray'); 
-    text("찌푸림", contentX + 125, tY + 235);
-    this.drawMiniCell(contentX + 167.5, tY + 220, 'square', 'SURPRISED', true, 'shape_gray'); 
-    text("충격", contentX + 167.5, tY + 235);
-    this.drawMiniCell(contentX + 210, tY + 220, 'square', 'NEUTRAL', true, 'shape_gray'); 
-    text("기본", contentX + 210, tY + 235);
+    [125, 167.5, 210].forEach((offset, idx) => {
+      const item = eyeExamples[idx];
+      if (!item) return;
+      this.drawMiniCell(contentX + offset, tY + 220, item.shape, item.eye, item.filled, item.speedLevel); 
+      text(item.label, contentX + offset, tY + 235);
+    });
 
     // ----------------------------------------
     // [섹션 3] 타이핑 속도
@@ -445,17 +481,13 @@ window.LegendUI = {
     textSize(10);
     fill(100);
     
-    this.drawMiniCell(contentX + 30, tY + 295, 'square', 'NEUTRAL', true, 'fast'); 
-    text("빠름", contentX + 30, tY + 310);
-    text("(채움, 채도/명도↑)", contentX + 30, tY + 324);
-    
-    this.drawMiniCell(contentX + 105, tY + 295, 'square', 'NEUTRAL', false, 'medium'); 
-    text("보통", contentX + 105, tY + 310);
-    text("(두꺼운 선)", contentX + 105, tY + 324);
-
-    this.drawMiniCell(contentX + 180, tY + 295, 'square', 'NEUTRAL', false, 'slow'); 
-    text("느림", contentX + 180, tY + 310);
-    text("(얇은 선, 채도/명도↓)", contentX + 180, tY + 324);
+    [30, 105, 180].forEach((offset, idx) => {
+      const item = legendSpec.speedExamples[idx];
+      if (!item) return;
+      this.drawMiniCell(contentX + offset, tY + 295, item.shape, item.eye, item.filled, item.speedLevel); 
+      text(item.label, contentX + offset, tY + 310);
+      text(item.note || '', contentX + offset, tY + 324);
+    });
 
     pop();
   },

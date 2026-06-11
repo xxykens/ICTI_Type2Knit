@@ -25,10 +25,11 @@ function goTo(id) {
   if (!next) return;
   cur.classList.remove('active');
   cur.style.display = 'none';
-  next.style.display = 'flex';
+  next.style.display = id === 'p10' ? 'grid' : 'flex';
   next.classList.add('active');
   state.currentScreen = id;
   document.body.classList.toggle('is-landing', id === 'p1');
+  document.body.classList.toggle('is-preview', id === 'p10');
   onScreenEnter(id);
 }
 

@@ -7,6 +7,62 @@
     { text: '그냥내가해야되나', tag: '슬픔', speed: 0.46, tension: 0.42 }
   ];
 
+  const LEGEND_SPEC = window.KnitLegendSpec || {
+    title: '감정별 뜨개 패턴',
+    descriptionLines: [
+      '타이핑하는 동안 웹캠이 표정 변화(눈썹·눈·입)를',
+      '기준 표정과 비교해 추출한 감정과 타이핑 속도에 따라',
+      '코의 색과 형태 등이 달라져요.'
+    ],
+    emotions: [
+      { name: '짜증', hue: 0 },
+      { name: '중립', hue: 51 },
+      { name: '슬픔', hue: 206 },
+      { name: '긴장', hue: 257 },
+      { name: '놀람', hue: 309 },
+      { name: '해탈', hue: 103 },
+      { name: '미묘', hue: 154 }
+    ],
+    shapeExamples: [
+      {
+        title: '입꼬리 긴장도',
+        items: [
+          { label: '긍정', shape: 'circle', eye: 'NEUTRAL', filled: true, speedLevel: 'shape_gray' },
+          { label: '부정', shape: 'square', eye: 'NEUTRAL', filled: true, speedLevel: 'shape_gray' }
+        ]
+      },
+      {
+        title: '눈 표정',
+        items: [
+          { label: '찌푸림', shape: 'square', eye: 'FROWN', filled: true, speedLevel: 'shape_gray' },
+          { label: '충격', shape: 'square', eye: 'SURPRISED', filled: true, speedLevel: 'shape_gray' },
+          { label: '기본', shape: 'square', eye: 'NEUTRAL', filled: true, speedLevel: 'shape_gray' }
+        ]
+      }
+    ],
+    speedExamples: [
+      { label: '빠름', note: '(채움, 채도/명도↑)', shape: 'square', eye: 'NEUTRAL', filled: true, speedLevel: 'fast' },
+      { label: '보통', note: '(두꺼운 선)', shape: 'square', eye: 'NEUTRAL', filled: false, speedLevel: 'medium' },
+      { label: '느림', note: '(얇은 선, 채도/명도↓)', shape: 'square', eye: 'NEUTRAL', filled: false, speedLevel: 'slow' }
+    ]
+  };
+
+  window.KnitLegendSpec = LEGEND_SPEC;
+
+  const TAG_DESCRIPTIONS = {
+    '기본표정': '눈·눈썹·입꼬리의 기본 기준값으로 감정 태그가 계산됩니다.',
+    '짜증': '기준 표정보다 눈썹에 힘이 들어갈 때 나타나는 태그입니다.',
+    '긴장': '기준 표정보다 눈이 작아지고 눈가에 힘이 들어갈 때 나타나는 태그입니다.',
+    '놀람': '기준 표정보다 눈썹이 올라가고 눈이 크게 떠질 때 나타나는 태그입니다.',
+    '슬픔': '기준 표정보다 입꼬리가 내려가고 슬퍼 보일 때 나타나는 태그입니다.',
+    '해탈': '기준 표정보다 입꼬리가 올라가고 표정이 풀려 보일 때 나타나는 태그입니다.',
+    '중립': '기준 표정과 큰 차이 없이 편안한 얼굴이 유지될 때 나타나는 태그입니다.',
+    '미묘': '변화는 있지만 한 가지 감정으로 분명히 보이지 않을 때 나타나는 태그입니다.',
+    '미묘함': '변화는 있지만 한 가지 감정으로 분명히 보이지 않을 때 나타나는 태그입니다.',
+    '얼굴 없음': '얼굴을 안정적으로 읽지 못해 표정 판단이 어려울 때 나타나는 태그입니다.',
+    '기준값 없음': '기준 표정이 아직 없어 표정 변화를 비교하기 어려울 때 나타나는 태그입니다.'
+  };
+
   function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
   }
@@ -35,6 +91,16 @@
       Math.round((g + m) * 255),
       Math.round((b + m) * 255)
     ];
+  }
+
+  function hsbToCss(h, s, v) {
+    const [r, g, b] = hsbToRgb(h, s, v);
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+
+  function hsbToRgba(h, s, v, a) {
+    const [r, g, b] = hsbToRgb(h, s, v);
+    return `rgba(${r}, ${g}, ${b}, ${a})`;
   }
 
   function baseHueFor(tag) {
@@ -517,6 +583,12 @@
         ${nose}
         <path class="face-mouth" d="M59 98 C66 101 76 101 83 98"/>
       `,
+      '기본표정': `
+        <path class="face-eye" d="M56 63 V72"/>
+        <path class="face-eye" d="M84 63 V72"/>
+        ${nose}
+        <path class="face-mouth" d="M59 98 C66 101 76 101 83 98"/>
+      `,
       '미묘함': `
         <path class="face-brow" d="M49 50 H64"/>
         <path class="face-brow" d="M77 48 L91 52"/>
@@ -545,25 +617,10 @@
     canvas.className = 'preview-canvas';
     container.appendChild(canvas);
 
-    const screen = document.getElementById('p10');
-    const oldFacePreview = screen && screen.querySelector('.preview-face-popover');
-    if (oldFacePreview) oldFacePreview.remove();
-
-    const facePreview = document.createElement('div');
-    facePreview.className = 'preview-face-popover';
-
-    const faceFrame = document.createElement('div');
-    faceFrame.className = 'preview-face-frame';
-
-    faceFrame.innerHTML = faceSvgForTag('중립');
-
-    const faceText = document.createElement('div');
-    faceText.className = 'preview-face-text';
-    faceText.innerHTML = '<strong>캠 예시 화면</strong><em>중립</em><span>실제 입력시 카메라는 보이지 않아요!</span>';
-
-    facePreview.appendChild(faceFrame);
-    facePreview.appendChild(faceText);
-    (screen || container).appendChild(facePreview);
+    const cameraCard = document.getElementById('p10-camera-card');
+    const faceFrame = document.getElementById('p10-camera-face');
+    const faceEmotion = document.getElementById('p10-camera-emotion');
+    const faceDescription = document.getElementById('p10-camera-description');
 
     const ctx = canvas.getContext('2d');
     const metrics = {
@@ -581,15 +638,23 @@
     cells.forEach((cell, idx) => drawKnitCell(ctx, cell, idx, metrics));
     drawNeedles(ctx, metrics);
 
-    let currentFaceTag = '';
+    let currentFaceTag = null;
     const updateFacePreview = (tag) => {
       if (!tag || currentFaceTag === tag) return;
       currentFaceTag = tag;
-      faceFrame.innerHTML = faceSvgForTag(tag);
-      const emotion = faceText.querySelector('em');
-      if (emotion) emotion.textContent = tag;
-      facePreview.dataset.emotion = tag;
+      if (faceFrame) faceFrame.innerHTML = faceSvgForTag(tag);
+      if (faceEmotion) {
+        faceEmotion.textContent = tag;
+        const tagBg = tag === '기본표정'
+          ? 'rgba(182, 158, 122, 0.3)'
+          : hsbToRgba(baseHueFor(tag), 0.4, 0.9, 0.22);
+        faceEmotion.style.setProperty('--tag-bg', tagBg);
+      }
+      if (faceDescription) faceDescription.textContent = TAG_DESCRIPTIONS[tag] || TAG_DESCRIPTIONS['미묘함'];
+      if (cameraCard) cameraCard.dataset.emotion = tag;
     };
+
+    updateFacePreview('기본표정');
 
     canvas.addEventListener('mousemove', (event) => {
       const rect = canvas.getBoundingClientRect();
@@ -604,49 +669,128 @@
       const hit = hoveredIndex !== -1;
 
       if (hit) updateFacePreview(cells[hoveredIndex].tag);
-      facePreview.classList.toggle('visible', hit);
+      if (cameraCard) cameraCard.classList.toggle('is-hot', hit);
     });
 
     canvas.addEventListener('mouseleave', () => {
-      facePreview.classList.remove('visible');
+      updateFacePreview('기본표정');
+      if (cameraCard) cameraCard.classList.remove('is-hot');
     });
   }
 
-  // 🌟 [추가됨] 좌측 HTML 영역에 범례 전용 미니 캔버스를 생성해 끼워넣는 함수
+  function legendMiniCellMarkup(item) {
+    const size = 30;
+    const half = size / 2;
+    let bri = 70;
+    let strokeWidth = 1.5;
+
+    if (item.speedLevel === 'fast') {
+      bri = 85;
+    } else if (item.speedLevel === 'medium') {
+      bri = 55;
+      strokeWidth = 3;
+    } else if (item.speedLevel === 'slow') {
+      bri = 30;
+      strokeWidth = 1;
+    } else if (item.speedLevel === 'shape_gray') {
+      bri = 55;
+    }
+
+    const bodyColor = hsbToCss(0, 0, bri / 100);
+    const stitchColor = hsbToCss(0, 0, Math.min((bri + 20) / 100, 1));
+    const shape = item.shape === 'circle'
+      ? `<circle cx="15" cy="15" r="${half - 2}" fill="${item.filled ? bodyColor : 'none'}" stroke="${bodyColor}" stroke-width="${item.filled ? 0 : strokeWidth}"/>`
+      : `<rect x="3" y="3" width="24" height="24" rx="5" fill="${item.filled ? bodyColor : 'none'}" stroke="${bodyColor}" stroke-width="${item.filled ? 0 : strokeWidth}"/>`;
+
+    let stitch = '<path d="M7 10 L15 21 L23 10" fill="none" stroke="' + stitchColor + '" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>';
+    if (item.eye === 'FROWN') {
+      stitch = '<path d="M9 9 L21 21 M21 9 L9 21" fill="none" stroke="' + stitchColor + '" stroke-width="2.1" stroke-linecap="round"/>';
+    } else if (item.eye === 'SURPRISED') {
+      const r = 24 * 0.3;
+      const points = Array.from({ length: 8 }, (_, i) => {
+        const radius = i % 2 === 0 ? r : r * 0.4;
+        const angle = (Math.PI / 4) * i;
+        return [
+          Number((15 + Math.cos(angle) * radius).toFixed(2)),
+          Number((15 + Math.sin(angle) * radius).toFixed(2))
+        ];
+      });
+      const d = points.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x} ${y}`).join(' ') + ' Z';
+      stitch = '<path d="' + d + '" fill="none" stroke="' + stitchColor + '" stroke-width="1.8" stroke-linejoin="round"/>';
+    }
+
+    return `
+      <svg class="legend-mini-cell" viewBox="0 0 ${size} ${size}" aria-hidden="true">
+        ${shape}
+        ${stitch}
+      </svg>
+    `;
+  }
+
+  function legendMiniItemMarkup(item) {
+    const note = item.note ? `<span class="legend-mini-note">${item.note}</span>` : '';
+    return `
+      <div class="legend-mini-item">
+        ${legendMiniCellMarkup(item)}
+        <span>${item.label}${note}</span>
+      </div>
+    `;
+  }
+
+  // p10 범례는 캔버스 이미지가 아니라 각 항목이 독립된 HTML 요소로 렌더링된다.
   function renderLegendToHTML() {
     const container = document.getElementById('p10-legend-container');
-    if (!container) return; // html에 컨테이너가 없으면 실행 안 함
+    if (!container) return;
 
-    container.innerHTML = ''; // 혹시 남아있을 기존 캔버스 초기화
-    const legendCanvas = document.createElement('canvas');
-    const legendScale = 1.2;
-    const baseWidth = 280;
-    const baseHeight = 350;
+    const colorItems = LEGEND_SPEC.emotions.map((emotion) => {
+      return `
+        <div class="legend-color-item">
+          <span class="legend-color-chip" style="--chip-fill:${hsbToCss(emotion.hue, 0.4, 0.9)}; --chip-stroke:${hsbToCss(emotion.hue, 0.5, 0.7)};"></span>
+          <span>${emotion.name}</span>
+        </div>
+      `;
+    }).join('');
 
-    // 전체 레이아웃을 1.2배로 키워서 캔버스 생성
-    legendCanvas.width = Math.round(baseWidth * legendScale);
-    legendCanvas.height = Math.round(baseHeight * legendScale);
-    legendCanvas.style.width = `${Math.round(baseWidth * legendScale)}px`;
-    legendCanvas.style.height = `${Math.round(baseHeight * legendScale)}px`;
+    const shapeGroups = LEGEND_SPEC.shapeExamples.map((group) => {
+      return `
+        <div class="legend-subtitle">${group.title}</div>
+        <div class="legend-row">
+          ${group.items.map(legendMiniItemMarkup).join('')}
+        </div>
+      `;
+    }).join('');
 
-    const ctx = legendCanvas.getContext('2d');
-    ctx.scale(legendScale, legendScale);
+    container.innerHTML = `
+      <h3 class="legend-title">${LEGEND_SPEC.title}</h3>
+      <p class="legend-desc">${LEGEND_SPEC.descriptionLines.join('<br>')}</p>
 
-    // 기존에 만들어둔 범례 그리기 함수를 이 '미니 캔버스'에 0, 0 좌표부터 출력!
-    drawStaticLegend(ctx, 0, 0);
+      <section class="legend-section">
+        <div class="legend-section-title">감정 베이스 색상</div>
+        <div class="legend-color-grid">${colorItems}</div>
+      </section>
 
-    // 완성된 미니 캔버스를 HTML 컨테이너에 삽입
-    container.appendChild(legendCanvas);
+      <section class="legend-section">
+        <div class="legend-section-title">형태 및 코 무늬</div>
+        ${shapeGroups}
+      </section>
+
+      <section class="legend-section">
+        <div class="legend-section-title">타이핑 속도</div>
+        <div class="legend-row legend-speed-row">
+          ${LEGEND_SPEC.speedExamples.map(legendMiniItemMarkup).join('')}
+        </div>
+      </section>
+    `;
   }
 
   // 🌟 [수정됨] p10 화면 렌더링을 총괄하는 객체
   window.page_S10 = {
     render: function () {
-      // 1. 오른쪽 뜨개물 캔버스 그리기
+      // 1. 가운데 샘플 뜨개 캔버스 그리기
       const grid = document.getElementById('p10-preview-grid');
       if (grid) drawPreviewGrid(grid);
 
-      // 2. 왼쪽 설명 글씨 아래에 범례 미니 캔버스 그리기
+      // 2. 오른쪽 범례는 캔버스가 아닌 HTML 요소로 렌더링
       renderLegendToHTML();
     }
   };

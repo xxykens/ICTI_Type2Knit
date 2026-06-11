@@ -231,20 +231,36 @@
 
 <!-- P10 – PREVIEW -->
 <div id="p10" class="screen preview-screen">
-  <span class="preview-home-link" onclick="goTo('p1')">▶ 홈으로</span>
-
-  <div class="preview-copy">
+  <section class="preview-copy" aria-label="미리보기 설명">
     <h2>미리보기</h2>
     <p>
       글자는 감정의 리듬을 따라<br>
       색과 형태가 다른 코로 쌓입니다.<br>
       완성될 패턴의 결을 먼저 확인해보세요.
     </p>
-    <div id="p10-legend-container" style="margin-top: 20px;"></div>
-  </div>
+  </section>
 
   <div class="preview-sample">
     <div id="p10-preview-grid" class="preview-grid" aria-label="샘플 뜨개 패턴"></div>
+  </div>
+
+  <aside id="p10-legend-container" class="preview-legend" aria-label="감정별 뜨개 패턴 안내"></aside>
+
+  <div class="preview-camera-area">
+    <div class="preview-camera-copy">
+      <strong>*표정 인식 예시</strong>
+      <span>실제 입력시 카메라는 보이지 않아요!</span>
+    </div>
+
+    <div id="p10-camera-card" class="preview-camera-card" aria-live="polite">
+      <div id="p10-camera-face" class="preview-face-frame"></div>
+      <div class="preview-face-text">
+        <em id="p10-camera-emotion">기본표정</em>
+        <p id="p10-camera-description" class="preview-face-description">
+          눈·눈썹·입꼬리의 기본 기준값으로 감정 태그가 계산됩니다.
+        </p>
+      </div>
+    </div>
   </div>
 </div>
 
