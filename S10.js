@@ -290,7 +290,7 @@
       const left = sorted[0].x - metrics.cellSize * 0.72;
       const right = sorted[sorted.length - 1].x + metrics.cellSize * 0.72;
 
-      ctx.strokeStyle = row % 2 === 0 ? 'rgba(182,158,122,0.36)' : 'rgba(231,225,216,0.74)';
+      ctx.strokeStyle = row % 2 === 0 ? 'rgba(182,158,122,0.16)' : 'rgba(231,225,216,0.32)';
       ctx.lineWidth = 7;
       ctx.beginPath();
       ctx.moveTo(left, y + 1);
@@ -303,7 +303,7 @@
       ctx.stroke();
     });
 
-    ctx.strokeStyle = 'rgba(182,158,122,0.28)';
+    ctx.strokeStyle = 'rgba(182,158,122,0.12)';
     ctx.lineWidth = 4;
     for (let col = 0; col < 10; col += 1) {
       const x = metrics.centerX - 4.5 * metrics.spacing + col * metrics.spacing;
@@ -320,7 +320,7 @@
   }
 
   function drawSingleNeedle(ctx, heatIntensity, length) {
-    const grad = ctx.createLinearGradient(0, -25, 0, length);
+    const grad = ctx.createLinearGradient(0, -25, 0, 100);
     const r = Math.round(225 + (255 - 225) * heatIntensity);
     const g = Math.round(215 + (80 - 215) * heatIntensity);
     const b = Math.round(195 + (80 - 195) * heatIntensity);
@@ -351,6 +351,7 @@
     const centerX = metrics.centerX;
     const centerY = metrics.baseY - metrics.cellSize * 0.8 - 18;
     const length = 410;
+    const heatIntensity = 1;
 
     ctx.save();
     ctx.translate(centerX, centerY);
@@ -359,13 +360,13 @@
     ctx.save();
     ctx.rotate(Math.PI / 4 - 0.04);
     ctx.translate(0, 6);
-    drawSingleNeedle(ctx, 0, length);
+    drawSingleNeedle(ctx, heatIntensity, length);
     ctx.restore();
 
     ctx.save();
     ctx.rotate(-Math.PI / 4 + 0.04);
     ctx.translate(0, -3);
-    drawSingleNeedle(ctx, 0, length);
+    drawSingleNeedle(ctx, heatIntensity, length);
     ctx.restore();
 
     ctx.restore();
@@ -612,8 +613,13 @@
   function drawPreviewGrid(container) {
     container.innerHTML = '';
     const canvas = document.createElement('canvas');
-    canvas.width = 660;
-    canvas.height = 540;
+    const canvasWidth = 660;
+    const canvasHeight = 540;
+    const pixelRatio = Math.min(Math.max(window.devicePixelRatio || 1, 2) * 1.2, 3);
+    canvas.width = Math.round(canvasWidth * pixelRatio);
+    canvas.height = Math.round(canvasHeight * pixelRatio);
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
     canvas.className = 'preview-canvas';
     container.appendChild(canvas);
 
@@ -626,17 +632,22 @@
     const metrics = {
       spacing: 42,
       cellSize: 36,
-      centerX: canvas.width / 2,
+      centerX: canvasWidth / 2,
       baseY: 150,
       positions: []
     };
 
     const cells = buildCells();
     metrics.positions = buildPreviewPositions(cells.length, metrics);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawThreadBase(ctx, metrics);
-    cells.forEach((cell, idx) => drawKnitCell(ctx, cell, idx, metrics));
-    drawNeedles(ctx, metrics);
+    const renderGrid = () => {
+      ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+      drawThreadBase(ctx, metrics);
+      cells.forEach((cell, idx) => drawKnitCell(ctx, cell, idx, metrics));
+      drawNeedles(ctx, metrics);
+    };
+
+    renderGrid();
 
     let currentFaceTag = null;
     const updateFacePreview = (tag) => {
@@ -658,8 +669,8 @@
 
     canvas.addEventListener('mousemove', (event) => {
       const rect = canvas.getBoundingClientRect();
-      const scaleX = canvas.width / rect.width;
-      const scaleY = canvas.height / rect.height;
+      const scaleX = canvasWidth / rect.width;
+      const scaleY = canvasHeight / rect.height;
       const x = (event.clientX - rect.left) * scaleX;
       const y = (event.clientY - rect.top) * scaleY;
       const hoveredIndex = metrics.positions.findIndex((position) => {
