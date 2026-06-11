@@ -1428,7 +1428,7 @@
       font-size: 35px; line-height: 2.2;
     }
     .complete-screen .caution {
-      font-size: 32px; color: var(--accent-blue);
+      font-size: 26px; color: var(--accent-blue);
       margin-top: 20px; line-height: 1.6;
     }
     .complete-screen .btn-row {
@@ -1474,9 +1474,18 @@
       align-items: center; justify-content: center; gap: 60px;
     }
     #p17 .btn-pair {
-      position: absolute; top: 330px; left: 700px;
-      transform: translateX(-50%);
-      display: flex; gap: 60px; align-items: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 60px;
+      width: 100%;
+    }
+    #p17 .btn-pair img {
+      display: block;
+      width: 146px;
+      height: 146px;
+      object-fit: contain;
+      cursor: pointer;
     }
 
     /* ════════════════════════════════

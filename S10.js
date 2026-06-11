@@ -1,7 +1,9 @@
 (function () {
   const exampleParts = [
     { text: '아니파일보내라고한지가언젠데', tag: '긴장', speed: 0.86, tension: 0.82 },
-    { text: '눈감아주는것도하루이틀이지', tag: '짜증', speed: 0.82, tension: 0.78 },
+    { text: '눈감아', tag: '짜증', speed: 0.5, tension: 0.78 },
+    { text: '주는것도하루이틀이지', tag: '짜증', speed: 0.82, tension: 0.78 },
+    { text: 'ㅠㅠㅠㅠ', tag: '슬픔', speed: 0.86, tension: 0.42 },
     { text: '잠수타고연락씹고', tag: '긴장', speed: 0.68, tension: 0.74 },
     { text: '수업안오면해결이되나', tag: '놀람', speed: 0.72, tension: 0.64 },
     { text: '그냥내가해야되나', tag: '슬픔', speed: 0.46, tension: 0.42 }
