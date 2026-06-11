@@ -213,13 +213,10 @@
     const [bgR, bgG, bgB] = hsbToRgb(cell.bgHue, cell.sat / 100, cell.bgBri / 100);
     const [stR, stG, stB] = hsbToRgb(cell.stitchHue, cell.sat / 100, cell.stitchBri / 100);
     const isFilled = cell.speed >= 0.6;
-    const actualSize = isFilled ? metrics.cellSize : metrics.cellSize - 4;
+    const actualSize = isFilled ? metrics.cellSize : metrics.cellSize - 5;
     const half = actualSize / 2;
 
     ctx.save();
-    ctx.shadowColor = 'rgba(92,74,52,0.16)';
-    ctx.shadowBlur = 6;
-    ctx.shadowOffsetY = 3;
     ctx.beginPath();
     if (cell.tension >= 0.5) {
       drawRoundedRect(ctx, px - half, py - half, actualSize, actualSize, 6);
@@ -232,14 +229,14 @@
       ctx.fill();
     } else {
       ctx.strokeStyle = `rgb(${bgR},${bgG},${bgB})`;
-      ctx.lineWidth = mapRange(cell.speed, 0, 0.6, 1.5, 4);
+      ctx.lineWidth = mapRange(cell.speed, 0, 0.6, 2, 4.5);
       ctx.stroke();
     }
     ctx.restore();
 
-    const r = metrics.cellSize * 0.3;
+    const r = metrics.cellSize * 0.28;
     ctx.strokeStyle = `rgb(${stR},${stG},${stB})`;
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2.5;
     ctx.beginPath();
     if (cell.eye === '짜증') {
       ctx.moveTo(px - r, py - r);
@@ -257,9 +254,9 @@
       }
       ctx.closePath();
     } else {
-      ctx.moveTo(px - r, py - r);
+      ctx.moveTo(px - r, py - r * 0.6);
       ctx.lineTo(px, py + r * 0.8);
-      ctx.lineTo(px + r, py - r);
+      ctx.lineTo(px + r, py - r * 0.6);
     }
     ctx.stroke();
 
