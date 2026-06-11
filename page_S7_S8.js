@@ -396,19 +396,14 @@ const page_S7_S8 = {
     }
 
     // 체크박스 Y 계산 (drawS8SingleView와 동일한 로직)
-    let eGroups = {};
-    (piece.cells || []).forEach(c => {
-      const t = c.emotionTag;
-      if (!t || t === 'NEUTRAL' || t === '중립') return;
-      if (!eGroups[t]) eGroups[t] = { sum: 0, n: 0 };
-      eGroups[t].sum += (c.emotionIntensity || 0); eGroups[t].n++;
-    });
-    const eListLen = Math.min(3, Object.keys(eGroups).filter(k => eGroups[k]).length) || 1;
-    const afterTagY = PANEL_Y + 92 + max(1, eListLen) * 20 + 8;
     const _knitInfoLines = _s8Layout.knitInfoLines;
+    const _eList = _s8Layout.eList;
     const cbX  = INFO_X + 18;
     const cbSz = 15;
-    const knitInfoBottomY = afterTagY + 14 + 22 + _knitInfoLines.length * 17;
+    let knitInfoBottomY = PANEL_Y + 72 + 22 + _knitInfoLines.length * 17;
+    if (_eList.length > 0) {
+      knitInfoBottomY += 8 + _eList.length * 20;
+    }
     const cbY  = knitInfoBottomY + 18;
     const cbY2 = cbY + 28;
 
@@ -444,12 +439,14 @@ const page_S7_S8 = {
     return lines;
   },
 
-  // 선택된 작품의 감정 태그·타이핑 속도를 분석해 "뜨개물 정보" 안내 문구를 만든다
+  // 선택된 작품의 감정 태그·타이핑 속도를 분석해 "뜨개물 정보" 안내 문구와 감정 태그 목록을 만든다
   _buildKnitInfo: function(piece) {
     const posTags = ['해탈', '미묘함'];
     const negTags = ['짜증', '놀람', '슬픔', '긴장'];
+    const eyeLabel = { FROWN: '짜증', SURPRISED: '놀람', BLURRY: '미묘함' };
     let emoOrder = [];
     let emoCount = {};
+    let eGroups = {};
     let posCount = 0, negCount = 0;
     let speedSum = 0, speedN = 0;
     (piece.cells || piece.knitArray || []).forEach(c => {
@@ -459,6 +456,9 @@ const page_S7_S8 = {
         emoCount[t]++;
         if (posTags.indexOf(t) !== -1) posCount++;
         else if (negTags.indexOf(t) !== -1) negCount++;
+
+        if (!eGroups[t]) eGroups[t] = { sum: 0, n: 0 };
+        eGroups[t].sum += (c.emotionIntensity || 0); eGroups[t].n++;
       }
       // piece.cells 항목은 typingSpeed, piece.knitArray 항목은 speed 필드를 쓴다 (KnitPiece.js 참고)
       const sp = (typeof c.speed === 'number') ? c.speed : c.typingSpeed;
@@ -487,20 +487,24 @@ const page_S7_S8 = {
       }
     }
 
-    const eCount = Math.max(1, Math.min(3, Object.keys(emoCount).length));
+    const eList = Object.entries(eGroups)
+      .map(([k, v]) => ({ label: eyeLabel[k] || k, avg: v.n ? v.sum/v.n : 0 }))
+      .sort((a, b) => b.avg - a.avg).slice(0, 3);
+
     textSize(11); textStyle(NORMAL);
     const lines = this._wrapTextLines(text || '기록된 감정 정보가 부족해요.', 220 - 36);
-    return { text, lines, eCount };
+    return { text, lines, eList };
   },
 
   // S8 상세 패널의 시작 Y(PANEL_Y)를 콘텐츠 길이에 맞춰 동적으로 계산.
   // drawS8SingleView(렌더링)와 handleS8CheckboxClick(히트테스트)이 같은 좌표를 쓰도록 공유한다.
-  // ※ 아래 오프셋은 drawS8SingleView의 실제 렌더링 순서([감정태그]→뜨개물정보→텍스트보기→선택된코)와 동일해야 함
+  // ※ 아래 오프셋은 drawS8SingleView의 실제 렌더링 순서(뜨개물정보(요약+감정태그)→텍스트보기→선택된코)와 동일해야 함
   _computeS8PanelLayout: function(piece) {
     const ki = this._buildKnitInfo(piece);
-    const contentBottom = 287 + ki.eCount * 20 + ki.lines.length * 17;
+    const tagsExtra = ki.eList.length > 0 ? (8 + ki.eList.length * 20) : 0;
+    const contentBottom = 245 + ki.lines.length * 17 + tagsExtra;
     const panelY = Math.max(60, Math.min(height / 2 + 10, height - 20 - contentBottom));
-    return { panelY: panelY, knitInfoLines: ki.lines };
+    return { panelY: panelY, knitInfoLines: ki.lines, eList: ki.eList };
   },
 
   // [S8] 클릭한 작품 상세 패널 (S7 위에 오버레이)
@@ -517,6 +521,7 @@ const page_S7_S8 = {
     const _s8Layout = this._computeS8PanelLayout(piece);
     pop();
     const _knitInfoLines = _s8Layout.knitInfoLines;
+    const _eList = _s8Layout.eList;
 
     const PANEL_Y  = _s8Layout.panelY;
     const PANEL_H  = height - PANEL_Y;
@@ -556,39 +561,8 @@ const page_S7_S8 = {
     stroke(220); strokeWeight(1);
     line(INFO_X + 10, PANEL_Y + 60, INFO_X + INFO_W - 10, PANEL_Y + 60);
 
-    // ── 감정 태그 ──────────────────────────────────
-    const eyeLabel = { FROWN: '짜증', SURPRISED: '놀람', BLURRY: '미묘함' };
-    let eGroups = {};
-    (piece.cells || []).forEach(c => {
-      const t = c.emotionTag;
-      if (!t || t === 'NEUTRAL' || t === '중립') return;
-      if (!eGroups[t]) eGroups[t] = { sum: 0, n: 0 };
-      eGroups[t].sum += (c.emotionIntensity || 0); eGroups[t].n++;
-    });
-    const eList = Object.entries(eGroups)
-      .map(([k, v]) => ({ label: eyeLabel[k] || k, avg: v.n ? v.sum/v.n : 0 }))
-      .sort((a, b) => b.avg - a.avg).slice(0, 3);
-
-    fill(60); noStroke(); textSize(12); textStyle(BOLD); textAlign(LEFT, TOP);
-    text('[감정태그]', px, PANEL_Y + 72);
-
-    if (eList.length === 0) {
-      fill(180); textSize(11); textStyle(NORMAL);
-      text('기록된 태그 없음', px, PANEL_Y + 92);
-    } else {
-      eList.forEach((e, k) => {
-        fill(80); textSize(11); textStyle(NORMAL); textAlign(LEFT, TOP);
-        text(`• ${e.label} ${e.avg.toFixed(2)}`, px, PANEL_Y + 92 + k * 20);
-      });
-    }
-
-    // 구분선
-    const afterTagY = PANEL_Y + 92 + max(1, eList.length) * 20 + 8;
-    stroke(220); strokeWeight(1);
-    line(INFO_X + 10, afterTagY, INFO_X + INFO_W - 10, afterTagY);
-
-    // ── 뜨개물 정보 ────────────────────────────────────
-    const knitInfoY = afterTagY + 14;
+    // ── 뜨개물 정보 (요약 메시지 + 감정 태그) ────────────
+    const knitInfoY = PANEL_Y + 72;
     push();
     fill(80); noStroke(); textSize(12); textStyle(BOLD); textAlign(LEFT, TOP);
     text('뜨개물 정보', px, knitInfoY);
@@ -597,7 +571,16 @@ const page_S7_S8 = {
     text(_knitInfoLines.join('\n'), px, knitInfoY + 22);
     pop();
 
-    const knitInfoBottomY = knitInfoY + 22 + _knitInfoLines.length * 17;
+    let knitInfoBottomY = knitInfoY + 22 + _knitInfoLines.length * 17;
+
+    if (_eList.length > 0) {
+      const tagListY = knitInfoBottomY + 8;
+      _eList.forEach((e, k) => {
+        fill(80); noStroke(); textSize(11); textStyle(NORMAL); textAlign(LEFT, TOP);
+        text(`• ${e.label} ${e.avg.toFixed(2)}`, px, tagListY + k * 20);
+      });
+      knitInfoBottomY = tagListY + _eList.length * 20;
+    }
 
     // 구분선
     stroke(220); strokeWeight(1);
@@ -760,11 +743,15 @@ const page_S7_S8 = {
     if (hoveredCellInfo) {
       const _eyeToKo = { FROWN: '짜증', SURPRISED: '놀람', BLURRY: '미묘함', NEUTRAL: '중립' };
       const eyeKo = _eyeToKo[hoveredCellInfo.eye] || hoveredCellInfo.eye || '알 수 없음';
-      fill(30); textSize(13); textStyle(BOLD);
-      text(`"${hoveredCellInfo.text || '—'}"`, px, infoY + 20);
+      let lineY = infoY + 20;
+      if (!textProtected) {
+        fill(30); textSize(13); textStyle(BOLD);
+        text(`"${hoveredCellInfo.text || '—'}"`, px, lineY);
+        lineY += 20;
+      }
       fill(120); textSize(11); textStyle(NORMAL);
-      text(`${eyeKo}  (${(hoveredCellInfo.tension*100||0).toFixed(0)}%)`, px, infoY + 40);
-      text(`속도: ${((hoveredCellInfo.speed||0)*100).toFixed(0)}%`, px, infoY + 58);
+      text(`${eyeKo}  (${(hoveredCellInfo.tension*100||0).toFixed(0)}%)`, px, lineY);
+      text(`속도: ${((hoveredCellInfo.speed||0)*100).toFixed(0)}%`, px, lineY + 18);
     } else {
       fill(190); noStroke(); textSize(11); textStyle(NORMAL); textAlign(LEFT, TOP);
       text('니트 코 위에 마우스를 올리면\n정보가 표시됩니다.', px, infoY + 20);

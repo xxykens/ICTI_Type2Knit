@@ -1069,7 +1069,7 @@ function openP18Overlay(piece, sourceCvs) {
     <div style="font-size:15px; color:#aaa; margin-bottom:24px;">${dateStr}</div>
   `;
 
-  // 감정태그
+  // 감정태그 (뜨개물 정보 섹션에 함께 표시)
   const tagMap = { FROWN:'찌푸림', SURPRISED:'놀람', BLURRY:'미묘함', NEUTRAL:'중립' };
   const eGroups = {};
   (piece.cells || []).forEach(c => {
@@ -1084,32 +1084,7 @@ function openP18Overlay(piece, sourceCvs) {
     .sort((a, b) => b.avg - a.avg)
     .slice(0, 3);
 
-  // 감정태그 목록 렌더링
-  const tagTitle = document.createElement('div');
-  tagTitle.style.cssText = 'font-size:14px; font-weight:600; margin-bottom:10px; color:#333;';
-  tagTitle.textContent = '[감정태그]';
-  info.appendChild(tagTitle);
-
-  if (eList.length === 0) {
-    const none = document.createElement('div');
-    none.style.cssText = 'font-size:13px; color:#bbb;';
-    none.textContent = '기록된 태그 없음';
-    info.appendChild(none);
-  } else {
-    eList.forEach(e => {
-      const row = document.createElement('div');
-      row.style.cssText = 'font-size:14px; color:#666; margin-bottom:4px;';
-      row.textContent = `• ${e.label}  ${e.avg.toFixed(2)}`;
-      info.appendChild(row);
-    });
-  }
-
-  // 구분선
-  const hr = document.createElement('div');
-  hr.style.cssText = 'border-top:1px solid #e0e0e0; margin:20px 0;';
-  info.appendChild(hr);
-
-  // 뜨개물 정보
+  // 뜨개물 정보 (요약 메시지 + 감정 태그)
   const knitInfoTitle = document.createElement('div');
   knitInfoTitle.style.cssText = 'font-size:14px; font-weight:600; color:#333; margin-bottom:8px;';
   knitInfoTitle.textContent = '뜨개물 정보';
@@ -1120,10 +1095,22 @@ function openP18Overlay(piece, sourceCvs) {
   knitInfoBody.textContent = _buildKnitInfoText(piece);
   info.appendChild(knitInfoBody);
 
+  if (eList.length > 0) {
+    const tagList = document.createElement('div');
+    tagList.style.cssText = 'margin-top:10px;';
+    eList.forEach(e => {
+      const row = document.createElement('div');
+      row.style.cssText = 'font-size:14px; color:#666; margin-bottom:4px;';
+      row.textContent = `• ${e.label}  ${e.avg.toFixed(2)}`;
+      tagList.appendChild(row);
+    });
+    info.appendChild(tagList);
+  }
+
   // 구분선
-  const hr2 = document.createElement('div');
-  hr2.style.cssText = 'border-top:1px solid #e0e0e0; margin:20px 0;';
-  info.appendChild(hr2);
+  const hr = document.createElement('div');
+  hr.style.cssText = 'border-top:1px solid #e0e0e0; margin:20px 0;';
+  info.appendChild(hr);
 
   // 텍스트 보기 체크박스
   const textProtected = piece.privacy === 'partial';
@@ -1263,7 +1250,8 @@ function openP18Overlay(piece, sourceCvs) {
     if (found) {
       const eyeKo = found.emotionTagKo || _tagMapKo[found.eye] || found.eye || '알 수 없음';
       selInfo.style.color = '#333';
-      selInfo.innerHTML = `<span style="font-size:15px;font-weight:600;">"${found.text || '—'}"</span><br>${eyeKo} (${((found.tension||0)*100).toFixed(0)}%)<br>속도: ${(((found.speed||0)*100).toFixed(0))}%`;
+      const textLine = textProtected ? '' : `<span style="font-size:15px;font-weight:600;">"${found.text || '—'}"</span><br>`;
+      selInfo.innerHTML = `${textLine}${eyeKo} (${((found.tension||0)*100).toFixed(0)}%)<br>속도: ${(((found.speed||0)*100).toFixed(0))}%`;
     } else {
       selInfo.style.color = '#aaa';
       selInfo.textContent = '니트 코 위에 마우스를 올리면 정보가 표시됩니다.';
