@@ -127,12 +127,7 @@ class FaceExpressionTracker {
     this.video.size(w, h);
 
     if (FACE_DEBUG) {
-      this.video.style('position', 'fixed');
-      this.video.style('top', '10px');
-      this.video.style('right', '10px');
-      this.video.style('width', '160px');
-      this.video.style('border', '2px solid red');
-      this.video.style('z-index', '9999');
+      this.setupDebugCameraPreview();
       console.log("[facemesh] ml5.facemesh 존재?", typeof ml5?.facemesh);
     } else {
       this.video.hide();
@@ -153,6 +148,89 @@ class FaceExpressionTracker {
           console.log("[facemesh] 첫 얼굴 감지 ✅ — 기준값은 자동 등록하지 않음");
         }
       }
+    });
+  }
+
+  setupDebugCameraPreview() {
+    document.getElementById('face-debug-camera-panel')?.remove();
+    document.getElementById('face-debug-camera-reopen')?.remove();
+
+    const panel = document.createElement('div');
+    panel.id = 'face-debug-camera-panel';
+    panel.className = 'face-debug-camera-panel';
+
+    const toolbar = document.createElement('div');
+    toolbar.className = 'face-debug-camera-toolbar';
+
+    const label = document.createElement('span');
+    label.className = 'face-debug-camera-label';
+    label.textContent = '검증용 카메라';
+
+    const actions = document.createElement('div');
+    actions.className = 'face-debug-camera-actions';
+
+    const minimizeButton = document.createElement('button');
+    minimizeButton.type = 'button';
+    minimizeButton.className = 'face-debug-camera-control';
+    minimizeButton.textContent = '−';
+    minimizeButton.setAttribute('aria-label', '작게 보기');
+    minimizeButton.setAttribute('aria-expanded', 'true');
+
+    const closeButton = document.createElement('button');
+    closeButton.type = 'button';
+    closeButton.className = 'face-debug-camera-control';
+    closeButton.textContent = '×';
+    closeButton.setAttribute('aria-label', '닫기');
+
+    const body = document.createElement('div');
+    body.className = 'face-debug-camera-body';
+
+    const reopenButton = document.createElement('button');
+    reopenButton.id = 'face-debug-camera-reopen';
+    reopenButton.type = 'button';
+    reopenButton.className = 'face-debug-camera-reopen';
+    reopenButton.textContent = '카메라 열기';
+    reopenButton.setAttribute('aria-controls', 'face-debug-camera-panel');
+    reopenButton.setAttribute('aria-expanded', 'false');
+
+    actions.append(minimizeButton, closeButton);
+    toolbar.append(label, actions);
+    panel.append(toolbar, body);
+    document.body.append(panel, reopenButton);
+
+    const videoEl = this.video.elt || this.video;
+    body.appendChild(videoEl);
+    this.video.style('position', 'static');
+    this.video.style('display', 'block');
+    this.video.style('width', '100%');
+    this.video.style('height', '100%');
+    this.video.style('border', '0');
+    this.video.style('object-fit', 'cover');
+
+    const setMode = (mode) => {
+      const shouldMinimize = mode === 'minimized';
+      const shouldClose = mode === 'closed';
+
+      panel.classList.toggle('is-minimized', shouldMinimize);
+      panel.classList.toggle('is-closed', shouldClose);
+      reopenButton.classList.toggle('is-visible', shouldClose);
+
+      minimizeButton.textContent = shouldMinimize ? '+' : '−';
+      minimizeButton.setAttribute('aria-label', shouldMinimize ? '펼쳐 보기' : '작게 보기');
+      minimizeButton.setAttribute('aria-expanded', String(!shouldMinimize));
+      reopenButton.setAttribute('aria-expanded', String(!shouldClose));
+    };
+
+    minimizeButton.addEventListener('click', () => {
+      setMode(panel.classList.contains('is-minimized') ? 'open' : 'minimized');
+    });
+
+    closeButton.addEventListener('click', () => {
+      setMode('closed');
+    });
+
+    reopenButton.addEventListener('click', () => {
+      setMode('open');
     });
   }
 
