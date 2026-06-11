@@ -305,6 +305,162 @@
     ctx.restore();
   }
 
+  // 🌟 [새로 추가] 순수 2D Canvas용 정적 범례 그리기 함수
+  function drawStaticLegend(ctx, x, y) {
+    ctx.save();
+    ctx.translate(x, y);
+    const scale = 1.0; // already handled by canvas scaling, keep default coordinate system
+    ctx.scale(scale, scale);
+
+    const boxW = 280;
+    const boxH = 350;
+
+    // 배경 박스 제외 (요청사항 반영)
+    
+    // 제목
+    ctx.fillStyle = 'rgb(50, 50, 50)';
+    ctx.font = "bold 15px 'HSHwalkong', 'Noto Serif KR', serif";
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText('감정별 뜨개 패턴', 15, 15);
+
+    // 설명
+    ctx.fillStyle = 'rgb(100, 100, 100)';
+    ctx.font = "10px 'HSHwalkong', 'Noto Serif KR', serif";
+    ctx.fillText('타이핑하는 동안 웹캠이 표정 변화(눈썹·눈·입)를', 15, 36);
+    ctx.fillText('기준 표정과 비교해 추출한 감정과 타이핑 속도에 따라', 15, 50);
+    ctx.fillText('코의 색과 형태 등이 달라져요.', 15, 64);
+
+    // [섹션 1]
+    ctx.fillStyle = 'rgb(50, 50, 50)';
+    ctx.font = "12px 'HSHwalkong', 'Noto Serif KR', serif";
+    ctx.fillText('■ 감정 베이스 색상', 15, 95);
+
+    const emotions = [
+      { name: '짜증', hue: 0 }, { name: '중립', hue: 51 },
+      { name: '해탈', hue: 103 }, { name: '미묘', hue: 154 },
+      { name: '슬픔', hue: 206 }, { name: '긴장', hue: 257 },
+      { name: '놀람', hue: 309 }
+    ];
+
+    emotions.forEach((emo, i) => {
+      const col = i % 4;
+      const row = Math.floor(i / 4);
+      const cx = 15 + col * 65;
+      const cy = 115 + row * 24;
+
+      const [r, g, b] = hsbToRgb(emo.hue, 0.4, 0.9); // fill
+      const [sr, sg, sb] = hsbToRgb(emo.hue, 0.5, 0.7); // stroke
+
+      ctx.fillStyle = `rgb(${r},${g},${b})`;
+      ctx.strokeStyle = `rgb(${sr},${sg},${sb})`;
+      ctx.lineWidth = 1;
+      
+      ctx.beginPath();
+      drawRoundedRect(ctx, cx, cy, 13, 13, 3);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = 'rgb(0, 0, 30)';
+      ctx.font = "10.5px 'HSHwalkong', 'Noto Serif KR', serif";
+      ctx.fillText(emo.name, cx + 18, cy + 1);
+    });
+
+    // [섹션 2]
+    ctx.fillStyle = 'rgb(50, 50, 50)';
+    ctx.font = "12px 'HSHwalkong', 'Noto Serif KR', serif";
+    ctx.fillText('■ 형태 및 코 무늬', 15, 168);
+
+    ctx.fillStyle = 'rgb(100, 100, 100)';
+    ctx.font = "10px 'HSHwalkong', 'Noto Serif KR', serif";
+    ctx.fillText('입꼬리 긴장도', 15, 188);
+    ctx.fillText('눈 표정', 130, 188);
+
+    // 미니 셀 헬퍼 함수
+    function drawMiniCell2D(mx, my, shape, eye, isFilled, speedLevel) {
+      ctx.save();
+      ctx.translate(mx, my);
+      const size = 18;
+      const half = size / 2;
+      let bri = 70; let sw = 1.5;
+      
+      if (speedLevel === 'fast') bri = 85;
+      else if (speedLevel === 'medium') { bri = 55; sw = 3; }
+      else if (speedLevel === 'slow') { bri = 30; sw = 1; }
+      else if (speedLevel === 'shape_gray') bri = 55;
+
+      const [br, bg, bb] = hsbToRgb(0, 0, bri/100);
+      
+      ctx.beginPath();
+      if (shape === 'square') {
+        drawRoundedRect(ctx, -half, -half, size, size, 4);
+      } else {
+        ctx.arc(0, 0, half, 0, Math.PI * 2);
+      }
+
+      if (isFilled) {
+        ctx.fillStyle = `rgb(${br},${bg},${bb})`;
+        ctx.fill();
+      } else {
+        ctx.strokeStyle = `rgb(${br},${bg},${bb})`;
+        ctx.lineWidth = sw;
+        ctx.stroke();
+      }
+
+      const [str, stg, stb] = hsbToRgb(0, 0, Math.min((bri+20)/100, 1));
+      ctx.strokeStyle = `rgb(${str},${stg},${stb})`;
+      ctx.lineWidth = 1.2;
+      const rad = size * 0.3;
+      
+      ctx.beginPath();
+      if (eye === 'FROWN') {
+        ctx.moveTo(-rad, -rad); ctx.lineTo(rad, rad);
+        ctx.moveTo(rad, -rad); ctx.lineTo(-rad, rad);
+      } else if (eye === 'SURPRISED') {
+        for (let i = 0; i < 8; i++) {
+          const r = i % 2 === 0 ? rad : rad * 0.4;
+          const a = Math.PI / 4 * i;
+          const px = Math.cos(a) * r;
+          const py = Math.sin(a) * r;
+          if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+      } else {
+        ctx.moveTo(-rad, -rad); ctx.lineTo(0, rad * 0.8); ctx.lineTo(rad, -rad);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    ctx.textAlign = 'center';
+    drawMiniCell2D(35, 220, 'circle', 'NEUTRAL', true, 'shape_gray'); ctx.fillText('긍정', 35, 235);
+    drawMiniCell2D(75, 220, 'square', 'NEUTRAL', true, 'shape_gray'); ctx.fillText('부정', 75, 235);
+    drawMiniCell2D(140, 220, 'square', 'FROWN', true, 'shape_gray'); ctx.fillText('찌푸림', 140, 235);
+    drawMiniCell2D(182, 220, 'square', 'SURPRISED', true, 'shape_gray'); ctx.fillText('충격', 182, 235);
+    drawMiniCell2D(225, 220, 'square', 'NEUTRAL', true, 'shape_gray'); ctx.fillText('기본', 225, 235);
+
+    // [섹션 3]
+    ctx.textAlign = 'left';
+    ctx.fillStyle = 'rgb(50, 50, 50)';
+    ctx.font = "12px 'HSHwalkong', 'Noto Serif KR', serif";
+    ctx.fillText('■ 타이핑 속도', 15, 265);
+    
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgb(100, 100, 100)';
+    ctx.font = "10px 'HSHwalkong', 'Noto Serif KR', serif";
+
+    drawMiniCell2D(45, 295, 'square', 'NEUTRAL', true, 'fast'); 
+    ctx.fillText('빠름', 45, 310); ctx.fillText('(채움, 채도/명도↑)', 45, 324);
+    
+    drawMiniCell2D(140, 295, 'square', 'NEUTRAL', false, 'medium'); 
+    ctx.fillText('보통', 140, 310); ctx.fillText('(두꺼운 선)', 140, 324);
+
+    drawMiniCell2D(235, 295, 'square', 'NEUTRAL', false, 'slow'); 
+    ctx.fillText('느림', 235, 310); ctx.fillText('(얇은 선, 채도/명도↓)', 235, 324);
+
+    ctx.restore();
+  }
+
   function faceSvgForTag(tag) {
     const label = tag || '미묘함';
     const faceBase = `
@@ -456,11 +612,42 @@
     });
   }
 
+  // 🌟 [추가됨] 좌측 HTML 영역에 범례 전용 미니 캔버스를 생성해 끼워넣는 함수
+  function renderLegendToHTML() {
+    const container = document.getElementById('p10-legend-container');
+    if (!container) return; // html에 컨테이너가 없으면 실행 안 함
+
+    container.innerHTML = ''; // 혹시 남아있을 기존 캔버스 초기화
+    const legendCanvas = document.createElement('canvas');
+    const legendScale = 1.2;
+    const baseWidth = 280;
+    const baseHeight = 350;
+
+    // 전체 레이아웃을 1.2배로 키워서 캔버스 생성
+    legendCanvas.width = Math.round(baseWidth * legendScale);
+    legendCanvas.height = Math.round(baseHeight * legendScale);
+    legendCanvas.style.width = `${Math.round(baseWidth * legendScale)}px`;
+    legendCanvas.style.height = `${Math.round(baseHeight * legendScale)}px`;
+
+    const ctx = legendCanvas.getContext('2d');
+    ctx.scale(legendScale, legendScale);
+
+    // 기존에 만들어둔 범례 그리기 함수를 이 '미니 캔버스'에 0, 0 좌표부터 출력!
+    drawStaticLegend(ctx, 0, 0);
+
+    // 완성된 미니 캔버스를 HTML 컨테이너에 삽입
+    container.appendChild(legendCanvas);
+  }
+
+  // 🌟 [수정됨] p10 화면 렌더링을 총괄하는 객체
   window.page_S10 = {
     render: function () {
+      // 1. 오른쪽 뜨개물 캔버스 그리기
       const grid = document.getElementById('p10-preview-grid');
-      if (!grid) return;
-      drawPreviewGrid(grid);
+      if (grid) drawPreviewGrid(grid);
+
+      // 2. 왼쪽 설명 글씨 아래에 범례 미니 캔버스 그리기
+      renderLegendToHTML();
     }
   };
-}());
+}()); // S10.js 끝

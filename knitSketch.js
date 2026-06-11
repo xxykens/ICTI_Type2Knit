@@ -131,8 +131,6 @@ function draw() {
           clipMaxY:        ph + spacing
         });
 
-        // 🌟 [여기를 수정하세요!] 
-        // 980, 260 대신 패널 너비(pw)에서 30px 뺀 위치(우측 상단)에 배치합니다.
         if (window.LegendUI && typeof window.LegendUI.drawIcon === 'function') {
           window.LegendUI.drawIcon(pw - 30, ph - 40);
         }
@@ -332,12 +330,24 @@ window.LegendUI = {
     if (tY + boxH > height) tY = height - boxH - 10;
     if (tY < 10) tY = 10;
 
-    colorMode(RGB);
-    fill(255, 245); 
-    stroke(200);
-    strokeWeight(1);
-    rectMode(CORNER);
-    rect(tX, tY, boxW, boxH, 12);
+    this.drawStaticLegend(tX, tY, true);
+  },
+
+  // 🌟 [추가됨] 내용물만 렌더링하는 고정 뷰 함수
+  drawStaticLegend: function(tX, tY, showBackground = true) {
+    push();
+    let boxW = 280; 
+    let boxH = 350; 
+
+    // showBackground가 true일 때만 하얀 둥근 테두리 박스를 그립니다.
+    if (showBackground) {
+      colorMode(RGB);
+      fill(255, 245); 
+      stroke(200);
+      strokeWeight(1);
+      rectMode(CORNER);
+      rect(tX, tY, boxW, boxH, 12);
+    }
     
     textFont('HSHwalkong');
     textWrap(WORD);
