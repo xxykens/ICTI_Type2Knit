@@ -754,7 +754,7 @@
     const shapeGroups = LEGEND_SPEC.shapeExamples.map((group) => {
       return `
         <div class="legend-subtitle">${group.title}</div>
-        <div class="legend-row">
+        <div class="legend-row legend-shape-row">
           ${group.items.map(legendMiniItemMarkup).join('')}
         </div>
       `;

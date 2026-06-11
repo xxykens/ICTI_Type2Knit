@@ -577,13 +577,13 @@
       align-items: stretch;
       justify-content: stretch;
       grid-template-columns:
-        minmax(286px, 0.82fr)
-        minmax(390px, 1.5fr)
-        minmax(240px, 0.78fr);
+        minmax(300px, 1fr)
+        minmax(390px, 2fr)
+        minmax(300px, 1fr);
       grid-template-rows: minmax(0, 1fr) auto;
       column-gap: clamp(20px, 3.2vw, 56px);
       row-gap: clamp(18px, 2.8vh, 32px);
-      padding: clamp(104px, 12vh, 124px) clamp(40px, 4.3vw, 70px) clamp(34px, 5vh, 50px);
+      padding: 110px 60px 50px;
     }
 
     #p10 .preview-copy {
@@ -597,11 +597,11 @@
     }
 
     #p10 .preview-copy h2 {
-      font-size: clamp(58px, 5.3vw, 76px);
+      font-size: 60px;
       font-weight: 800;
       line-height: 1;
       letter-spacing: 0;
-      margin-bottom: clamp(26px, 4vh, 44px);
+      margin-bottom: 20px;
     }
 
     #p10 .preview-copy p {
@@ -669,14 +669,20 @@
       height: 100%;
     }
 
-    #p10 .preview-legend {
+    #p10 #p10-legend-container {
       grid-column: 3;
       grid-row: 1 / 3;
       align-self: start;
       justify-self: end;
       width: min(100%, 348px);
-      color: rgba(0,0,0,0.72);
+      color: rgba(0, 0, 0, 0.72);
       z-index: 2;
+      padding: 24px;
+      background: #ffffff;
+      border-radius: 24px;
+      max-height: calc(max(100vh, var(--stage-min-height)) - 152px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
     }
 
     #p10 .legend-title {
@@ -688,7 +694,7 @@
 
     #p10 .legend-desc {
       margin: 0 0 clamp(26px, 4vh, 42px);
-      font-size: clamp(12px, 0.95vw, 15px);
+      font-size: clamp(14px, 1.05vw, 17px);
       line-height: 1.55;
       color: rgba(0,0,0,0.46);
       word-break: keep-all;
@@ -765,6 +771,11 @@
       margin-top: 28px;
     }
 
+    #p10 .legend-shape-row {
+      align-items: center;
+      gap: clamp(14px, 2vw, 28px);
+    }
+
     #p10 .legend-mini-item {
       display: inline-flex;
       flex-direction: column;
@@ -772,10 +783,18 @@
       gap: 8px;
       min-width: 44px;
       color: rgba(0,0,0,0.48);
-      font-size: clamp(12px, 0.95vw, 15px);
+      font-size: clamp(13px, 1vw, 16px);
       line-height: 1.15;
       text-align: center;
       white-space: nowrap;
+    }
+
+    #p10 .legend-shape-row .legend-mini-item {
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      text-align: left;
     }
 
     #p10 .legend-mini-cell {
@@ -807,7 +826,7 @@
       grid-row: 2;
       align-self: end;
       justify-self: start;
-      width: min(100%, 360px);
+      width: min(100%, 390px);
       display: flex;
       flex-direction: column;
       gap: 20px;
@@ -826,10 +845,10 @@
     }
 
     #p10 .preview-camera-copy strong {
-      font-size: clamp(21px, 1.7vw, 28px);
+      font-size: clamp(21px, 1.7vw, 24px);
       font-weight: 700;
       color: rgba(0,0,0,0.72);
-      line-height: 1.05;
+      line-height: 1.4;
       white-space: nowrap;
     }
 
@@ -938,24 +957,24 @@
       word-break: keep-all;
     }
 
-    @media (max-width: 1220px), (max-height: 760px) {
+    @media (max-width: 1220px), (max-height: 820px) {
       #p10 {
         grid-template-columns:
-          minmax(270px, 0.78fr)
-          minmax(372px, 1.36fr)
-          minmax(224px, 0.68fr);
-        column-gap: 20px;
+          minmax(280px, 1fr)
+          minmax(320px, 1.5fr)
+          minmax(280px, 1fr);
+        column-gap: 16px;
         row-gap: 16px;
-        padding: 96px 34px 30px;
+        padding: 110px 60px 30px;
       }
 
       #p10 .preview-copy h2 {
-        font-size: 54px;
-        margin-bottom: 24px;
+        font-size: 60px;
+        margin-bottom: 20px;
       }
 
       #p10 .preview-copy p {
-        font-size: 22px;
+        font-size: 23px;
         line-height: 1.52;
       }
 
@@ -964,9 +983,10 @@
         line-height: 1.38;
       }
 
-      #p10 .preview-legend {
-        transform: scale(0.86);
-        transform-origin: top right;
+      #p10 #p10-legend-container {
+        padding: 18px;
+        border-radius: 20px;
+        max-height: calc(max(100vh, var(--stage-min-height)) - 126px);
       }
 
       #p10 .legend-section-title {
@@ -992,7 +1012,6 @@
 
       #p10 .legend-mini-item {
         gap: 4px;
-        font-size: 11px;
       }
 
       #p10 .legend-mini-cell {
@@ -1017,14 +1036,14 @@
       }
 
       #p10 .preview-camera-area {
-        width: min(100%, 300px);
-        gap: 6px;
+        width: min(100%, 340px);
+        gap: 16px;
       }
 
       #p10 .preview-camera-card {
         grid-template-columns: 78px minmax(0, 1fr);
         gap: 12px;
-        min-height: 122px;
+        min-height: 105px;
         padding: 12px;
       }
 
