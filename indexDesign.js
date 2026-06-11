@@ -4,7 +4,6 @@ const state = {
   charCount: 0,
   currentScreen: 'p1'
 };
-const LOGO_HIDDEN_SCREENS = new Set(['p1', 'p11', 'p12', 'p14']);
 window.state = state;
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && document.getElementById('p18-overlay-backdrop')) {
@@ -30,7 +29,6 @@ function goTo(id) {
   next.classList.add('active');
   state.currentScreen = id;
   document.body.classList.toggle('is-landing', id === 'p1');
-  document.body.classList.toggle('is-logo-hidden', LOGO_HIDDEN_SCREENS.has(id));
   onScreenEnter(id);
 }
 

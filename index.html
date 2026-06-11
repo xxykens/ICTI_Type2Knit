@@ -9,31 +9,33 @@
   </head>
   <body class="is-landing">
     <header class="site-header">
-      <nav class="site-nav" aria-label="상단 네비게이션">
-        <button class="site-logo-placeholder" type="button" onclick="goTo('p1')" aria-label="홈으로"></button>
+      <div class="site-header-inner">
+        <button class="site-logo-placeholder" type="button" onclick="goTo('p1')" aria-label="홈으로">
+          <img class="site-logo-image" src="images/type-to-knit-logo.svg" alt="">
+        </button>
         <div class="site-tagline">감정이∙패턴이∙되는∙순간</div>
-      </nav>
+      </div>
     </header>
 
 <!-- P1 – LANDING -->
 <div id="p1" class="screen active">
-  <div class="top-brand">감정이∙패턴이∙되는∙순간</div>
   <div class="preview-tag" onclick="goTo('p10')">► 미리보기</div>
-  <div class="p1-title">
-    <h1>Type to Knit_</h1>
-    <div class="desc">
-      화나는 일이 있었나요?<br>
-      그 마음을 적어보세요.<br>
-      글자는 사라지고 뜨개질이 남습니다.
+  <div class="p1-hero">
+    <div class="p1-title">
+      <h1>Type to Knit_</h1>
+      <div class="desc">
+        화나는 일이 있었나요?<br>
+        그 마음을 적어보세요.<br>
+        글자는 사라지고 뜨개질이 남습니다.
+      </div>
+      <div class="p1-actions">
+        <button class="enter-btn" type="button" onclick="goTo('p2')">입장하기</button>
+        <button class="archive-tag secondary-btn" type="button" onclick="goTo('p18')">아카이브 보기</button>
+      </div>
     </div>
-    <div class="p1-actions">
-      <button class="enter-btn" type="button" onclick="goTo('p2')">입장하기</button>
-      <button class="archive-tag secondary-btn" type="button" onclick="goTo('p18')">아카이브 보기</button>
-    </div>
-  </div>
-  <div class="right">
-    <svg width="343" height="535" viewBox="0 0 343 535" fill="none" xmlns="http://www.w3.org/2000/svg" style="height:700px;width:auto">
-      <g opacity="0.5">
+    <div class="right">
+      <svg class="knit-graphic" width="343" height="535" viewBox="0 0 343 535" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <g opacity="0.5">
         <line x1="171.857" y1="45.861" x2="171.857" y2="111.86" stroke="#E7E1D8" stroke-width="5.68874"/>
         <rect x="38.7407" y="110.144" width="48.9231" height="48.9231" rx="13.0841" fill="#E7E1D8" stroke="#E7E1D8" stroke-width="1.13775"/>
         <rect x="38.7407" y="163.618" width="48.9231" height="48.9231" rx="13.0841" fill="#E7E1D8" stroke="#E7E1D8" stroke-width="1.13775"/>
@@ -78,14 +80,14 @@
         <circle cx="18.4887" cy="103.495" r="16.4973" transform="rotate(5 18.4887 103.495)" fill="#B69E7A" stroke="#E7E1D8" stroke-width="1.13775"/>
         <rect x="-0.733264" y="0.330997" width="223.94" height="10.4699" rx="5.23493" transform="matrix(-0.93541 -0.353565 -0.353565 0.93541 329.166 97.9101)" fill="#B69E7A" stroke="#E7E1D8" stroke-width="1.13775"/>
         <circle cx="17.0662" cy="17.0662" r="16.4973" transform="matrix(-0.996195 0.0871557 0.0871557 0.996195 339.597 85.007)" fill="#B69E7A" stroke="#E7E1D8" stroke-width="1.13775"/>
-      </g>
-    </svg>
+        </g>
+      </svg>
+    </div>
   </div>
 </div>
 
 <!-- P2 – NICKNAME / PRIVACY -->
 <div id="p2" class="screen">
-  <div class="top-brand">감정이∙패턴이∙되는∙순간</div>
   <div class="p2-inner">
     <div class="p2-title">당신을 뭐라고 부를까요?</div>
     <div class="p2-input-wrap">
@@ -129,7 +131,6 @@
 
 <!-- P3 – INTRO 1 -->
 <div id="p3" class="screen intro-screen">
-  <div class="top-brand">감정이∙패턴이∙되는∙순간</div>
   <div class="intro-line" id="p3-l1">감정이 격해져서</div>
   <div class="intro-line" id="p3-l2">메시지창에 분노를 털어놓거나</div>
   <div class="intro-line" id="p3-l3">차마 보내지 못하고 썼다 지운 적 있으신가요?</div>
@@ -139,7 +140,6 @@
 
 <!-- P4 – INTRO 2 -->
 <div id="p4" class="screen intro-screen">
-  <div class="top-brand">감정이∙패턴이∙되는∙순간</div>
   <div class="intro-line" id="p4-l1">당신이 타이핑한 분노, 속상함, 기쁨을</div>
   <div class="intro-line" id="p4-l2">한땀 한땀 담아</div>
   <div class="intro-line" id="p4-l3">뜨개질을 해보려 합니다.</div>
@@ -150,7 +150,6 @@
 
 <!-- P5 – INTRO 3 -->
 <div id="p5" class="screen intro-screen">
-  <div class="top-brand">감정이∙패턴이∙되는∙순간</div>
   <div class="intro-line" id="p5-l1">감정을 타이핑하는 동안의</div>
   <div class="intro-line" id="p5-l2">당신의 표정도</div>
   <div class="intro-line" id="p5-l3">뜨개 패턴에 반영됩니다.</div>
@@ -160,7 +159,6 @@
 
 <!-- P6 – CALIBRATION -->
 <div id="p6" class="screen intro-screen">
-  <div class="top-brand">감정이∙패턴이∙되는∙순간</div>
   <div class="intro-line" id="p6-l1">정면을 바라보고</div>
   <div class="intro-line" id="p6-l2">편안한 표정을 지어주세요.</div>
   <div class="intro-gap"></div>
@@ -175,7 +173,6 @@
 <div id="p7" class="screen">
   <!-- 정상 인식 대기 상태 -->
   <div id="p7-measuring" class="face-recognition-center">
-    <div class="top-brand">감정이∙패턴이∙되는∙순간</div>
     <div id="p7-lottie" class="face-lottie"></div>
     <div class="face-message">정면을 바라보고 편안한 표정을 지어주세요.</div>
     <div id="p7-countdown" class="face-countdown"></div>
@@ -183,7 +180,6 @@
 
   <!-- 인식 실패 상태 (기본 숨김) -->
   <div id="p7-fail" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; flex-direction:column; align-items:center; justify-content:center; z-index:1;">
-    <div class="top-brand">감정이∙패턴이∙되는∙순간</div>
     <div style="font-size:35px; color:#1a1a1a; margin-bottom:20px;">얼굴을 인식하지 못했어요.</div>
     <div style="font-size:22px; color:#888; margin-bottom:40px; text-align:center;">카메라 앞에 얼굴이 잘 보이도록<br>위치를 조정한 뒤 다시 시도해주세요.</div>
     <button onclick="goTo('p1')" style="font-size:20px; padding:14px 36px; border:1.5px solid #aaa; background:#fff; border-radius:8px; cursor:pointer; color:#444; font-family:inherit; margin-bottom:24px;">홈으로 돌아가기</button>
@@ -193,14 +189,12 @@
 
 <!-- P8 – MEASURING DONE -->
 <div id="p8" class="screen face-done-screen">
-  <div class="top-brand">감정이∙패턴이∙되는∙순간</div>
   <img class="face-done-image" src="images/face_detact.png">
   <div class="face-message">측정완료!</div>
 </div>
 
 <!-- P9 – TYPING + 뜨개 캔버스 -->
 <div id="p9" class="screen" onclick="focusTyping()" style="position:relative; flex-direction:column;">
-  <div class="top-brand">감정이∙패턴이∙되는∙순간</div>
   <div class="hint-text">타이핑하는 글자는 화면에 보이지 않아요.</div>
   <div class="hint-text2">지금 떠오르는 생각과 감정을 타이핑해봐요.</div>
   <div id="lang-indicator" class="lang-indicator">A</div>
@@ -237,7 +231,6 @@
 
 <!-- P10 – PREVIEW -->
 <div id="p10" class="screen preview-screen">
-  <div class="top-brand">감정이∙패턴이∙되는∙순간</div>
   <span class="preview-home-link" onclick="goTo('p1')">▶ 홈으로</span>
 
   <div class="preview-copy">
@@ -257,14 +250,12 @@
 
 <!-- P11 – FINISHING -->
 <div id="p11" class="screen">
-  <div class="top-brand">감정이∙패턴이∙되는∙순간</div>
   <img src="images/knitting.png">
   <div class="finishing-text">뜨개질 마무리 매듭 짓는 중...</div>
 </div>
 
 <!-- P12 – COMPLETE (공개) -->
 <div id="p12" class="screen complete-screen">
-  <div class="top-brand">감정이∙패턴이∙되는∙순간</div>
   <div class="preview-panel"></div>
   <div class="info-panel">
     <h2>
@@ -298,7 +289,6 @@
 
 <!-- P14 – COMPLETE (비공개) -->
 <div id="p14" class="screen complete-screen">
-  <div class="top-brand">감정이∙패턴이∙되는∙순간</div>
   <div class="preview-panel"></div>
   <div class="info-panel">
     <h2>당신만의 뜨개 작품이 완성되었습니다.</h2>
@@ -323,7 +313,6 @@
 
 <!-- P16 – DISSOLVE -->
 <div id="p16" class="screen">
-  <div class="top-brand">감정이∙패턴이∙되는∙순간</div>
   <div class="dissolve-text" id="p16-text">
     격양되었던 마음이 조금은 진정되었나요?<br>
     당신의 감정으로 만든 이 작품이 풀리듯,<br>당신의 마음도 풀리면 좋겠어요.
@@ -332,7 +321,6 @@
 
 <!-- P17 – END -->
 <div id="p17" class="screen">
-  <div class="top-brand">감정이∙패턴이∙되는∙순간</div>
   <div class="btn-pair">
     <img src="images/toArchive.png" onclick="goTo('p18')" style="cursor:pointer; width:30%;">
     <img src="images/home.png" onclick="goTo('p1')" style="cursor:pointer; width:30%;">
@@ -341,7 +329,6 @@
 
 <!-- P18 – ARCHIVE -->
 <div id="p18" class="screen" style="position:relative; flex-direction:column;">
-  <div class="top-brand">감정이∙패턴이∙되는∙순간</div>
   <div id="p18-canvas-container" style="
     position:absolute;
     top:0; left:0;
