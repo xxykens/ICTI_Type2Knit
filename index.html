@@ -8,6 +8,12 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
   </head>
   <body class="is-landing">
+    <svg class="svg-symbols" width="0" height="0" aria-hidden="true" focusable="false">
+      <symbol id="icon-help-duotone" viewBox="0 0 100 100" fill="none">
+        <path d="M49.9999 91.6667C73.0124 91.6667 91.6666 73.0125 91.6666 50C91.6666 26.9875 73.0124 8.33333 49.9999 8.33333C26.9874 8.33333 8.33325 26.9875 8.33325 50C8.33325 73.0125 26.9874 91.6667 49.9999 91.6667Z" fill="currentColor" fill-opacity="0.16"/>
+        <path d="M49.2916 58.3333V55.7458C49.2896 54.0405 49.7368 52.3648 50.5882 50.8873C51.4396 49.4097 52.6652 48.1825 54.1416 47.3292C58.8333 44.5792 60.4499 38.7583 57.6999 34.0667C54.9499 29.375 49.1291 27.7583 44.4374 30.5083C41.5208 32.2917 39.5833 35.3625 39.5833 38.9208M49.9999 70.8333H49.9666M91.6666 50C91.6666 26.9875 73.0124 8.33333 49.9999 8.33333C26.9874 8.33333 8.33325 26.9875 8.33325 50C8.33325 73.0125 26.9874 91.6667 49.9999 91.6667C73.0124 91.6667 91.6666 73.0125 91.6666 50Z" stroke="currentColor" stroke-width="6.25" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
+    </svg>
     <header class="site-header">
       <div class="site-header-inner">
         <button class="site-logo-placeholder" type="button" onclick="goTo('p1')" aria-label="홈으로">
@@ -277,7 +283,11 @@
     <h2>
       당신의 뜨개 작품이 완성되었습니다.
       <span class="tooltip-wrapper">
-        <button type="button" class="tooltip-trigger" aria-describedby="p12-tooltip-text">?</button>
+        <button type="button" class="tooltip-trigger" aria-label="작품 등록 안내" aria-describedby="p12-tooltip-text">
+          <svg class="tooltip-icon" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+            <use href="#icon-help-duotone"></use>
+          </svg>
+        </button>
         <span id="p12-tooltip-text" class="tooltip-box" role="tooltip">
           등록 전 최종 미리보기입니다. 작품을 확인한 뒤 아카이브에 등록할 수 있어요.
         </span>
@@ -356,7 +366,11 @@
     <h2>
       아카이브
       <span class="tooltip-wrapper">
-        <button id="p18-tooltip-button" type="button" class="tooltip-trigger">?</button>
+        <button id="p18-tooltip-button" type="button" class="tooltip-trigger" aria-label="감정별 뜨개 패턴 안내">
+          <svg class="tooltip-icon" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+            <use href="#icon-help-duotone"></use>
+          </svg>
+        </button>
       </span>
     </h2>
     <span class="home-link" onclick="goTo('p1')">▶ 홈으로</span>

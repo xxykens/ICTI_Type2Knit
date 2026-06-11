@@ -121,6 +121,13 @@
       display: none;
     }
 
+    .svg-symbols {
+      position: absolute;
+      width: 0;
+      height: 0;
+      overflow: hidden;
+    }
+
     .site-tagline {
       height: 36px;
       display: inline-flex;
@@ -1354,25 +1361,32 @@
       align-items: center;
     }
     #p18 .archive-header .tooltip-wrapper {
-      position: relative;
-      top: -5px;
+      align-self: flex-start;
+      padding-top: 2px;
+      top: 0;
     }
     .screen .tooltip-trigger,
     .complete-screen .tooltip-trigger {
-      width: 34px;
-      height: 34px;
+      width: 30px;
+      height: 30px;
       border-radius: 50%;
       border: none;
-      background: var(--accent-blue);
-      color: #fff;
-      font-size: 18px;
-      font-weight: bold;
+      background: transparent;
+      color: var(--accent-blue);
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       padding: 0;
       line-height: 1;
+    }
+    .screen .tooltip-icon,
+    .complete-screen .tooltip-icon {
+      display: block;
+      width: 28px;
+      height: 28px;
+      color: currentColor;
+      pointer-events: none;
     }
     .screen .tooltip-trigger:focus,
     .complete-screen .tooltip-trigger:focus {

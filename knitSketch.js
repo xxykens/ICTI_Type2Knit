@@ -301,19 +301,42 @@ window.LegendUI = {
     let d = dist(mouseX, mouseY, x, y);
     this.isHovered = (d < this.iconRadius);
 
-    fill(this.isHovered ? '#666666' : '#999999');
-    noStroke();
-    ellipse(x, y, this.iconRadius * 2);
-
-    fill(255);
-    textAlign(CENTER, CENTER);
-    textSize(16);
-    text('?', x, y);
+    this.drawHelpIcon(x, y, this.iconRadius * 1.9, this.isHovered ? '#666666' : '#999999');
     pop();
 
     if (this.isHovered) {
       this.drawTooltip(x, y);
     }
+  },
+
+  drawHelpIcon: function(x, y, size, iconColor) {
+    push();
+    colorMode(RGB);
+    translate(x - size / 2, y - size / 2);
+    scale(size / 100);
+
+    const c = color(iconColor);
+    noStroke();
+    fill(red(c), green(c), blue(c), 41);
+    ellipse(49.9999, 50, 83.3334, 83.3334);
+
+    noFill();
+    stroke(c);
+    strokeWeight(6.25);
+    strokeCap(ROUND);
+    strokeJoin(ROUND);
+    beginShape();
+    vertex(49.2916, 58.3333);
+    vertex(49.2916, 55.7458);
+    bezierVertex(49.2896, 54.0405, 49.7368, 52.3648, 50.5882, 50.8873);
+    bezierVertex(51.4396, 49.4097, 52.6652, 48.1825, 54.1416, 47.3292);
+    bezierVertex(58.8333, 44.5792, 60.4499, 38.7583, 57.6999, 34.0667);
+    bezierVertex(54.9499, 29.375, 49.1291, 27.7583, 44.4374, 30.5083);
+    bezierVertex(41.5208, 32.2917, 39.5833, 35.3625, 39.5833, 38.9208);
+    endShape();
+    line(49.9999, 70.8333, 49.9666, 70.8333);
+    ellipse(49.9999, 50, 83.3334, 83.3334);
+    pop();
   },
 
   drawTooltip: function(iconX, iconY) {
