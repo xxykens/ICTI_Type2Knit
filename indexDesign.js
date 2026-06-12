@@ -3,7 +3,8 @@ const state = {
   privacy: 'public',
   charCount: 0,
   currentScreen: 'p1',
-  p9Hint: null
+  p9Hint: null,
+  p7MessageTimer: null
 };
 window.state = state;
 document.addEventListener('keydown', (e) => {
@@ -117,21 +118,33 @@ function onScreenEnter(id) {
     const failEl = document.getElementById('p7-fail');
     if (measuringEl) measuringEl.style.display = '';
     if (failEl) failEl.style.display = 'none';
+    startCalibrationMessageAnimation();
 
-    let count = 5;
+    /*
+    let count = P7_CALIBRATION_DURATION_SECONDS;
     const countEl = document.getElementById('p7-countdown');
-    if (countEl) countEl.textContent = `${count}초 후 기본 표정이 인식됩니다.`;
+    renderP7Countdown(countEl, count);
 
     const countInterval = setInterval(() => {
       if (state.currentScreen !== 'p7') { clearInterval(countInterval); return; }
       count--;
-      if (countEl) countEl.textContent = `${count}초 후 기본 표정이 인식됩니다.`;
-      if (count <= 0) clearInterval(countInterval);
+      if (count <= 0) {
+        clearInterval(countInterval);
+        return;
+      }
+      renderP7Countdown(countEl, count);
     }, 1000);
+    */
 
     setTimeout(() => {
       if (state.currentScreen !== 'p7') return;
-      if (countEl) countEl.textContent = '';
+      // if (countEl) countEl.textContent = '';
+      const messageEl = document.getElementById('p7-face-message');
+      const registrationMessageTimeout = setTimeout(() => {
+        if (state.currentScreen !== 'p7' || !messageEl) return;
+        messageEl.textContent = '기준표정을 등록하고 있어요.';
+        messageEl.classList.remove('animated-message', 'is-final-message');
+      }, 2000);
 
       const updateInterval = setInterval(() => {
         if (typeof registerFaceBaseline === 'function') {
@@ -139,6 +152,7 @@ function onScreenEnter(id) {
           if (result && result.success) {
             clearInterval(updateInterval);
             clearTimeout(failTimeout);
+            clearTimeout(registrationMessageTimeout);
             if (state.currentScreen === 'p7') goTo('p8');
           }
         }
@@ -148,10 +162,11 @@ function onScreenEnter(id) {
       const failTimeout = setTimeout(() => {
         if (state.currentScreen !== 'p7') return;
         clearInterval(updateInterval);
+        clearTimeout(registrationMessageTimeout);
         showP7Fail();
       }, 15000);
 
-    }, 5000);
+    }, P7_CALIBRATION_DURATION_SECONDS * 1000);
   }
 
   if (id === 'p8') {
@@ -219,6 +234,55 @@ function onScreenEnter(id) {
     }, 5000);
     window._p16Timers.push(t1);
   }
+}
+
+const P7_CALIBRATION_DURATION_SECONDS = 6;
+const P7_CALIBRATION_MESSAGE_INTERVAL_MS = 2000;
+const P7_CALIBRATION_MESSAGES = [
+  '정면을 바라보고 무표정을 유지해주세요.',
+  '얼굴 정보는 저장되지 않습니다.',
+  '이제 기준표정을 등록할게요.'
+];
+
+/*
+function renderP7Countdown(countEl, count) {
+  if (!countEl) return;
+  countEl.innerHTML = `
+    <span class="face-countdown-number">${count}</span>
+    <span class="face-countdown-label">초 후 기준 표정이 인식됩니다</span>
+  `;
+}
+*/
+
+function startCalibrationMessageAnimation() {
+  const messageEl = document.getElementById('p7-face-message');
+  if (!messageEl) return;
+
+  if (state.p7MessageTimer) {
+    clearTimeout(state.p7MessageTimer);
+    state.p7MessageTimer = null;
+  }
+
+  let index = 0;
+  function showMessage() {
+    if (state.currentScreen !== 'p7') return;
+
+    const isFinalMessage = index === P7_CALIBRATION_MESSAGES.length - 1;
+    messageEl.innerHTML = P7_CALIBRATION_MESSAGES[index];
+    messageEl.classList.remove('animated-message', 'is-final-message');
+    void messageEl.offsetWidth;
+    messageEl.classList.add('animated-message');
+    if (isFinalMessage) messageEl.classList.add('is-final-message');
+
+    index += 1;
+    if (index < P7_CALIBRATION_MESSAGES.length) {
+      state.p7MessageTimer = setTimeout(showMessage, P7_CALIBRATION_MESSAGE_INTERVAL_MS);
+    } else {
+      state.p7MessageTimer = null;
+    }
+  }
+
+  showMessage();
 }
 
 // ── P7 인식 실패 처리 ──

@@ -180,8 +180,14 @@
   <!-- 정상 인식 대기 상태 -->
   <div id="p7-measuring" class="face-recognition-center">
     <div id="p7-lottie" class="face-lottie"></div>
-    <div class="face-message">정면을 바라보고 편안한 표정을 지어주세요.</div>
+    <div class="face-message animated-message" id="p7-face-message">정면을 바라보고 무표정을 유지해주세요.</div>
+    <div class="face-context-message">
+      지금의 기준 표정은 뜨개 패턴을 만들 때 기준값으로 사용됩니다.<br>
+      작품은 타이핑 중 변화하는 표정을 따라 완성됩니다.
+    </div>
+    <!--
     <div id="p7-countdown" class="face-countdown"></div>
+    -->
   </div>
 
   <!-- 인식 실패 상태 (기본 숨김) -->

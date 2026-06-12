@@ -1214,12 +1214,85 @@
       word-break: keep-all;
     }
 
-    .face-countdown {
-      min-height: 40px;
-      font-size: 32px;
-      line-height: 1.25;
-      color: #888;
+    #p7 .face-message {
+      min-height: 96px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
+
+    .face-context-message {
+      max-width: min(820px, calc(var(--stage-width) - 96px));
+      margin-top: -10px;
+      font-size: 22px;
+      line-height: 1.55;
+      color: var(--mid-gray);
+      word-break: keep-all;
+    }
+
+    .animated-message {
+      opacity: 0;
+      animation: messageFade 1.9s ease-in-out forwards;
+    }
+
+    .animated-message.is-final-message {
+      animation-name: messageFadeHold;
+    }
+
+    @keyframes messageFade {
+      0% {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      20% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      75% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(-4px);
+      }
+    }
+
+    @keyframes messageFadeHold {
+      0% {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      20%,
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /*
+    .face-countdown {
+      min-height: 112px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      color: #777;
+    }
+
+    .face-countdown-number {
+      font-size: 72px;
+      line-height: 0.95;
+      color: #1a1a1a;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .face-countdown-label {
+      font-size: 24px;
+      line-height: 1.25;
+    }
+    */
 
     /* ════════════════════════════════
        P9 – TYPING
