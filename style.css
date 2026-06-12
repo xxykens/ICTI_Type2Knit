@@ -1266,8 +1266,9 @@
       position: absolute;
       width: 700px;
       height: 325px;
-      left: 290px;
-      top: 280px;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
       background: #FFFFFF;
       border: 2px solid #7C7771;
       border-radius: 12px;

@@ -38,6 +38,7 @@ function onScreenEnter(id) {
     state.charCount = 0;
     document.getElementById('typing-capture').value = '';
     document.getElementById('char-count').textContent = '0';
+    document.getElementById('limit-popup').style.display = 'none';
   }
   if (id === 'p2') {
     const input = document.getElementById('nickname-input');
@@ -443,7 +444,7 @@ function startP16UnravelAnimation() {
   const cvs = document.createElement('canvas');
   cvs.id = 'p16-knit-canvas';
   cvs.width  = W;
-  cvs.height = H;
+  cvs.height = H + 20; // 살짝 가라앉는 정도만 여유
   cvs.style.cssText = `
     position: absolute;
     top: 50%; left: 50%;
@@ -451,19 +452,35 @@ function startP16UnravelAnimation() {
     opacity: 0;
     transition: opacity 1s;
     border-radius: 16px;
+    overflow: visible;
   `;
   p16.appendChild(cvs);
 
   requestAnimationFrame(() => requestAnimationFrame(() => { cvs.style.opacity = '1'; }));
 
+  const startX_ = SP / 2 + 4;
+  const startY_ = SP / 2 + 10;
+
+  // 화면(H)에 보이는 셀만 애니메이션 대상으로 함
+  const visibleIdx = [];
+  cells.forEach((cell, idx) => {
+    const row = Math.floor(idx / 10);
+    const py = startY_ + row * SP;
+    if (py <= H + SP) visibleIdx.push(idx);
+  });
+
+  // 셀별 애니메이션 상태
+  // phase: 'idle' | 'falling' | 'done'
   const cellStates = cells.map(() => ({ phase: 'idle', t: 0 }));
-  const SQUASH_DUR = 180;
-  const LINE_DUR   = 140;
   const startTimes = new Array(cells.length).fill(null);
+
   window._p16RafId = null;
   let finished = false;
 
-  const totalRows = Math.ceil(cells.length / 10);
+  // ㄹ자 순서 매핑: 화면에 보이는 마지막 행부터, 짝수 행=오른→왼, 홀수 행=왼→오른
+  const maxRowIdx = visibleIdx.length ? Math.floor(visibleIdx[visibleIdx.length - 1] / 10) : 0;
+  const totalRows = maxRowIdx + 1;
+
   const unravelOrder = [];
   for (let r = totalRows - 1; r >= 0; r--) {
     const fromBottom = (totalRows - 1) - r;
@@ -471,60 +488,75 @@ function startP16UnravelAnimation() {
     const rowStart = r * 10;
     const rowEnd   = Math.min(rowStart + 10, cells.length);
     const cols = [];
-    for (let c = rowStart; c < rowEnd; c++) cols.push(c);
+    for (let c = rowStart; c < rowEnd; c++) {
+      if (visibleIdx.includes(c)) cols.push(c);
+    }
     if (!leftToRight) cols.reverse();
     unravelOrder.push(...cols);
   }
   const orderIndex = new Array(cells.length);
   unravelOrder.forEach((cellIdx, pos) => { orderIndex[cellIdx] = pos; });
 
+  // ── 타이밍 계산: 500자(약 75셀) 기준 8~10초 안에 끝나도록 ──
+  const FALL_DUR = 700;  // 셀 하나가 가라앉으며 사라지는 시간 (ms)
+  const TOTAL_TARGET = 9000; // 목표 전체 시간 (ms)
+  const START_DELAY = 600;   // 시작 전 대기
+  const END_BUFFER  = FALL_DUR + 300; // 마지막 셀 낙하 + 여유
+
+  const n = Math.max(unravelOrder.length, 1);
+  let STAGGER = (TOTAL_TARGET - START_DELAY - END_BUFFER) / Math.max(n - 1, 1);
+  STAGGER = Math.max(15, Math.min(STAGGER, 220)); // 너무 빠르거나 느리지 않게 클램프
+
   const triggerByOrder = (pos) => {
     if (pos < 0 || pos >= unravelOrder.length) return;
     const cellIdx = unravelOrder[pos];
     if (cellStates[cellIdx].phase !== 'idle') return;
-    cellStates[cellIdx].phase = 'squash';
+    cellStates[cellIdx].phase = 'falling';
     startTimes[cellIdx] = performance.now();
+
+    // 다음 셀은 STAGGER 후에 트리거 (연쇄, 겹치며 진행)
+    const t = setTimeout(() => triggerByOrder(pos + 1), STAGGER);
+    window._p16Timers.push(t);
   };
 
-  const t = setTimeout(() => {
+  const t0 = setTimeout(() => {
     triggerByOrder(0);
     window._p16RafId = requestAnimationFrame(tick);
-  }, 800);
-  window._p16Timers.push(t);
+  }, START_DELAY);
+  window._p16Timers.push(t0);
 
   function tick(now) {
     if (finished) return;
+
     let anyActive = false;
 
     for (let idx = 0; idx < cells.length; idx++) {
       const cs = cellStates[idx];
       if (cs.phase === 'idle' || cs.phase === 'done') continue;
+
       const elapsed = now - startTimes[idx];
       anyActive = true;
 
-      if (cs.phase === 'squash') {
-        cs.t = Math.min(elapsed / SQUASH_DUR, 1);
+      if (cs.phase === 'falling') {
+        cs.t = Math.min(elapsed / FALL_DUR, 1);
         if (cs.t >= 1) {
-          cs.phase = 'line';
-          startTimes[idx] = now;
-          cs.t = 0;
-          triggerByOrder(orderIndex[idx] + 1);
+          cs.phase = 'done';
         }
-      } else if (cs.phase === 'line') {
-        cs.t = Math.min(elapsed / LINE_DUR, 1);
-        if (cs.t >= 1) cs.phase = 'done';
       }
     }
 
     drawFrame();
 
-    const noneIdle = cellStates.every(cs => cs.phase !== 'idle');
-    if (noneIdle && !anyActive) {
+    const visibleStates = unravelOrder.map(idx => cellStates[idx]);
+    const noneIdle = visibleStates.every(cs => cs.phase !== 'idle');
+    const allDone  = visibleStates.every(cs => cs.phase === 'done');
+
+    if (noneIdle && allDone) {
       finished = true;
       window._p16RafId = null;
-      cvs.style.transition = 'opacity 0.8s';
+      cvs.style.transition = 'opacity 0.6s';
       cvs.style.opacity = '0';
-      const t2 = setTimeout(() => goTo('p17'), 900);
+      const t2 = setTimeout(() => goTo('p17'), 700);
       window._p16Timers.push(t2);
       return;
     }
@@ -534,7 +566,7 @@ function startP16UnravelAnimation() {
 
   function drawFrame() {
     const ctx = cvs.getContext('2d');
-    ctx.clearRect(0, 0, W, H);
+    ctx.clearRect(0, 0, W, cvs.height);
 
     const startX = SP / 2 + 4;
     const startY = SP / 2 + 10;
@@ -547,9 +579,9 @@ function startP16UnravelAnimation() {
 
       const col = idx % 10;
       const row = Math.floor(idx / 10);
-      const px  = startX + col * SP;
-      const py  = startY + row * SP;
-      if (py > H + SP) continue;
+      const baseX = startX + col * SP;
+      const baseY = startY + row * SP;
+      if (baseY > H + SP) continue;
 
       let h, s, b, stitchH, stitchBri;
       if (cell.bgHue !== undefined) {
@@ -567,32 +599,26 @@ function startP16UnravelAnimation() {
       const CS = isFilled ? CS_base : CS_base - 3;
 
       if (cs.phase === 'idle') {
-        _p16DrawCell(ctx, px, py, CS, cell, bgR, bgG, bgBl, stR, stG, stBl, tension, isFilled, 1, 1);
-      } else if (cs.phase === 'squash') {
-        const ease = cs.t * cs.t;
-        _p16DrawCell(ctx, px, py, CS, cell, bgR, bgG, bgBl, stR, stG, stBl, tension, isFilled, 1 - ease, 1);
-      } else if (cs.phase === 'line') {
-        const halfW = (CS / 2) * (1 - cs.t);
-        ctx.save();
-        ctx.globalAlpha = 1 - cs.t;
-        ctx.strokeStyle = `rgb(${bgR},${bgG},${bgBl})`;
-        ctx.lineWidth = Math.max(1.2, SP * 0.07);
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(px - halfW, py);
-        ctx.lineTo(px + halfW, py);
-        ctx.stroke();
-        ctx.restore();
+        _p16DrawCell(ctx, baseX, baseY, CS, cell, bgR, bgG, bgBl, stR, stG, stBl, tension, isFilled, 1, 1, 0, 0);
+      } else if (cs.phase === 'falling') {
+        // 부드럽게 가라앉으며 투명도로 사라짐 (easeOut)
+        const ease = 1 - Math.pow(1 - cs.t, 2);
+        const fallY = ease * (CS * 1.4); // 셀 크기의 140%만큼 하강
+        const alpha = 1 - cs.t; // 처음부터 점진적으로 페이드아웃
+
+        _p16DrawCell(ctx, baseX, baseY + fallY, CS, cell, bgR, bgG, bgBl, stR, stG, stBl, tension, isFilled, 1, alpha, 0, 0);
       }
     }
   }
 }
 
-function _p16DrawCell(ctx, px, py, CS, cell, bgR, bgG, bgBl, stR, stG, stBl, tension, isFilled, scaleY, alpha) {
-  if (scaleY <= 0) return;
+function _p16DrawCell(ctx, px, py, CS, cell, bgR, bgG, bgBl, stR, stG, stBl, tension, isFilled, scaleY, alpha, rotation) {
+  if (scaleY <= 0 || alpha <= 0) return;
+  rotation = rotation || 0;
   ctx.save();
   ctx.globalAlpha = alpha;
   ctx.translate(px, py);
+  ctx.rotate(rotation);
   ctx.scale(1, scaleY);
   ctx.translate(-px, -py);
 
