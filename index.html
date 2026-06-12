@@ -201,8 +201,10 @@
 
 <!-- P9 – TYPING + 뜨개 캔버스 -->
 <div id="p9" class="screen" onclick="focusTyping()" style="position:relative; flex-direction:column;">
-  <div class="hint-text">타이핑하는 글자는 화면에 보이지 않아요.</div>
-  <div class="hint-text2">지금 떠오르는 생각과 감정을 타이핑해봐요.</div>
+  <div id="typing-hint" class="typing-hint" aria-live="polite">
+    <div id="typing-hint-line-1" class="hint-text">문장을 이어가면 새로운 짜임이 만들어져요.</div>
+    <div id="typing-hint-line-2" class="hint-text2">지금 떠오르는 감정을 적어보세요.</div>
+  </div>
   <div id="lang-indicator" class="lang-indicator">A</div>
   <div class="char-count">
     <span>🪡</span>

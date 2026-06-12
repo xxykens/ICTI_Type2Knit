@@ -2,7 +2,8 @@ const state = {
   nickname: '',
   privacy: 'public',
   charCount: 0,
-  currentScreen: 'p1'
+  currentScreen: 'p1',
+  p9Hint: null
 };
 window.state = state;
 document.addEventListener('keydown', (e) => {
@@ -159,6 +160,7 @@ function onScreenEnter(id) {
   }
 
   if (id === 'p9') {
+    resetTypingHint();
     setTimeout(focusTyping, 300);
     if (typeof window.knitSketch_onP9Enter === 'function') window.knitSketch_onP9Enter();
     // knitstamp 루프는 p7부터 이미 돌고 있음 — 여기선 시작만 확인
@@ -246,6 +248,7 @@ function startKnitstampLoop() {
   if (state._knitstampInterval) return; // 이미 돌고 있으면 중복 시작 안 함
   state._knitstampInterval = setInterval(() => {
     if (typeof updateKnitstampInput === 'function') updateKnitstampInput();
+    updateTypingHint();
   }, 1000);
 }
 
@@ -329,19 +332,129 @@ async function handleBaselineRegister() {
 }
 
 // ── P9 타이핑 ──
+const TYPING_HINT_MESSAGES = [
+  {
+    kind: 'base',
+    line1: '문장을 이어가면 새로운 짜임이 만들어져요.',
+    line2: '지금 떠오르는 감정을 적어보세요.'
+  },
+  {
+    kind: 'base',
+    line1: '계속 타이핑해보세요.',
+    line2: '글과 표정이 쌓일수록 패턴이 더 풍부해져요.'
+  },
+  {
+    kind: 'calmPattern',
+    line1: '색과 패턴을 더 다양하게 만들고 싶다면',
+    line2: '눈썹, 입꼬리, 시선을 조금씩 바꾸며 글자를 입력해보세요.'
+  },
+  {
+    kind: 'calmPattern',
+    line1: '표정과 글이 함께 움직이면',
+    line2: '색과 무늬가 더 풍부하게 이어져요.'
+  },
+  {
+    kind: 'slow',
+    line1: '더 이상 할 말이 없나요?',
+    line2: '그럼 이 마음은 여기서 매듭지어볼까요?'
+  }
+];
+
+const TYPING_HINT_ROTATE_MS = 6500;
+const TYPING_HINT_FADE_MS = 360;
+
+function createTypingHintState() {
+  const now = Date.now();
+  return {
+    enteredAt: now,
+    lastHintKey: '',
+    transitionTimer: null
+  };
+}
+
+function resetTypingHint() {
+  if (state.p9Hint?.transitionTimer) {
+    clearTimeout(state.p9Hint.transitionTimer);
+  }
+  state.p9Hint = createTypingHintState();
+  updateTypingHint({ force: true });
+}
+
+function getTypingHintState() {
+  if (!state.p9Hint) state.p9Hint = createTypingHintState();
+  return state.p9Hint;
+}
+
+function pickSequentialTypingHint(now, enteredAt) {
+  const index = Math.floor((now - enteredAt) / TYPING_HINT_ROTATE_MS) % TYPING_HINT_MESSAGES.length;
+  return TYPING_HINT_MESSAGES[index];
+}
+
+function applyTypingHintText(hintEl, line1El, line2El, message) {
+  hintEl.dataset.hintKind = message.kind;
+  line1El.textContent = message.line1;
+  line2El.textContent = message.line2;
+}
+
+function updateTypingHint(options = {}) {
+  if (state.currentScreen !== 'p9') return;
+
+  const hintEl = document.getElementById('typing-hint');
+  const line1El = document.getElementById('typing-hint-line-1');
+  const line2El = document.getElementById('typing-hint-line-2');
+  if (!hintEl || !line1El || !line2El) return;
+
+  const hintState = getTypingHintState();
+  const now = Date.now();
+  const message = pickSequentialTypingHint(now, hintState.enteredAt);
+
+  const hintKey = `${message.kind}:${message.line1}:${message.line2}`;
+  if (hintState.lastHintKey === hintKey) return;
+
+  hintState.lastHintKey = hintKey;
+
+  if (hintState.transitionTimer) {
+    clearTimeout(hintState.transitionTimer);
+    hintState.transitionTimer = null;
+  }
+
+  if (options.force) {
+    hintEl.classList.remove('is-changing');
+    applyTypingHintText(hintEl, line1El, line2El, message);
+    return;
+  }
+
+  hintEl.classList.add('is-changing');
+  hintState.transitionTimer = setTimeout(() => {
+    if (state.currentScreen !== 'p9') {
+      hintState.transitionTimer = null;
+      return;
+    }
+
+    applyTypingHintText(hintEl, line1El, line2El, message);
+    requestAnimationFrame(() => {
+      hintEl.classList.remove('is-changing');
+      hintState.transitionTimer = null;
+    });
+  }, TYPING_HINT_FADE_MS);
+}
+
 function focusTyping() {
   document.getElementById('typing-capture').focus();
 }
 
 function onType() {
   const ta = document.getElementById('typing-capture');
-  const count = ta.value.length;
-  state.charCount = count;
-  document.getElementById('char-count').textContent = count;
+  let count = ta.value.length;
   if (count >= 500) {
     ta.value = ta.value.slice(0, 500);
+    count = ta.value.length;
     document.getElementById('limit-popup').style.display = 'block';
   }
+
+  state.charCount = count;
+  document.getElementById('char-count').textContent = count;
+  updateTypingHint();
 }
 
 function endTyping() { goTo('p11'); }
