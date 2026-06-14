@@ -793,6 +793,8 @@
     `;
   }
 
+  window.renderKnitPreviewGrid = drawPreviewGrid;
+
   // 🌟 [수정됨] p10 화면 렌더링을 총괄하는 객체
   window.page_S10 = {
     render: function () {

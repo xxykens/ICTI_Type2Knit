@@ -188,6 +188,12 @@ function onScreenEnter(id) {
     }
   }
 
+  if (id === 'p19') {
+    if (window.page_S19 && typeof window.page_S19.render === 'function') {
+      window.page_S19.render();
+    }
+  }
+
   if (id === 'p11') {
     stopKnitstampLoop();
     setTimeout(finishAnimation, 2800);
