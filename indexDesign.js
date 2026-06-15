@@ -8,9 +8,22 @@ const state = {
 };
 window.state = state;
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && document.getElementById('p18-overlay-backdrop')) {
+  if (e.key !== 'Escape') return;
+
+  const qrBackdrop = document.getElementById('knit-qr-backdrop');
+  if (qrBackdrop && qrBackdrop.classList.contains('is-visible')) {
+    closeKnitQrPopup();
+    return;
+  }
+
+  if (document.getElementById('p18-overlay-backdrop')) {
     closeP18Overlay();
   }
+});
+
+document.addEventListener('click', (e) => {
+  const qrBackdrop = document.getElementById('knit-qr-backdrop');
+  if (qrBackdrop && e.target === qrBackdrop) closeKnitQrPopup();
 });
 
 // ── 화면 전환 ──
@@ -233,7 +246,7 @@ function onScreenEnter(id) {
     }, 100);
   }
   if (id === 'p14') {
-    document.getElementById('p14-chars').textContent = state.charCount;
+    fillPrivateCompleteScreen();
     setTimeout(() => {
       if (typeof window.knitSketch_renderPreview === 'function') window.knitSketch_renderPreview();
     }, 100);
@@ -590,10 +603,158 @@ function finishAnimation() {
 }
 
 function fillCompleteScreen() {
-  document.getElementById('p12-nick').textContent = state.nickname;
-  document.getElementById('p12-chars').textContent = state.charCount;
-  document.getElementById('p12-privacy').textContent =
-    state.privacy === 'public' ? '전체 공개' : '일부 공개';
+  fillCompleteDetails('p12');
+}
+
+function fillPrivateCompleteScreen() {
+  fillCompleteDetails('p14');
+}
+
+function _createCompletePreviewPiece() {
+  if (typeof KnitPiece !== 'function') return null;
+
+  const nickname = state.privacy === 'private' ? '익명' : (state.nickname || '익명');
+  const piece = new KnitPiece(nickname, state.privacy);
+  piece.absorbArchiveData(window.archiveData || []);
+  window._knitSketchPreviewPiece = piece;
+  return piece;
+}
+
+function _formatCompleteDate(dateValue) {
+  const date = dateValue ? new Date(dateValue) : new Date();
+  if (Number.isNaN(date.getTime())) return '-';
+  return date.toLocaleDateString('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+}
+
+function _normalizeCompleteEmotionTag(cell) {
+  const tagMap = {
+    FROWN: '짜증',
+    SURPRISED: '놀람',
+    BLURRY: '미묘함',
+    NEUTRAL: '중립',
+    '찌푸림': '짜증',
+    '미묘': '미묘함'
+  };
+  const raw = cell.emotionTagKo || tagMap[cell.emotionTag] || tagMap[cell.eye] || cell.emotionTag || cell.eye || '';
+  return tagMap[raw] || raw;
+}
+
+function _getCompleteEmotionStats(piece) {
+  const groups = {};
+  const order = [];
+  const cells = piece ? (piece.cells || piece.knitArray || []) : [];
+
+  cells.forEach((cell) => {
+    const tag = _normalizeCompleteEmotionTag(cell);
+    if (!tag || tag === '중립' || tag === 'NEUTRAL') return;
+
+    if (!groups[tag]) {
+      groups[tag] = { label: tag, count: 0, intensitySum: 0 };
+      order.push(tag);
+    }
+
+    const intensity = typeof cell.emotionIntensity === 'number'
+      ? cell.emotionIntensity
+      : (typeof cell.tension === 'number' ? cell.tension : 0);
+
+    groups[tag].count += 1;
+    groups[tag].intensitySum += intensity;
+  });
+
+  return order
+    .map((tag) => ({
+      label: tag,
+      count: groups[tag].count,
+      avg: groups[tag].count ? groups[tag].intensitySum / groups[tag].count : 0
+    }))
+    .sort((a, b) => b.count - a.count || b.avg - a.avg);
+}
+
+function _getCompleteAverageTypingSpeed(piece) {
+  const cells = piece ? (piece.cells || piece.knitArray || []) : [];
+  let sum = 0;
+  let count = 0;
+
+  cells.forEach((cell) => {
+    const speed = typeof cell.speed === 'number' ? cell.speed : cell.typingSpeed;
+    if (typeof speed !== 'number') return;
+    sum += speed;
+    count += 1;
+  });
+
+  return count ? sum / count : 0;
+}
+
+function _formatCompleteAverageSpeed(avgSpeed) {
+  if (!avgSpeed) return '기록 없음';
+  let label = '보통';
+  if (avgSpeed >= 0.6) label = '빠름';
+  else if (avgSpeed < 0.4) label = '느림';
+  return `${label} ${Math.round(avgSpeed * 100)}%`;
+}
+
+function _buildCompleteSummary(piece, emotionStats, avgSpeed) {
+  if (!piece || !emotionStats.length) return '기록된 감정 정보가 부족해요.';
+
+  const top = emotionStats.slice(0, 3);
+  let text = '';
+
+  if (top.length === 1) {
+    text = `지배적인 감정은 ${top[0].label}입니다. 오늘의 마음이 하나의 결로 또렷하게 남았어요.`;
+  } else if (top.length === 2) {
+    text = `${top[0].label}에서 ${top[1].label}로 감정이 변화하는 흐름이 보여요.`;
+  } else {
+    text = `지배적인 감정은 ${top[0].label}입니다. ${top[1].label}, ${top[2].label}도 함께 묻어나는 복합적인 기록이에요.`;
+  }
+
+  if (avgSpeed >= 0.6) {
+    text += ' 마음속 말이 빠르게 풀려나온 편이에요.';
+  } else if (avgSpeed > 0 && avgSpeed < 0.4) {
+    text += ' 천천히 고르며 적어 내려간 리듬이 보여요.';
+  }
+
+  return text;
+}
+
+function fillCompleteDetails(screenId) {
+  const piece = _createCompletePreviewPiece();
+  const emotionStats = _getCompleteEmotionStats(piece);
+  const avgSpeed = _getCompleteAverageTypingSpeed(piece);
+
+  const dateEl = document.getElementById(`${screenId}-date`);
+  const charsEl = document.getElementById(`${screenId}-chars`);
+  const summaryEl = document.getElementById(`${screenId}-summary`);
+  const tagsEl = document.getElementById(`${screenId}-tags`);
+  const speedEl = document.getElementById(`${screenId}-speed`);
+
+  if (dateEl) dateEl.textContent = _formatCompleteDate(piece && piece.date);
+  if (charsEl) charsEl.textContent = state.charCount;
+  if (summaryEl) summaryEl.textContent = _buildCompleteSummary(piece, emotionStats, avgSpeed);
+  if (speedEl) speedEl.textContent = _formatCompleteAverageSpeed(avgSpeed);
+
+  if (tagsEl) {
+    tagsEl.innerHTML = '';
+    const topTags = emotionStats.slice(0, 3);
+
+    if (!topTags.length) {
+      const empty = document.createElement('span');
+      empty.className = 'complete-tag is-empty';
+      empty.textContent = '기록 없음';
+      tagsEl.appendChild(empty);
+      return;
+    }
+
+    topTags.forEach((tag) => {
+      const item = document.createElement('span');
+      item.className = 'complete-tag';
+      item.textContent = `${tag.label} ${Math.round(tag.avg * 100)}%`;
+      tagsEl.appendChild(item);
+    });
+  }
 }
 
 function retryKnit() {
@@ -612,6 +773,93 @@ function retryKnit() {
 }
 
 function unravelKnit() { goTo('p16'); }
+
+function openKnitQrPopup() {
+  const backdrop = document.getElementById('knit-qr-backdrop');
+  if (!backdrop) return;
+
+  backdrop.classList.add('is-visible');
+  backdrop.setAttribute('aria-hidden', 'false');
+  drawKnitQrPlaceholder();
+
+  const closeButton = backdrop.querySelector('.qr-popup-close');
+  if (closeButton) closeButton.focus();
+}
+
+function closeKnitQrPopup() {
+  const backdrop = document.getElementById('knit-qr-backdrop');
+  if (!backdrop) return;
+
+  backdrop.classList.remove('is-visible');
+  backdrop.setAttribute('aria-hidden', 'true');
+}
+
+function drawKnitQrPlaceholder() {
+  const canvas = document.getElementById('knit-qr-example-canvas');
+  if (!canvas) return;
+
+  const size = 240;
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  canvas.width = size * dpr;
+  canvas.height = size * dpr;
+  canvas.style.width = `${size}px`;
+  canvas.style.height = `${size}px`;
+
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, size, size);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, size, size);
+
+  const modules = 29;
+  const pad = 14;
+  const cell = (size - pad * 2) / modules;
+
+  function fillModule(x, y, color) {
+    ctx.fillStyle = color || '#1d1d1d';
+    ctx.fillRect(
+      Math.round(pad + x * cell),
+      Math.round(pad + y * cell),
+      Math.ceil(cell),
+      Math.ceil(cell)
+    );
+  }
+
+  function drawFinder(x, y) {
+    for (let yy = 0; yy < 7; yy += 1) {
+      for (let xx = 0; xx < 7; xx += 1) {
+        const edge = xx === 0 || yy === 0 || xx === 6 || yy === 6;
+        const center = xx >= 2 && xx <= 4 && yy >= 2 && yy <= 4;
+        fillModule(x + xx, y + yy, edge || center ? '#1d1d1d' : '#ffffff');
+      }
+    }
+  }
+
+  function isFinderArea(x, y) {
+    const inLeft = x < 8;
+    const inRight = x > modules - 9;
+    const inTop = y < 8;
+    const inBottom = y > modules - 9;
+    return (inLeft && inTop) || (inRight && inTop) || (inLeft && inBottom);
+  }
+
+  for (let y = 0; y < modules; y += 1) {
+    for (let x = 0; x < modules; x += 1) {
+      if (isFinderArea(x, y)) continue;
+      const hash = (x * 11 + y * 17 + x * y * 3 + y * y) % 9;
+      const stripe = (x + y) % 7 === 0 || (x * 2 + y) % 11 === 0;
+      if (hash < 3 || stripe) fillModule(x, y);
+    }
+  }
+
+  drawFinder(0, 0);
+  drawFinder(modules - 7, 0);
+  drawFinder(0, modules - 7);
+
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(0.5, 0.5, size - 1, size - 1);
+}
 
 function _cleanupP16() {
   if (window._p16Timers) window._p16Timers.forEach(t => clearTimeout(t));

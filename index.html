@@ -367,9 +367,29 @@
       </span>
     </h2>
     <div class="info-row">
-      닉네임: <span id="p12-nick"></span><br>
-      글자 수: <span id="p12-chars">0</span> / 500<br>
-      공개 설정: <span id="p12-privacy"></span>
+      <div class="complete-detail">
+        <span class="complete-detail-label">생성 날짜</span>
+        <strong id="p12-date">-</strong>
+      </div>
+      <div class="complete-detail">
+        <span class="complete-detail-label">글자 수</span>
+        <strong><span id="p12-chars">0</span> / 500</strong>
+      </div>
+      <div class="complete-detail complete-detail-summary">
+        <span class="complete-detail-label">뜨개물 정보</span>
+        <p id="p12-summary">기록된 감정 정보를 정리하고 있어요.</p>
+      </div>
+      <div class="complete-detail">
+        <span class="complete-detail-label">주요 감정 태그</span>
+        <div id="p12-tags" class="complete-tag-list" aria-live="polite"></div>
+      </div>
+      <div class="complete-detail">
+        <span class="complete-detail-label">평균 타이핑 속도</span>
+        <strong id="p12-speed">-</strong>
+      </div>
+      <button type="button" class="qr-download-btn" onclick="openKnitQrPopup()">
+        작품 이미지 다운받기
+      </button>
     </div>
     <div class="caution">
       🪡 등록 후 수정할 수 없어요.<br>
@@ -378,6 +398,9 @@
     <div class="btn-row">
       <button type="button" class="image-btn" onclick="retryKnit()" aria-label="다시 하기">
         <img src="images/retry.png" alt="">
+      </button>
+      <button type="button" class="image-btn" onclick="unravelKnit()" aria-label="풀기">
+        <img src="images/untie.png" alt="">
       </button>
       <button type="button" class="image-btn" onclick="handleRegister()" aria-label="아카이브에 등록">
         <img src="images/register.png" alt="">
@@ -392,8 +415,29 @@
   <div class="info-panel">
     <h2>당신만의 뜨개 작품이 완성되었습니다.</h2>
     <div class="info-row">
-      글자 수: <span id="p14-chars">0</span> / 500<br>
-      공개 설정: 비공개
+      <div class="complete-detail">
+        <span class="complete-detail-label">생성 날짜</span>
+        <strong id="p14-date">-</strong>
+      </div>
+      <div class="complete-detail">
+        <span class="complete-detail-label">글자 수</span>
+        <strong><span id="p14-chars">0</span> / 500</strong>
+      </div>
+      <div class="complete-detail complete-detail-summary">
+        <span class="complete-detail-label">뜨개물 정보</span>
+        <p id="p14-summary">기록된 감정 정보를 정리하고 있어요.</p>
+      </div>
+      <div class="complete-detail">
+        <span class="complete-detail-label">주요 감정 태그</span>
+        <div id="p14-tags" class="complete-tag-list" aria-live="polite"></div>
+      </div>
+      <div class="complete-detail">
+        <span class="complete-detail-label">평균 타이핑 속도</span>
+        <strong id="p14-speed">-</strong>
+      </div>
+      <button type="button" class="qr-download-btn" onclick="openKnitQrPopup()">
+        작품 이미지 다운받기
+      </button>
     </div>
     <div class="caution">
       🪡 이 작품은 저장되지 않아요.<br>
@@ -408,6 +452,17 @@
       </button>
     </div>
   </div>
+</div>
+
+<!-- QR SAMPLE POPUP -->
+<div id="knit-qr-backdrop" class="qr-popup-backdrop" aria-hidden="true">
+  <section class="qr-popup-panel" role="dialog" aria-modal="true" aria-labelledby="knit-qr-title">
+    <button type="button" class="qr-popup-close" onclick="closeKnitQrPopup()" aria-label="닫기">닫기</button>
+    <p class="qr-popup-kicker">작품 이미지 다운받기</p>
+    <h2 id="knit-qr-title">휴대폰으로 QR을 스캔해주세요.</h2>
+    <canvas id="knit-qr-example-canvas" class="qr-sample-canvas" width="240" height="240" aria-label="QR 예시"></canvas>
+    <p class="qr-popup-note">이미지 업로드 연결 전 예시 화면입니다.</p>
+  </section>
 </div>
 
 <!-- P16 – DISSOLVE -->

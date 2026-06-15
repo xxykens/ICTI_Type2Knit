@@ -279,7 +279,11 @@ window.knitSketch_renderPreview = function() {
   p5cvs.style.width = `${pw}px`;
   p5cvs.style.height = `${ph}px`;
 
-  const piece = new KnitPiece('preview', 'public');
+  const previewNickname = window.state && window.state.privacy === 'private'
+    ? '익명'
+    : ((window.state && window.state.nickname) || '익명');
+  const previewPrivacy = (window.state && window.state.privacy) || 'public';
+  const piece = new KnitPiece(previewNickname, previewPrivacy);
   piece.absorbArchiveData(window.archiveData);
   window._knitSketchPreviewPiece = piece;
 
