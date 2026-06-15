@@ -1411,6 +1411,23 @@ function p18ScrollRight() {
   _updateP18TrackPos();
 }
 
+// 마우스 휠로 카드 가로 스크롤 (세로/가로 휠 입력 모두 지원, 한 번에 한 칸씩)
+let _p18WheelLock = false;
+const _p18ScreenEl = document.getElementById('p18');
+if (_p18ScreenEl) {
+  _p18ScreenEl.addEventListener('wheel', (e) => {
+    // 상세 오버레이가 열려있을 때는 오버레이 자체 스크롤을 사용
+    if (document.getElementById('p18-overlay-backdrop')) return;
+    const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+    if (Math.abs(delta) < 4) return;
+    e.preventDefault();
+    if (_p18WheelLock) return;
+    _p18WheelLock = true;
+    if (delta > 0) p18ScrollRight(); else p18ScrollLeft();
+    setTimeout(() => { _p18WheelLock = false; }, 450);
+  }, { passive: false });
+}
+
 // 선택된 작품의 감정 태그·타이핑 속도를 분석해 "뜨개물 정보" 안내 문구를 생성
 function _buildKnitInfoText(piece) {
   // [감정태그] 목록과 동일한 라벨 체계로 정규화 (찌푸림=레거시 FROWN 표기 → 짜증으로 통일)
