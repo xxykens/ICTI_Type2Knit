@@ -175,6 +175,14 @@ class FaceExpressionTracker {
     const frame = document.createElement('div');
     frame.className = 'face-recognition-guide-frame';
     frame.setAttribute('aria-hidden', 'true');
+    frame.innerHTML = `
+      <svg class="face-recognition-guide-icon" viewBox="0 0 300 240" preserveAspectRatio="xMidYMax meet" focusable="false" aria-hidden="true">
+        <path
+          class="face-recognition-guide-outline"
+          d="M27 239 C30 220 34 199 40 181 C44 168 54 162 68 157 L96 146 C112 140 120 130 122 116 C112 106 108 90 108 70 C108 35 125 16 150 16 C175 16 192 35 192 70 C192 90 188 106 178 116 C180 130 188 140 204 146 L232 157 C246 162 256 168 260 181 C266 199 270 220 273 239"
+        />
+      </svg>
+    `;
 
     const status = document.createElement('div');
     status.className = 'face-recognition-status';
@@ -200,6 +208,9 @@ class FaceExpressionTracker {
     this.video.style('height', '100%');
     this.video.style('border', '0');
     this.video.style('object-fit', 'cover');
+    this.video.style('object-position', 'center center');
+    this.video.style('transform', 'scaleX(-1)');
+    this.video.style('transform-origin', 'center center');
 
     this.previewPanel = panel;
     this.previewStatusText = statusText;
