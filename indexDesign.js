@@ -228,8 +228,11 @@ function onScreenEnter(id) {
     if (typeof window.knitSketch_onP18Enter === 'function') window.knitSketch_onP18Enter();
     if (!window.page_S7_S8 || !window.page_S5) return;
     const doLoad = () => {
-      window.page_S7_S8.loadDataFromDB().then((pieces) => {
-        renderP18Cards(pieces);
+      // 아카이브 진입마다 비어있는지 확인 후 디폴트 예시 3개를 재등록 (DB가 외부에서 초기화된 경우 자가복구)
+      window.page_S5.seedDefaultArchive().then(() => {
+        window.page_S7_S8.loadDataFromDB().then((pieces) => {
+          renderP18Cards(pieces);
+        });
       });
     };
     if (!window.page_S5.db) {
