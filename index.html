@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Type to Knit_</title>
     <link rel="stylesheet" type="text/css" href="style.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script> -->
   </head>
   <body class="is-landing">
     <svg class="svg-symbols" width="0" height="0" aria-hidden="true" focusable="false">
@@ -167,6 +167,7 @@
 <div id="p6" class="screen intro-screen">
   <div class="intro-line" id="p6-l1">정면을 바라보고</div>
   <div class="intro-line" id="p6-l2">편안한 표정을 지어주세요.</div>
+  <div id="p6-face-preview-slot" class="face-recognition-preview-slot" aria-live="polite"></div>
   <div class="intro-gap"></div>
   <div class="intro-line" id="p6-l3">이 표정을 기준으로</div>
   <div class="intro-line" id="p6-l4">타이핑 중 표정 변화를 감지합니다.</div>
@@ -179,7 +180,8 @@
 <div id="p7" class="screen">
   <!-- 정상 인식 대기 상태 -->
   <div id="p7-measuring" class="face-recognition-center">
-    <div id="p7-lottie" class="face-lottie"></div>
+    <!-- <div id="p7-lottie" class="face-lottie"></div> -->
+    <div id="p7-face-preview-slot" class="face-recognition-preview-slot" aria-live="polite"></div>
     <div class="face-message animated-message" id="p7-face-message">정면을 바라보고 무표정을 유지해주세요.</div>
     <div class="face-context-message">
       지금의 기준 표정은 뜨개 패턴을 만들 때 기준값으로 사용됩니다.<br>

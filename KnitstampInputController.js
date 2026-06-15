@@ -3,7 +3,8 @@ window.knitstamp = window.knitstamp || {
 };
 
 // ==========================================
-// 🔍 [디버그 모드] true = 카메라 미리보기 + 콘솔 로그 ON
+// FACE_DEBUG true = 콘솔 로그 ON
+// 카메라 프리뷰는 p6/p7의 사용자용 얼굴 인식 프레임에서만 표시됩니다.
 // ==========================================
 const FACE_DEBUG = true;
 
@@ -25,6 +26,10 @@ function setupKnitstampInput() {
     typingTracker: new TypingSpeedTracker(),
     intervalMs: 1000
   });
+
+  if (window.state?.currentScreen) {
+    knitstampInputController.faceTracker.setPreviewScreen(window.state.currentScreen);
+  }
 }
 
 // main sketch에서 draw 때 호출
@@ -122,15 +127,17 @@ class FaceExpressionTracker {
     this.predictions = [];
     this.baseline = null;
     this.hasLoggedFirstFace = false;
+    this.previewPanel = null;
+    this.previewStatusText = null;
+    this.previewScreen = null;
 
     this.video = createCapture(VIDEO);
     this.video.size(w, h);
+    this.video.hide();
+    this.setupFaceRecognitionPreview();
 
     if (FACE_DEBUG) {
-      this.setupDebugCameraPreview();
       console.log("[facemesh] ml5.facemesh 존재?", typeof ml5?.facemesh);
-    } else {
-      this.video.hide();
     }
 
     let videoEl = this.video.elt || this.video;
@@ -148,90 +155,101 @@ class FaceExpressionTracker {
           console.log("[facemesh] 첫 얼굴 감지 ✅ — 기준값은 자동 등록하지 않음");
         }
       }
+
+      this.updatePreviewStatus();
     });
   }
 
-  setupDebugCameraPreview() {
+  setupFaceRecognitionPreview() {
     document.getElementById('face-debug-camera-panel')?.remove();
     document.getElementById('face-debug-camera-reopen')?.remove();
+    document.getElementById('face-recognition-preview')?.remove();
 
     const panel = document.createElement('div');
-    panel.id = 'face-debug-camera-panel';
-    panel.className = 'face-debug-camera-panel';
+    panel.id = 'face-recognition-preview';
+    panel.className = 'face-recognition-preview is-hidden';
 
-    const toolbar = document.createElement('div');
-    toolbar.className = 'face-debug-camera-toolbar';
+    const videoWrap = document.createElement('div');
+    videoWrap.className = 'face-recognition-video-wrap';
 
-    const label = document.createElement('span');
-    label.className = 'face-debug-camera-label';
-    label.textContent = '검증용 카메라';
+    const frame = document.createElement('div');
+    frame.className = 'face-recognition-guide-frame';
+    frame.setAttribute('aria-hidden', 'true');
 
-    const actions = document.createElement('div');
-    actions.className = 'face-debug-camera-actions';
+    const status = document.createElement('div');
+    status.className = 'face-recognition-status';
 
-    const minimizeButton = document.createElement('button');
-    minimizeButton.type = 'button';
-    minimizeButton.className = 'face-debug-camera-control';
-    minimizeButton.textContent = '−';
-    minimizeButton.setAttribute('aria-label', '작게 보기');
-    minimizeButton.setAttribute('aria-expanded', 'true');
+    const statusDot = document.createElement('span');
+    statusDot.className = 'face-recognition-status-dot';
+    statusDot.setAttribute('aria-hidden', 'true');
 
-    const closeButton = document.createElement('button');
-    closeButton.type = 'button';
-    closeButton.className = 'face-debug-camera-control';
-    closeButton.textContent = '×';
-    closeButton.setAttribute('aria-label', '닫기');
+    const statusText = document.createElement('span');
+    statusText.className = 'face-recognition-status-text';
+    statusText.textContent = '얼굴을 찾고 있어요.';
 
-    const body = document.createElement('div');
-    body.className = 'face-debug-camera-body';
-
-    const reopenButton = document.createElement('button');
-    reopenButton.id = 'face-debug-camera-reopen';
-    reopenButton.type = 'button';
-    reopenButton.className = 'face-debug-camera-reopen';
-    reopenButton.textContent = '카메라 열기';
-    reopenButton.setAttribute('aria-controls', 'face-debug-camera-panel');
-    reopenButton.setAttribute('aria-expanded', 'false');
-
-    actions.append(minimizeButton, closeButton);
-    toolbar.append(label, actions);
-    panel.append(toolbar, body);
-    document.body.append(panel, reopenButton);
+    status.append(statusDot, statusText);
+    videoWrap.append(frame, status);
+    panel.append(videoWrap);
+    document.body.append(panel);
 
     const videoEl = this.video.elt || this.video;
-    body.appendChild(videoEl);
+    videoWrap.prepend(videoEl);
     this.video.style('position', 'static');
-    this.video.style('display', 'block');
+    this.video.style('display', 'none');
     this.video.style('width', '100%');
     this.video.style('height', '100%');
     this.video.style('border', '0');
     this.video.style('object-fit', 'cover');
 
-    const setMode = (mode) => {
-      const shouldMinimize = mode === 'minimized';
-      const shouldClose = mode === 'closed';
+    this.previewPanel = panel;
+    this.previewStatusText = statusText;
+  }
 
-      panel.classList.toggle('is-minimized', shouldMinimize);
-      panel.classList.toggle('is-closed', shouldClose);
-      reopenButton.classList.toggle('is-visible', shouldClose);
+  setPreviewScreen(screenId) {
+    this.previewScreen = screenId;
 
-      minimizeButton.textContent = shouldMinimize ? '+' : '−';
-      minimizeButton.setAttribute('aria-label', shouldMinimize ? '펼쳐 보기' : '작게 보기');
-      minimizeButton.setAttribute('aria-expanded', String(!shouldMinimize));
-      reopenButton.setAttribute('aria-expanded', String(!shouldClose));
-    };
+    if (!this.previewPanel) return;
 
-    minimizeButton.addEventListener('click', () => {
-      setMode(panel.classList.contains('is-minimized') ? 'open' : 'minimized');
-    });
+    const shouldShow = screenId === 'p6' || screenId === 'p7';
+    const slot = shouldShow ? document.getElementById(`${screenId}-face-preview-slot`) : null;
 
-    closeButton.addEventListener('click', () => {
-      setMode('closed');
-    });
+    if (!shouldShow || !slot) {
+      this.previewPanel.classList.add('is-hidden');
+      this.video.style('display', 'none');
+      return;
+    }
 
-    reopenButton.addEventListener('click', () => {
-      setMode('open');
-    });
+    slot.appendChild(this.previewPanel);
+    this.previewPanel.classList.remove('is-hidden');
+    this.previewPanel.dataset.screen = screenId;
+    this.video.style('display', 'block');
+    this.updatePreviewStatus();
+  }
+
+  updatePreviewStatus() {
+    if (!this.previewPanel || !this.previewStatusText || this.previewPanel.classList.contains('is-hidden')) {
+      return;
+    }
+
+    const hasFace = this.hasFace();
+    this.previewPanel.classList.toggle('has-face', hasFace);
+    this.previewPanel.classList.toggle('is-searching', !hasFace);
+
+    if (this.previewScreen === 'p6') {
+      this.previewStatusText.textContent = hasFace
+        ? '얼굴이 프레임 안에 들어왔어요.'
+        : '얼굴을 프레임 안에 맞춰주세요.';
+      return;
+    }
+
+    if (this.baseline) {
+      this.previewStatusText.textContent = '기준표정이 등록되었어요.';
+      return;
+    }
+
+    this.previewStatusText.textContent = hasFace
+      ? '얼굴이 인식되고 있어요. 표정을 유지해주세요.'
+      : '얼굴을 찾고 있어요.';
   }
 
   hasFace() {
@@ -251,6 +269,7 @@ class FaceExpressionTracker {
 
     if (!keypoints) {
       if (FACE_DEBUG) console.log("[baseline] 등록 실패 — 얼굴 미감지");
+      this.updatePreviewStatus();
 
       return {
         success: false,
@@ -261,6 +280,7 @@ class FaceExpressionTracker {
     this.baseline = this.extractFaceValues(keypoints);
 
     if (FACE_DEBUG) console.log("[baseline] 등록 완료 ✅", this.baseline);
+    this.updatePreviewStatus();
 
     return {
       success: true,

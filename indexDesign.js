@@ -32,7 +32,15 @@ function goTo(id) {
   state.currentScreen = id;
   document.body.classList.toggle('is-landing', id === 'p1');
   document.body.classList.toggle('is-preview', id === 'p10');
+  setFaceRecognitionPreviewScreen(id);
   onScreenEnter(id);
+}
+
+function setFaceRecognitionPreviewScreen(id) {
+  const tracker = knitstampInputController?.faceTracker;
+  if (tracker && typeof tracker.setPreviewScreen === 'function') {
+    tracker.setPreviewScreen(id);
+  }
 }
 
 function onScreenEnter(id) {
@@ -60,6 +68,7 @@ function onScreenEnter(id) {
     startIntro(['p6-l1','p6-l2','p6-l3','p6-l4'], () => {
       document.getElementById('p6-start-btn').style.display = 'block';
     });
+    /*
     // p7 진입 전 JSON만 미리 fetch (덜컥임 방지)
     if (!window._p7AnimData) {
       fetch('images/face_loading.json')
@@ -73,11 +82,13 @@ function onScreenEnter(id) {
           window._p7AnimData = animData;
         });
     }
+    */
   }
 
   if (id === 'p7') {
     knitstampInputController.faceTracker.baseline = null;
 
+    /*
     // Lottie 초기화 (p7이 visible 상태일 때 loadAnimation)
     const lottieContainer = document.getElementById('p7-lottie');
     if (lottieContainer) {
@@ -112,6 +123,7 @@ function onScreenEnter(id) {
           });
       }
     }
+    */
 
     // 재진입 시 실패 화면 초기화
     const measuringEl = document.getElementById('p7-measuring');
