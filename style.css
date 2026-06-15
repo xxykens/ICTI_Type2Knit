@@ -1839,9 +1839,6 @@
       font-size: 44px; font-weight: 400; margin-bottom: 40px;
       line-height: 1.2;
     }
-<<<<<<< HEAD
-
-=======
     .complete-screen .info-panel h2.complete-title-with-description {
       margin-bottom: 16px;
     }
@@ -1932,7 +1929,6 @@
       visibility: visible;
       transform: translateX(-50%) translateY(0);
     }
->>>>>>> ddba040c3a49d95ccea4ee07198fe24693dd3f3a
     .complete-screen .info-row {
       display: flex;
       flex-direction: column;

@@ -88,13 +88,27 @@ const page_S5 = {
         knitTable: '++id, nickname, privacy, date'
       });
       console.log("💾 [S5] Dexie DB 초기화 완료");
-      return Promise.resolve();
+      return this.seedDefaultArchive();
     }
 
     return createNativeKnitArchiveDB().then((db) => {
       this.db = db;
       console.log("💾 [S5] IndexedDB fallback 초기화 완료");
+      return this.seedDefaultArchive();
     });
+  },
+
+  // 아카이브가 완전히 비어있을 때(최초 실행, IndexedDB 초기화 등) 디폴트 예시 뜨개물 3개를 등록
+  seedDefaultArchive: function() {
+    if (!this.db || typeof getDefaultArchivePieces !== 'function') return Promise.resolve();
+    return this.db.knitTable.toArray()
+      .then(rows => {
+        if (rows && rows.length > 0) return;
+        const seeds = getDefaultArchivePieces();
+        return seeds.reduce((p, piece) => p.then(() => this.db.knitTable.add(piece)), Promise.resolve())
+          .then(() => console.log("🧶 [S5] 디폴트 아카이브 3개 등록 완료"));
+      })
+      .catch(err => console.error("❌ [S5] 디폴트 아카이브 등록 실패:", err));
   },
 
   // p12 register.png 클릭 시 호출

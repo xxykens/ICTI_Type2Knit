@@ -1605,7 +1605,7 @@ function openP18Overlay(piece, sourceCvs) {
   cbWrap.style.cssText = `display:flex; align-items:center; gap:8px; font-size:14px; color:${textProtected ? '#bbb' : '#555'}; cursor:${textProtected ? 'default' : 'pointer'};`;
   const cb = document.createElement('input');
   cb.type = 'checkbox';
-  cb.checked = false;
+  cb.checked = !textProtected;
   cb.disabled = textProtected;
   cb.style.cssText = `width:16px; height:16px; cursor:${textProtected ? 'default' : 'pointer'};`;
   cbWrap.appendChild(cb);
@@ -1627,7 +1627,7 @@ function openP18Overlay(piece, sourceCvs) {
   let _cvsMx = -9999, _cvsMy = -9999;
   const _tagCurOffsets = {};
   const _tagTgtOffsets = {};
-  let _textFade    = 0;   // 텍스트 보기 페이드 (0→1)
+  let _textFade    = textProtected ? 0 : 1;   // 텍스트 보기 페이드 (cb 초기값과 동일하게 시작)
   let _emotionFade = 1;   // 감정 정보 페이드 (cb2 초기값 true)
   let _rafId = null;
   let _unraveling = false; // 뜨개실 풀기 애니메이션 진행 중에는 다른 캔버스 갱신을 멈춤
