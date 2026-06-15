@@ -700,27 +700,105 @@ function _formatCompleteAverageSpeed(avgSpeed) {
   return `${label} ${Math.round(avgSpeed * 100)}%`;
 }
 
-function _buildCompleteSummary(piece, emotionStats, avgSpeed) {
-  if (!piece || !emotionStats.length) return '기록된 감정 정보가 부족해요.';
+// 배열을 제자리에서 뒤섞은 새 배열을 반환 (Fisher-Yates)
+function _shuffleArray(arr) {
+  const result = arr.slice();
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
 
-  const top = emotionStats.slice(0, 3);
-  let text = '';
+const KNITSTAMP_CHAR_COUNT_THRESHOLD = 150; // 글자 수 많음/적음 기준
+const KNITSTAMP_SPEED_VERY_SLOW = 0.15;     // 포문 B로 전환되는 "현저히 느림" 기준
+const KNITSTAMP_SPEED_SLOW = 0.4;           // [3] 느림 문장 기준
+const KNITSTAMP_SPEED_FAST = 0.6;           // [3] 빠름 문장 기준
+const KNITSTAMP_POS_EMOTION_TAGS = ['해탈', '미묘함'];
+const KNITSTAMP_NEG_EMOTION_TAGS = ['짜증', '놀람', '슬픔', '긴장'];
 
-  if (top.length === 1) {
-    text = `지배적인 감정은 ${top[0].label}입니다. 오늘의 마음이 하나의 결로 또렷하게 남았어요.`;
-  } else if (top.length === 2) {
-    text = `${top[0].label}에서 ${top[1].label}로 감정이 변화하는 흐름이 보여요.`;
+// Knitstamp 최종 메시지: [1] 포문 + [2] 감정 태그 문장 + [3] 추가 문장을 블록 단위로 셔플해 조합
+function _buildKnitstampFinalMessage(piece, charCountOverride) {
+  const cells = piece ? (piece.cells || piece.knitArray || []) : [];
+  if (!cells.length) return '기록된 감정 정보가 부족해요.';
+
+  const nickname = piece.privacy === 'private' ? '익명의 니터' : (piece.nickname || '익명');
+
+  // 감정 태그 집계: 등장 순서(emoOrder, 2개 태그 변화 표현용)와 비중 순위(byCount, 지배 감정 판단용)
+  let emoOrder = [];
+  let emoCount = {};
+  let posCount = 0, negCount = 0;
+  let speedSum = 0, speedN = 0;
+  let charCount = 0;
+
+  cells.forEach((cell) => {
+    const tag = _normalizeCompleteEmotionTag(cell);
+    if (tag && tag !== '중립' && tag !== 'NEUTRAL') {
+      if (!emoCount[tag]) { emoCount[tag] = 0; emoOrder.push(tag); }
+      emoCount[tag]++;
+      if (KNITSTAMP_POS_EMOTION_TAGS.indexOf(tag) !== -1) posCount++;
+      else if (KNITSTAMP_NEG_EMOTION_TAGS.indexOf(tag) !== -1) negCount++;
+    }
+
+    const speed = typeof cell.speed === 'number' ? cell.speed : cell.typingSpeed;
+    if (typeof speed === 'number') { speedSum += speed; speedN++; }
+
+    charCount += cell.syllables || 0;
+  });
+
+  if (typeof charCountOverride === 'number') charCount = charCountOverride;
+
+  const avgSpeed = speedN ? speedSum / speedN : 0;
+  const byCount = Object.keys(emoCount).sort((a, b) => emoCount[b] - emoCount[a]);
+  const tagCount = byCount.length;
+
+  // [1] 포문: A(글자 수, 항상 첫 문장) + C(시간대) 또는 B(타이핑 속도 현저히 느림일 때만 C 대신)
+  const sentenceA = charCount >= KNITSTAMP_CHAR_COUNT_THRESHOLD
+    ? `오늘 ${nickname}님은 참 많은 이야기를 써내려가셨어요.`
+    : `오늘 ${nickname}님은 짧지만 선명한 감정을 남기셨어요.`;
+
+  const isVerySlow = avgSpeed > 0 && avgSpeed < KNITSTAMP_SPEED_VERY_SLOW;
+  let sentenceCorB;
+  if (isVerySlow) {
+    sentenceCorB = `오늘은 천천히, 조심스럽게 한 자 한 자 써내려가셨군요, ${nickname}님.`;
   } else {
-    text = `지배적인 감정은 ${top[0].label}입니다. ${top[1].label}, ${top[2].label}도 함께 묻어나는 복합적인 기록이에요.`;
+    const hour = (piece.date ? new Date(piece.date) : new Date()).getHours();
+    if (hour >= 5 && hour <= 11) {
+      sentenceCorB = `아침부터 감정을 꺼내셨군요, ${nickname}님.`;
+    } else if (hour >= 12 && hour <= 17) {
+      sentenceCorB = `하루 한가운데서 잠깐 멈추어 내면을 들여다보셨네요, ${nickname}님.`;
+    } else if (hour >= 18 && hour <= 22) {
+      sentenceCorB = `하루를 마무리하며 감정을 정리하셨군요, ${nickname}님.`;
+    } else {
+      sentenceCorB = `고요한 밤에 감정을 꺼내셨네요, ${nickname}님.`;
+    }
+  }
+  const block1 = `${sentenceA} ${sentenceCorB}`;
+
+  // [2] 감정 태그 기반 문장
+  let block2 = '';
+  if (tagCount === 1) {
+    block2 = `지배적인 감정은 ${byCount[0]}입니다. 오늘 그럴만한 일이 있으셨나봐요.`;
+  } else if (tagCount === 2) {
+    block2 = `${emoOrder[0]}에서 ${emoOrder[1]}로 감정이 변화하는 것을 보았어요.`;
+  } else if (tagCount >= 3) {
+    const polarity = posCount >= negCount ? '긍정' : '부정';
+    block2 = _shuffleArray([
+      `지배적인 감정은 ${byCount[0]}입니다.`,
+      `${byCount[1]}, ${byCount[2]}도 함께 묻어나는 복합적인 하루였네요.`,
+      `전체적으로는 주로 ${polarity}적인 감정이 많이 담겼어요.`
+    ]).join(' ');
   }
 
-  if (avgSpeed >= 0.6) {
-    text += ' 마음속 말이 빠르게 풀려나온 편이에요.';
-  } else if (avgSpeed > 0 && avgSpeed < 0.4) {
-    text += ' 천천히 고르며 적어 내려간 리듬이 보여요.';
+  // [3] 추가 문장: 타이핑 속도 기반 (B가 선택된 경우 느림 문장은 중복되므로 생략)
+  let block3 = '';
+  if (avgSpeed >= KNITSTAMP_SPEED_FAST) {
+    block3 = '오늘은 속도감 있게 마음 속의 말을 풀어내셨군요.';
+  } else if (avgSpeed > 0 && avgSpeed < KNITSTAMP_SPEED_SLOW && !isVerySlow) {
+    block3 = '천천히 꺼내야 하는 감정이었나봐요.';
   }
 
-  return text;
+  return _shuffleArray([block1, block2, block3].filter(Boolean)).join(' ');
 }
 
 function fillCompleteDetails(screenId) {
@@ -736,7 +814,7 @@ function fillCompleteDetails(screenId) {
 
   if (dateEl) dateEl.textContent = _formatCompleteDate(piece && piece.date);
   if (charsEl) charsEl.textContent = state.charCount;
-  if (summaryEl) summaryEl.textContent = _buildCompleteSummary(piece, emotionStats, avgSpeed);
+  if (summaryEl) summaryEl.textContent = _buildKnitstampFinalMessage(piece, state.charCount);
   if (speedEl) speedEl.textContent = _formatCompleteAverageSpeed(avgSpeed);
 
   if (tagsEl) {
@@ -1431,54 +1509,6 @@ if (_p18ScreenEl) {
   }, { passive: false });
 }
 
-// 선택된 작품의 감정 태그·타이핑 속도를 분석해 "뜨개물 정보" 안내 문구를 생성
-function _buildKnitInfoText(piece) {
-  // [감정태그] 목록과 동일한 라벨 체계로 정규화 (찌푸림=레거시 FROWN 표기 → 짜증으로 통일)
-  const tagNorm = { FROWN: '짜증', SURPRISED: '놀람', BLURRY: '미묘함', NEUTRAL: '중립', '찌푸림': '짜증' };
-  const posTags = ['해탈', '미묘함'];
-  const negTags = ['짜증', '놀람', '슬픔', '긴장'];
-
-  let emoOrder = [];
-  let emoCount = {};
-  let posCount = 0, negCount = 0;
-  let speedSum = 0, speedN = 0;
-  (piece.cells || piece.knitArray || []).forEach(c => {
-    const t = c.emotionTagKo || tagNorm[c.emotionTag] || c.emotionTag || '';
-    if (t && t !== 'NEUTRAL' && t !== '중립') {
-      if (!emoCount[t]) { emoCount[t] = 0; emoOrder.push(t); }
-      emoCount[t]++;
-      if (posTags.indexOf(t) !== -1) posCount++;
-      else if (negTags.indexOf(t) !== -1) negCount++;
-    }
-    // piece.cells 항목은 typingSpeed, piece.knitArray 항목은 speed 필드를 쓴다 (KnitPiece.js 참고)
-    const sp = (typeof c.speed === 'number') ? c.speed : c.typingSpeed;
-    if (typeof sp === 'number') { speedSum += sp; speedN++; }
-  });
-  const avgSpeed = speedN ? speedSum / speedN : 0;
-  const knitName = piece.privacy === 'private' ? '익명의 니터' : (piece.nickname || '익명');
-
-  let text = '';
-  if (emoOrder.length === 1) {
-    text = `${knitName}님이 느끼시는 지배적인 감정은 ${emoOrder[0]}입니다. 오늘 그럴만한 일이 있으셨나봐요.`;
-  } else if (emoOrder.length === 2) {
-    // {감정명1}→{감정명2}는 뜨개 코 배열에서 먼저 등장한 순서(emoOrder)로 "변화"를 표현
-    text = `${knitName}님, ${emoOrder[0]}에서 ${emoOrder[1]}로 감정이 변화하는 것을 보았어요. 오늘 하루를 잘 되짚어 보아요`;
-  } else if (emoOrder.length >= 3) {
-    // {감정명1}은 평균 강도가 아니라 등장 횟수(비중) 기준 1위
-    const byCount  = Object.keys(emoCount).sort((a, b) => emoCount[b] - emoCount[a]);
-    const polarity = posCount >= negCount ? '긍정' : '부정';
-    text = `${knitName}님이 느끼시는 지배적인 감정은 ${byCount[0]}입니다. ${byCount[1]}, ${byCount[2]}도 함께 묻어나는 복합적인 하루였네요. 전체적으로는 주로 ${polarity}적인 감정이 많이 담겼어요.`;
-  }
-  if (text) {
-    if (avgSpeed >= 0.6) {
-      text += ' 마음 속의 말을 술술 풀어내어 타이핑 속도가 꽤 빠르셨군요.';
-    } else if (avgSpeed > 0 && avgSpeed < 0.4) {
-      text += ' 마음 속으로 정리할 시간이 필요하셨나요? 타이핑 속도가 조금 느린 편이었어요.';
-    }
-  }
-  return text || '기록된 감정 정보가 부족해요.';
-}
-
 // ── P18 오버레이 (클릭 시 상세뷰) ──
 function openP18Overlay(piece, sourceCvs) {
   closeP18Overlay();
@@ -1596,7 +1626,7 @@ function openP18Overlay(piece, sourceCvs) {
 
   const knitInfoBody = document.createElement('div');
   knitInfoBody.style.cssText = 'font-size:13px; color:#888; line-height:1.6;';
-  knitInfoBody.textContent = _buildKnitInfoText(piece);
+  knitInfoBody.textContent = _buildKnitstampFinalMessage(piece);
   info.appendChild(knitInfoBody);
 
   if (eList.length > 0) {
