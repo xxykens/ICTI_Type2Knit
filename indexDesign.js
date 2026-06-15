@@ -1372,6 +1372,22 @@ function _hsbToRgb(h, s, b) {
   return [Math.round(r*255), Math.round(g*255), Math.round(bl*255)];
 }
 
+// 감정태그 → 감정 베이스 색상(hue). "■ 감정 베이스 색상" 범례(S10.js)와 동일한 값을 사용
+const _EMOTION_BASE_HUE = {
+  '짜증': 0, '찌푸림': 0,
+  '중립': 51,
+  '해탈': 103, '풀림': 103,
+  '미묘': 154, '미묘함': 154, '표정 변화': 154,
+  '슬픔': 206, '무거움': 206,
+  '긴장': 257,
+  '놀람': 309
+};
+function _emotionTagColor(label) {
+  const hue = _EMOTION_BASE_HUE[label] !== undefined ? _EMOTION_BASE_HUE[label] : 154;
+  const [r, g, b] = _hsbToRgb(hue, 0.4, 0.9);
+  return `rgb(${r},${g},${b})`;
+}
+
 // ── P18 스크롤 ──
 function _updateP18TrackPos() {
   const track = document.getElementById('p18-track');
@@ -1568,8 +1584,11 @@ function openP18Overlay(piece, sourceCvs) {
     tagList.style.cssText = 'margin-top:10px;';
     eList.forEach(e => {
       const row = document.createElement('div');
-      row.style.cssText = 'font-size:14px; color:#666; margin-bottom:4px;';
-      row.textContent = `• ${e.label}  ${e.avg.toFixed(2)}`;
+      row.style.cssText = 'font-size:14px; color:#666; margin-bottom:4px; display:flex; align-items:center; gap:6px;';
+      const dot = document.createElement('span');
+      dot.style.cssText = `display:inline-block; width:10px; height:10px; border-radius:50%; background:${_emotionTagColor(e.label)}; flex-shrink:0;`;
+      row.appendChild(dot);
+      row.appendChild(document.createTextNode(`${e.label}  ${e.avg.toFixed(2)}`));
       tagList.appendChild(row);
     });
     info.appendChild(tagList);
@@ -1611,12 +1630,13 @@ function openP18Overlay(piece, sourceCvs) {
   let _textFade    = 0;   // 텍스트 보기 페이드 (0→1)
   let _emotionFade = 1;   // 감정 정보 페이드 (cb2 초기값 true)
   let _rafId = null;
+  let _unraveling = false; // 뜨개실 풀기 애니메이션 진행 중에는 다른 캔버스 갱신을 멈춤
 
   const redrawBig = () => _p18DrawCardBig(bigCvs, piece, overlayW, overlayH, cb.checked, cb2.checked, _cvsMx, _cvsMy, _tagCurOffsets, _textFade, _emotionFade);
 
   // RAF 애니메이션 루프 — 태그 오프셋 + 페이드 lerp
   const startAnim = () => {
-    if (_rafId) return;
+    if (_rafId || _unraveling) return;
     const tick = () => {
       let active = false;
       for (const k in _tagCurOffsets) {
@@ -1657,12 +1677,38 @@ function openP18Overlay(piece, sourceCvs) {
   selInfo.textContent = '니트 코 위에 마우스를 올리면 정보가 표시됩니다.';
   info.appendChild(selInfo);
 
+  // 구분선 + 뜨개실 풀기
+  const hr4 = document.createElement('div');
+  hr4.style.cssText = 'border-top:1px solid #e0e0e0; margin:20px 0 14px;';
+  info.appendChild(hr4);
+
+  const unravelLink = document.createElement('div');
+  unravelLink.textContent = '뜨개실 풀기';
+  unravelLink.style.cssText = 'font-size:14px; font-weight:600; color:#d9534f; text-align:center; cursor:pointer; letter-spacing:0.02em; transition:color 0.15s ease;';
+  unravelLink.addEventListener('mouseenter', () => { if (!_unraveling) unravelLink.style.color = '#b8413d'; });
+  unravelLink.addEventListener('mouseleave', () => { if (!_unraveling) unravelLink.style.color = '#d9534f'; });
+  unravelLink.addEventListener('click', () => {
+    if (_unraveling) return;
+    _showUnravelConfirm(() => {
+      _unraveling = true;
+      if (_rafId) { cancelAnimationFrame(_rafId); _rafId = null; }
+      unravelLink.textContent = '뜨개실을 푸는 중...';
+      unravelLink.style.cursor = 'default';
+      unravelLink.style.color = '#bbb';
+      _playArchiveUnravelAnimation(bigCvs, piece, overlayW, overlayH, () => {
+        _deleteArchivePiece(piece);
+      });
+    });
+  });
+  info.appendChild(unravelLink);
+
   // 마우스 호버 → 선택된 코 정보 업데이트
   const _SP = Math.floor((overlayW - 8) / 10);
   const _hsx = _SP / 2 + 4;
   const _hsy = _SP / 2 + 10;
   const _tagMapKo = { FROWN: '짜증', SURPRISED: '놀람', BLURRY: '미묘함', NEUTRAL: '중립' };
   bigCvs.addEventListener('mousemove', (e) => {
+    if (_unraveling) return;
     const r = bigCvs.getBoundingClientRect();
     const mx = e.clientX - r.left;
     const my = e.clientY - r.top;
@@ -1738,6 +1784,226 @@ function closeP18Overlay() {
   if (panel) panel.style.animation = 'overlayPanelOut 0.25s cubic-bezier(0.22, 0.61, 0.36, 1) both';
   backdrop.style.animation = 'overlayFadeOut 0.3s cubic-bezier(0.22, 0.61, 0.36, 1) both';
   backdrop.addEventListener('animationend', () => backdrop.remove(), { once: true });
+}
+
+// ── 뜨개실 풀기: 확인 팝업 ──
+function _showUnravelConfirm(onConfirm) {
+  const backdrop = document.createElement('div');
+  backdrop.style.cssText = `
+    position: fixed; inset: 0; z-index: 2000;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(4px);
+    animation: overlayFadeIn 0.2s ease both;
+  `;
+
+  const panel = document.createElement('div');
+  panel.style.cssText = `
+    width: min(360px, calc(100vw - 48px));
+    background: #fff; border-radius: 16px;
+    padding: 32px 28px; text-align: center;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.22);
+    font-family: 'HSHwalkong', 'Noto Serif KR', serif;
+    animation: overlayPanelIn 0.25s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  `;
+
+  const msg = document.createElement('p');
+  msg.style.cssText = 'font-size:16px; line-height:1.7; color:#333; margin:0 0 24px;';
+  msg.innerHTML = '정말 뜨개물을 푸시겠습니까?<br>한번 삭제된 뜨개물은 다시 볼 수 없어요.';
+  panel.appendChild(msg);
+
+  const btnRow = document.createElement('div');
+  btnRow.style.cssText = 'display:flex; gap:10px;';
+
+  const closePopup = () => {
+    backdrop.style.animation = 'overlayFadeOut 0.2s ease both';
+    backdrop.addEventListener('animationend', () => backdrop.remove(), { once: true });
+  };
+
+  const backBtn = document.createElement('button');
+  backBtn.type = 'button';
+  backBtn.textContent = '뒤로 가기';
+  backBtn.style.cssText = `
+    flex:1; padding:12px 0; border-radius:10px; border:1px solid #ddd;
+    background:#f5f5f5; color:#666; font-size:15px; font-family:inherit; cursor:pointer;
+  `;
+  backBtn.addEventListener('click', closePopup);
+
+  const unravelBtn = document.createElement('button');
+  unravelBtn.type = 'button';
+  unravelBtn.textContent = '뜨개실 풀기';
+  unravelBtn.style.cssText = `
+    flex:1; padding:12px 0; border-radius:10px; border:none;
+    background:#d9534f; color:#fff; font-size:15px; font-weight:600; font-family:inherit; cursor:pointer;
+  `;
+  unravelBtn.addEventListener('click', () => {
+    backdrop.remove();
+    onConfirm();
+  });
+
+  btnRow.appendChild(backBtn);
+  btnRow.appendChild(unravelBtn);
+  panel.appendChild(btnRow);
+  backdrop.appendChild(panel);
+  document.body.appendChild(backdrop);
+}
+
+// ── 뜨개실 풀기: 캔버스 위에서 코가 한 줄씩 풀려 사라지는 애니메이션 (p16과 동일한 로직, 임의 캔버스 대상) ──
+function _playArchiveUnravelAnimation(cvs, piece, W, H, onDone) {
+  const ctx = cvs.getContext('2d');
+  const dpr = cvs._dpr || 1;
+  const cells = piece.knitArray || piece.cells || [];
+
+  const SP = Math.floor((W - 8) / 10);
+  const CS_base = SP - 4;
+  const startX = SP / 2 + 4;
+  const startY = SP / 2 + 10;
+
+  const visibleIdx = [];
+  cells.forEach((cell, idx) => {
+    const row = Math.floor(idx / 10);
+    const py = startY + row * SP;
+    if (py <= H + SP) visibleIdx.push(idx);
+  });
+
+  const cellStates = cells.map(() => ({ phase: 'idle', t: 0 }));
+  const startTimes = new Array(cells.length).fill(null);
+
+  const maxRowIdx = visibleIdx.length ? Math.floor(visibleIdx[visibleIdx.length - 1] / 10) : 0;
+  const totalRows = maxRowIdx + 1;
+
+  // ㄹ자 순서 매핑: 마지막 행부터, 짝수 행=오른→왼, 홀수 행=왼→오른
+  const unravelOrder = [];
+  for (let r = totalRows - 1; r >= 0; r--) {
+    const fromBottom = (totalRows - 1) - r;
+    const leftToRight = (fromBottom % 2 === 1);
+    const rowStart = r * 10;
+    const rowEnd   = Math.min(rowStart + 10, cells.length);
+    const cols = [];
+    for (let c = rowStart; c < rowEnd; c++) {
+      if (visibleIdx.includes(c)) cols.push(c);
+    }
+    if (!leftToRight) cols.reverse();
+    unravelOrder.push(...cols);
+  }
+
+  const FALL_DUR = 700;
+  const TOTAL_TARGET = 9000;
+  const START_DELAY = 600;
+  const END_BUFFER  = FALL_DUR + 300;
+
+  const n = Math.max(unravelOrder.length, 1);
+  let STAGGER = (TOTAL_TARGET - START_DELAY - END_BUFFER) / Math.max(n - 1, 1);
+  STAGGER = Math.max(15, Math.min(STAGGER, 220));
+
+  const timers = [];
+  let rafId = null;
+  let finished = false;
+
+  const triggerByOrder = (pos) => {
+    if (pos < 0 || pos >= unravelOrder.length) return;
+    const cellIdx = unravelOrder[pos];
+    if (cellStates[cellIdx].phase !== 'idle') return;
+    cellStates[cellIdx].phase = 'falling';
+    startTimes[cellIdx] = performance.now();
+    timers.push(setTimeout(() => triggerByOrder(pos + 1), STAGGER));
+  };
+
+  function drawFrame() {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#E8E5E0';
+    ctx.beginPath();
+    ctx.roundRect(0, 0, W, H, 14);
+    ctx.fill();
+
+    for (let idx = 0; idx < cells.length; idx++) {
+      const cell = cells[idx];
+      const cs   = cellStates[idx];
+      if (cs.phase === 'done') continue;
+
+      const col = idx % 10;
+      const row = Math.floor(idx / 10);
+      const baseX = startX + col * SP;
+      const baseY = startY + row * SP;
+      if (baseY > H + SP) continue;
+
+      let h, s, b, stitchH, stitchBri;
+      if (cell.bgHue !== undefined) {
+        h = cell.bgHue; s = cell.sat; b = cell.bgBri;
+        stitchH = cell.stitchHue; stitchBri = cell.stitchBri;
+      } else {
+        h = 154; s = 20; b = 65; stitchH = 184; stitchBri = 75;
+      }
+      const [bgR, bgG, bgBl] = _hsbToRgb(h, s / 100, b / 100);
+      const [stR, stG, stBl] = _hsbToRgb(stitchH, s / 100, stitchBri / 100);
+
+      const speed   = cell.speed   || 0;
+      const tension = cell.tension !== undefined ? cell.tension : 0.5;
+      const isFilled = speed >= 0.6;
+      const CS = isFilled ? CS_base : CS_base - 3;
+
+      if (cs.phase === 'idle') {
+        _p16DrawCell(ctx, baseX, baseY, CS, cell, bgR, bgG, bgBl, stR, stG, stBl, tension, isFilled, 1, 1, 0, 0);
+      } else if (cs.phase === 'falling') {
+        const ease  = 1 - Math.pow(1 - cs.t, 2);
+        const fallY = ease * (CS * 1.4);
+        const alpha = 1 - cs.t;
+        _p16DrawCell(ctx, baseX, baseY + fallY, CS, cell, bgR, bgG, bgBl, stR, stG, stBl, tension, isFilled, 1, alpha, 0, 0);
+      }
+    }
+  }
+
+  function tick(now) {
+    if (finished) return;
+
+    for (let idx = 0; idx < cells.length; idx++) {
+      const cs = cellStates[idx];
+      if (cs.phase === 'idle' || cs.phase === 'done') continue;
+      const elapsed = now - startTimes[idx];
+      if (cs.phase === 'falling') {
+        cs.t = Math.min(elapsed / FALL_DUR, 1);
+        if (cs.t >= 1) cs.phase = 'done';
+      }
+    }
+
+    drawFrame();
+
+    const visibleStates = unravelOrder.map(idx => cellStates[idx]);
+    const noneIdle = visibleStates.every(cs => cs.phase !== 'idle');
+    const allDone  = visibleStates.every(cs => cs.phase === 'done');
+
+    if (noneIdle && allDone) {
+      finished = true;
+      rafId = null;
+      onDone();
+      return;
+    }
+    rafId = requestAnimationFrame(tick);
+  }
+
+  drawFrame();
+  timers.push(setTimeout(() => {
+    triggerByOrder(0);
+    rafId = requestAnimationFrame(tick);
+  }, START_DELAY));
+}
+
+// ── 뜨개실 풀기: DB에서 삭제하고 아카이브 갱신 ──
+function _deleteArchivePiece(piece) {
+  const finish = () => {
+    if (window.page_S7_S8 && Array.isArray(window.page_S7_S8.archivedPieces)) {
+      window.page_S7_S8.archivedPieces = window.page_S7_S8.archivedPieces.filter(p => p !== piece);
+    }
+    closeP18Overlay();
+    renderP18Cards(window.page_S7_S8 ? window.page_S7_S8.archivedPieces : []);
+  };
+
+  if (window.page_S5 && window.page_S5.db && piece.id !== undefined) {
+    window.page_S5.db.knitTable.delete(piece.id).then(finish).catch(finish);
+  } else {
+    finish();
+  }
 }
 
 function _p18DrawCardBig(cvs, piece, W, H, showText, showEmotionInfo, mx, my, tagOffsets, textFade, emotionFade) {

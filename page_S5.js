@@ -36,6 +36,16 @@ function createNativeKnitArchiveDB() {
               tx.onerror = () => rejectAdd(tx.error);
             });
           },
+          delete(key) {
+            return new Promise((resolveDel, rejectDel) => {
+              const tx = db.transaction('knitTable', 'readwrite');
+              const store = tx.objectStore('knitTable');
+              const delRequest = store.delete(key);
+              delRequest.onsuccess = () => resolveDel();
+              delRequest.onerror = () => rejectDel(delRequest.error);
+              tx.onerror = () => rejectDel(tx.error);
+            });
+          },
           toArray() {
             return new Promise((resolveAll, rejectAll) => {
               const tx = db.transaction('knitTable', 'readonly');
