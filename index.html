@@ -8,12 +8,6 @@
   <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script> -->
   </head>
   <body class="is-landing">
-    <svg class="svg-symbols" width="0" height="0" aria-hidden="true" focusable="false">
-      <symbol id="icon-help-duotone" viewBox="0 0 100 100" fill="none">
-        <path d="M49.9999 91.6667C73.0124 91.6667 91.6666 73.0125 91.6666 50C91.6666 26.9875 73.0124 8.33333 49.9999 8.33333C26.9874 8.33333 8.33325 26.9875 8.33325 50C8.33325 73.0125 26.9874 91.6667 49.9999 91.6667Z" fill="currentColor" fill-opacity="0.16"/>
-        <path d="M49.2916 58.3333V55.7458C49.2896 54.0405 49.7368 52.3648 50.5882 50.8873C51.4396 49.4097 52.6652 48.1825 54.1416 47.3292C58.8333 44.5792 60.4499 38.7583 57.6999 34.0667C54.9499 29.375 49.1291 27.7583 44.4374 30.5083C41.5208 32.2917 39.5833 35.3625 39.5833 38.9208M49.9999 70.8333H49.9666M91.6666 50C91.6666 26.9875 73.0124 8.33333 49.9999 8.33333C26.9874 8.33333 8.33325 26.9875 8.33325 50C8.33325 73.0125 26.9874 91.6667 49.9999 91.6667C73.0124 91.6667 91.6666 73.0125 91.6666 50Z" stroke="currentColor" stroke-width="6.25" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/>
-      </symbol>
-    </svg>
     <header class="site-header">
       <div class="site-header-inner">
         <button class="site-logo-placeholder" type="button" onclick="goTo('p1')" aria-label="홈으로">
@@ -355,16 +349,7 @@
   <div class="info-panel">
     <h2>
       당신의 뜨개 작품이 완성되었습니다.
-      <span class="tooltip-wrapper">
-        <button type="button" class="tooltip-trigger" aria-label="작품 등록 안내" aria-describedby="p12-tooltip-text">
-          <svg class="tooltip-icon" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
-            <use href="#icon-help-duotone"></use>
-          </svg>
-        </button>
-        <span id="p12-tooltip-text" class="tooltip-box" role="tooltip">
-          등록 전 최종 미리보기입니다. 작품을 확인한 뒤 아카이브에 등록할 수 있어요.
-        </span>
-      </span>
+
     </h2>
     <div class="info-row">
       닉네임: <span id="p12-nick"></span><br>
@@ -438,13 +423,7 @@
   <div class="archive-header">
     <h2>
       아카이브
-      <span class="tooltip-wrapper">
-        <button id="p18-tooltip-button" type="button" class="tooltip-trigger" aria-label="감정별 뜨개 패턴 안내">
-          <svg class="tooltip-icon" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
-            <use href="#icon-help-duotone"></use>
-          </svg>
-        </button>
-      </span>
+
     </h2>
     <span class="home-link" onclick="goTo('p1')">▶ 홈으로</span>
   </div>
@@ -483,6 +462,51 @@
     font-size:28px; color:#aaa;
   ">아직 등록된 작품이 없어요.</div>
 </div>
+
+  <!-- 공통 하단 툴팁 버튼 -->
+  <div class="app-footer" aria-hidden="false">
+    <button id="footer-tooltip-button" type="button" onclick="window.LegendUI && window.LegendUI.toggleFooterTooltip()">
+      당신의 감정은 어떻게 뜨개 패턴이 되나요?
+    </button>
+  </div>
+  <div id="footer-tooltip" class="footer-tooltip" role="tooltip" aria-hidden="true">
+    <!-- 감정별 뜨개 패턴 설명 -->
+    <div class="legend-title">감정별 뜨개 패턴</div>
+    <div class="legend-description">타이핑하는 동안 웹캠이 표정 변화(눈썹·눈·입)를 기준 표정과 비교해 감정을 추정하고, 그 감정과 타이핑 속도에 따라 코의 색과 형태 등이 달라져요.</div>
+    
+    <div class="legend-section">
+      <div class="legend-section-title">■ 감정 베이스 색상</div>
+      <div class="legend-emotions">
+        <div class="legend-emotion"><span class="emotion-box" style="background:hsl(0, 40%, 90%)"></span> 짜증</div>
+        <div class="legend-emotion"><span class="emotion-box" style="background:hsl(51, 40%, 90%)"></span> 중립</div>
+        <div class="legend-emotion"><span class="emotion-box" style="background:hsl(103, 40%, 90%)"></span> 해탈</div>
+        <div class="legend-emotion"><span class="emotion-box" style="background:hsl(154, 40%, 90%)"></span> 미묘</div>
+        <div class="legend-emotion"><span class="emotion-box" style="background:hsl(206, 40%, 90%)"></span> 슬픔</div>
+        <div class="legend-emotion"><span class="emotion-box" style="background:hsl(257, 40%, 90%)"></span> 긴장</div>
+        <div class="legend-emotion"><span class="emotion-box" style="background:hsl(309, 40%, 90%)"></span> 놀람</div>
+      </div>
+    </div>
+    
+    <div class="legend-section-title">■ 형태 및 코 무늬</div>
+      <div style="font-size: 12px; color: #666; margin-bottom: 8px;">입꼬리 긴장도</div>
+      <div style="display: flex; gap: 16px; margin-bottom: 12px;">
+        <div class="legend-emotion">
+          <span class="shape-box round">V</span> 긍정
+        </div>
+        <div class="legend-emotion">
+          <span class="shape-box square">V</span> 부정
+        </div>
+      </div>
+    
+    <div class="legend-section">
+      <div class="legend-section-title">■ 타이핑 속도</div>
+      <div class="legend-speeds">
+        <div class="legend-speed"><span class="speed-box fast"></span> 빠름 (채움, 채도/명도↑)</div>
+        <div class="legend-speed"><span class="speed-box medium"></span> 보통 (두꺼운 선)</div>
+        <div class="legend-speed"><span class="speed-box slow"></span> 느림 (얇은 선, 채도/명도↓)</div>
+      </div>
+    </div>
+  </div>
 
 <!-- 스크립트: DOM 로드 후 실행 -->
 <script src="libraries/p5.min.js"></script>

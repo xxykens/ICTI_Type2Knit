@@ -147,10 +147,6 @@ const page_S7_S8 = {
     fill(30); textSize(44); textStyle(BOLD); textAlign(LEFT, CENTER);
     text("아카이브", 62, HEADER_H / 2);
 
-    if (window.LegendUI && typeof window.LegendUI.drawIcon === 'function') {
-      window.LegendUI.drawIcon(40, HEADER_H / 2);
-    }
-
     // ── 빈 상태 ──────────────────────────────────────
     if (this.archivedPieces.length === 0) {
       fill(160); noStroke(); textAlign(CENTER, CENTER); textSize(22); textStyle(NORMAL);
