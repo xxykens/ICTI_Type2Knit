@@ -1823,7 +1823,7 @@
 
     .complete-screen .preview-panel {
       flex: 0 0 30%;
-      background: var(--light-gray);
+      background: transparent;
       position: relative;
       overflow: hidden;
     }
@@ -2023,24 +2023,38 @@
     }
     .complete-screen .btn-row {
       position: absolute; bottom: 60px; right: 60px;
-      display: flex; gap: 24px; align-items: flex-end;
+      display: flex; gap: 36px; align-items: flex-end;
       z-index: 20;
       pointer-events: auto;
     }
     .complete-screen .image-btn {
       display: block;
-      width: 146px;
-      height: 146px;
+      width: 118px;
+      height: 118px;
       border: 0;
       background: transparent;
       padding: 0;
       cursor: pointer;
+      transition: filter 0.18s ease, transform 0.18s ease;
     }
     .complete-screen .image-btn img {
       display: block;
       max-width: 100%;
       max-height: 100%;
       pointer-events: none;
+    }
+    .complete-screen .image-btn:hover,
+    .complete-screen .image-btn:focus-visible {
+      filter: saturate(1.18) contrast(1.12) brightness(0.9);
+      transform: translateY(-2px);
+      outline: none;
+    }
+    .complete-screen .image-btn-register {
+      filter: sepia(0.18) saturate(1.45) hue-rotate(142deg) brightness(0.96);
+    }
+    .complete-screen .image-btn-register:hover,
+    .complete-screen .image-btn-register:focus-visible {
+      filter: sepia(0.24) saturate(1.75) hue-rotate(142deg) contrast(1.08) brightness(0.88);
     }
 
     .qr-popup-backdrop {

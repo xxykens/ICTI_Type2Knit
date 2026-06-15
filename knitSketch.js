@@ -17,6 +17,8 @@ window.currentTypingSpeed    = 0;
 window.lastSecondSpeedTarget = 0;
 window.tempBackspaceFlag     = false;
 window.tempText              = '';
+window._completePreviewScrollY = 0;
+window._completePreviewMaxScroll = 0;
 
 window.LegendUI = {
   isInitialized: false,
@@ -349,25 +351,68 @@ function draw() {
 
         colorMode(RGB);
         clear();
-        background(245);
-
         colorMode(HSB, 360, 100, 100);
         const S8_CELL    = 38;
         const S8_SPACING = 44;
         const S8_GRID_W  = S8_CELL / 2 + 9 * S8_SPACING + S8_CELL / 2;
-        const scale      = pw / S8_GRID_W;
+        const previewInsetX = Math.min(36, Math.max(24, pw * 0.08));
+        const scale      = (pw - previewInsetX) / S8_GRID_W;
         const cellSize   = S8_CELL    * scale;
         const spacing    = S8_SPACING * scale;
-        const startX     = cellSize / 2;
-        const startY     = cellSize / 2 + 8;
+        const startX     = previewInsetX + cellSize / 2;
+        const title = document.querySelector('.complete-screen.active .info-panel h2');
+        const titleTop = title
+          ? title.getBoundingClientRect().top - panel.getBoundingClientRect().top
+          : 60;
+        const startY = cellSize / 2 + Math.max(0, titleTop);
+        const gridData = window._knitSketchPreviewPiece.knitArray || window._knitSketchPreviewPiece.cells || [];
+        const rowCount = Math.ceil(gridData.length / 10);
+        const contentBottom = rowCount > 0
+          ? startY + (rowCount - 1) * spacing + cellSize / 2
+          : startY;
+        const maxScroll = Math.max(0, contentBottom - ph + 36);
+        const scrollY = Math.min(window._completePreviewScrollY || 0, maxScroll);
+        window._completePreviewScrollY = scrollY;
+        window._completePreviewMaxScroll = maxScroll;
 
-        page_S7_S8.drawKnitGrid(window._knitSketchPreviewPiece.knitArray || window._knitSketchPreviewPiece.cells || [], startX, startY, cellSize, spacing, {
+        page_S7_S8.drawKnitGrid(gridData, startX, startY - scrollY, cellSize, spacing, {
           showText:        false,
           showEmotionInfo: false,
           privacy:         'public',
-          clipMinY:        -Infinity,
+          clipMinY:        -spacing,
           clipMaxY:        ph + spacing
         });
+
+        const p5cvs = document.getElementById('p5-knit-canvas');
+        if (p5cvs) p5cvs.style.cursor = 'default';
+
+        if (maxScroll > 0 && scrollY < maxScroll - 1) {
+          push();
+          colorMode(RGB);
+          drawingContext.save();
+          const fadeHeight = Math.min(132, Math.max(88, ph * 0.16));
+          const gradient = drawingContext.createLinearGradient(0, ph - fadeHeight, 0, ph);
+          gradient.addColorStop(0, 'rgba(255, 255, 255, 0)');
+          gradient.addColorStop(1, 'rgba(255, 255, 255, 0.95)');
+          drawingContext.fillStyle = gradient;
+          drawingContext.fillRect(0, ph - fadeHeight, pw, fadeHeight);
+          drawingContext.restore();
+          pop();
+        }
+
+        if (maxScroll > 0 && scrollY > 1) {
+          push();
+          colorMode(RGB);
+          drawingContext.save();
+          const fadeHeight = Math.min(92, Math.max(64, ph * 0.11));
+          const gradient = drawingContext.createLinearGradient(0, 0, 0, fadeHeight);
+          gradient.addColorStop(0, 'rgba(255, 255, 255, 0.92)');
+          gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+          drawingContext.fillStyle = gradient;
+          drawingContext.fillRect(0, 0, pw, fadeHeight);
+          drawingContext.restore();
+          pop();
+        }
 
       }
     }
@@ -413,6 +458,15 @@ function keyPressed() {
 
 function mouseWheel(event) {
   if (!window.state) return false;
+  if (window.state.currentScreen === 'p12' || window.state.currentScreen === 'p14') {
+    const maxScroll = window._completePreviewMaxScroll || 0;
+    if (maxScroll > 0) {
+      const nextScroll = (window._completePreviewScrollY || 0) + event.delta;
+      window._completePreviewScrollY = Math.max(0, Math.min(maxScroll, nextScroll));
+      return false;
+    }
+  }
+
   if (window.state.currentScreen === 'p18' && window.page_S7_S8) {
     if (page_S7_S8.showDetailPanel) {
       page_S7_S8.handleS8Scroll(event.delta);
@@ -499,7 +553,7 @@ window.knitSketch_renderPreview = function() {
   p5cvs.style.position = 'absolute';
   p5cvs.style.top = '0';
   p5cvs.style.left = '0';
-  p5cvs.style.pointerEvents = 'none';
+  p5cvs.style.pointerEvents = 'auto';
   panel.appendChild(p5cvs);
 
   const pw = panel.offsetWidth;
@@ -515,6 +569,8 @@ window.knitSketch_renderPreview = function() {
   const piece = new KnitPiece(previewNickname, previewPrivacy);
   piece.absorbArchiveData(window.archiveData);
   window._knitSketchPreviewPiece = piece;
+  window._completePreviewScrollY = 0;
+  window._completePreviewMaxScroll = 0;
 
   loop();
 };
