@@ -35,7 +35,7 @@
         글자는 사라지고 뜨개질이 남습니다.
       </div>
       <div class="p1-actions">
-        <button class="enter-btn" type="button" onclick="goTo('p2')">입장하기</button>
+        <button class="enter-btn" type="button" onclick="goTo('p19')">입장하기</button>
         <button class="archive-tag secondary-btn" type="button" onclick="goTo('p18')">아카이브 보기</button>
       </div>
     </div>
@@ -245,6 +245,69 @@
   </div>
 </div>
 
+<!-- P19 – ENTRY INTRO -->
+<div id="p19" class="screen entry-intro-screen">
+  <button class="entry-intro-skip" type="button" onclick="goTo('p2')">건너뛰기</button>
+
+  <section class="entry-intro-slide is-active" data-entry-slide>
+    <div class="entry-intro-kicker">1 / 3</div>
+    <h2>감정이 격해질 때<br>우리는 타이핑합니다</h2>
+    <p class="entry-intro-lead">
+      보내지 못한 말, 지웠던 문장, 손끝의 반복적인 리듬.
+    </p>
+    <p class="entry-intro-subcopy">
+      Type to Knit은 그 순간의 타이핑 리듬과 표정 변화를 뜨개 패턴으로 번역합니다.
+    </p>
+    <p class="entry-concept-line">
+      글 대신, 몸의 흔적이 남습니다.
+    </p>
+  </section>
+
+  <section class="entry-intro-slide entry-intro-slide-facemesh" data-entry-slide>
+    <div class="entry-facemesh-copy">
+      <div class="entry-intro-kicker">2 / 3</div>
+      <h2>FaceMesh로<br>표정 변화를 읽습니다</h2>
+      <p class="entry-intro-lead">
+        카메라는 얼굴 사진을 남기기보다, 표정이 움직이는 지점을 찾기 위해 잠시 켜집니다.
+      </p>
+      <p class="entry-intro-detail">
+        FaceMesh는 얼굴 위의 여러 랜드마크를 감지합니다. Type to Knit은 기준 표정과 비교해
+        눈썹, 눈, 입꼬리 주변 점의 거리 변화만 계산합니다. 얼굴 이미지는 저장하지 않고,
+        계산된 수치만 패턴 신호로 보냅니다.
+      </p>
+    </div>
+
+    <aside class="entry-facemesh-panel" aria-label="FaceMesh 랜드마크 예시">
+      <img class="entry-facemesh-image" src="images/facemesh-landmarks.png" alt="FaceMesh 랜드마크 예시">
+    </aside>
+  </section>
+
+  <section class="entry-intro-slide entry-intro-slide-demo" data-entry-slide>
+    <div class="entry-intro-copy">
+      <div class="entry-intro-kicker">3 / 3</div>
+      <h2>감정이<br>패턴이 됩니다</h2>
+      <p>
+        타이핑 속도와 표정 태그가 만나<br>
+        색, 형태, 코의 밀도를 바꿉니다.
+      </p>
+    </div>
+
+    <aside class="entry-intro-preview-panel" aria-label="미리보기 예시 패턴">
+      <div id="p19-preview-grid" class="entry-preview-grid"></div>
+    </aside>
+  </section>
+
+  <div class="entry-intro-nav" aria-label="입장 소개 진행">
+    <button class="entry-intro-back" type="button" data-entry-prev onclick="p19PrevSlide()">이전</button>
+    <div class="entry-intro-dots" aria-hidden="true">
+      <span class="is-active"></span>
+      <span></span>
+      <span></span>
+    </div>
+    <button class="entry-intro-next" type="button" data-entry-next onclick="p19NextSlide()">다음</button>
+  </div>
+</div>
+
 <!-- P10 – PREVIEW -->
 <div id="p10" class="screen preview-screen">
   <section class="preview-copy" aria-label="미리보기 설명">
@@ -433,7 +496,8 @@
 <script src="knitSketch.js"></script>
 <script src="page_S5.js"></script>
 <script src="page_S7_S8.js"></script>
-<script src="S10.js"></script>
+<script src="S10.js?v=p19-preview-grid"></script>
+<script src="S19.js?v=p19-preview-grid"></script>
 <script src="indexDesign.js"></script>
 </body>
 </html>
