@@ -94,6 +94,56 @@ const page_S4 = {
         window.cells[i].display(CELL_SIZE, i); 
       }
     }
+
+    // 5. 대바늘 위 떠다니는 입력 글자 애니메이션
+    this.drawFloatingChars();
+  },
+
+  // --- 대바늘 위 글자 페이드 애니메이션 ---
+  _floatingChars: [],
+  _FLOAT_LIFE_MS: 1000,   // 글자가 떠 있는 시간 (1초)
+  _FLOAT_RISE: 26,        // 1초 동안 위로 떠오르는 거리(px)
+
+  spawnFloatingChar: function(ch) {
+    if (!ch) return;
+    // 대바늘 교차점(약간 위)을 기준으로 약간의 좌우 흔들림을 줘서 겹침 방지
+    const jitterX = (Math.random() - 0.5) * 24;
+    this._floatingChars.push({
+      ch: ch,
+      bornAt: (typeof millis === 'function') ? millis() : performance.now(),
+      jitterX: jitterX
+    });
+    // 너무 많이 쌓이지 않도록 제한
+    if (this._floatingChars.length > 30) this._floatingChars.shift();
+  },
+
+  drawFloatingChars: function() {
+    if (!this._floatingChars.length) return;
+    const now = (typeof millis === 'function') ? millis() : performance.now();
+    const baseX = width / 2;
+    const baseY = 350 - CELL_SIZE * 0.8 - 18; // 대바늘 교차점 살짝 위
+
+    push();
+    colorMode(RGB, 255);                       // 색 모드를 RGB로 고정
+    if (window._floatFont) textFont(window._floatFont); // 사이트와 동일 폰트
+    textAlign(CENTER, CENTER);
+    textSize(18);
+    textStyle(NORMAL);
+    for (let i = this._floatingChars.length - 1; i >= 0; i--) {
+      const f = this._floatingChars[i];
+      const age = now - f.bornAt;
+      if (age >= this._FLOAT_LIFE_MS) {
+        this._floatingChars.splice(i, 1);
+        continue;
+      }
+      const t = age / this._FLOAT_LIFE_MS;      // 0 → 1
+      const alpha = 255 * (1 - t);               // 점점 투명
+      const y = baseY - this._FLOAT_RISE * t;    // 위로 떠오름
+      noStroke();
+      fill(26, 26, 26, alpha);                   // 거의 검은색
+      text(f.ch, baseX + f.jitterX, y);
+    }
+    pop();
   },
 
   // --- 내부 계산 및 드로잉 유틸리티 ---

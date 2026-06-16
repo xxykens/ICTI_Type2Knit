@@ -430,41 +430,59 @@ async function handleBaselineRegister() {
 }
 
 // ── P9 타이핑 ──
-const TYPING_HINT_MESSAGES = [
+// 사용자의 현재 입력(글자 수) 상태에 따라 달라지는 안내 문구.
+// 각 구간은 minCount(이 글자 수 이상일 때 적용)로 정의되며,
+// 내림차순으로 정렬되어 현재 글자 수에 맞는 첫 구간이 선택된다.
+const END_BUTTON_MIN_COUNT = 200; // 종료 버튼이 뜨는 최소 글자 수
+
+const TYPING_HINT_STAGES = [
   {
     kind: 'base',
+    minCount: 0,
     line1: '문장을 이어가면 새로운 짜임이 만들어져요.',
     line2: '지금 떠오르는 감정을 적어보세요.'
   },
   {
     kind: 'base',
+    minCount: 20,
     line1: '계속 타이핑해보세요.',
     line2: '글과 표정이 쌓일수록 패턴이 더 풍부해져요.'
   },
   {
     kind: 'calmPattern',
+    minCount: 70,
     line1: '색과 패턴을 더 다양하게 만들고 싶다면',
     line2: '눈썹, 입꼬리, 시선을 조금씩 바꾸며 글자를 입력해보세요.'
   },
   {
     kind: 'calmPattern',
+    minCount: 130,
     line1: '표정과 글이 함께 움직이면',
     line2: '색과 무늬가 더 풍부하게 이어져요.'
   },
   {
     kind: 'slow',
-    line1: '더 이상 할 말이 없나요?',
-    line2: '그럼 이 마음은 여기서 매듭지어볼까요?'
+    minCount: END_BUTTON_MIN_COUNT,
+    line1: '이제 충분히 많은 마음을 짜냈어요.',
+    line2: '마음껏 감정을 표출하고 종료 버튼을 눌러도 좋아요.'
   }
 ];
 
-const TYPING_HINT_ROTATE_MS = 6500;
+// 200자 이상에서 일정 시간 입력이 멈추면 보여줄 종료 유도 문구
+const TYPING_IDLE_MS = 3000; // 마지막 입력 후 이 시간 이상 멈추면 idle
+const TYPING_HINT_IDLE_MESSAGE = {
+  kind: 'slow',
+  line1: '더 쓸 말이 없다면',
+  line2: '종료 버튼을 눌러 끝내도 좋아요.'
+};
+
 const TYPING_HINT_FADE_MS = 360;
 
 function createTypingHintState() {
   const now = Date.now();
   return {
     enteredAt: now,
+    lastTypedAt: now,
     lastHintKey: '',
     transitionTimer: null
   };
@@ -475,6 +493,10 @@ function resetTypingHint() {
     clearTimeout(state.p9Hint.transitionTimer);
   }
   state.p9Hint = createTypingHintState();
+  state.charCount = 0;
+  const charCountEl = document.getElementById('char-count');
+  if (charCountEl) charCountEl.textContent = '0';
+  updateEndButtonVisibility(0);
   updateTypingHint({ force: true });
 }
 
@@ -483,9 +505,14 @@ function getTypingHintState() {
   return state.p9Hint;
 }
 
-function pickSequentialTypingHint(now, enteredAt) {
-  const index = Math.floor((now - enteredAt) / TYPING_HINT_ROTATE_MS) % TYPING_HINT_MESSAGES.length;
-  return TYPING_HINT_MESSAGES[index];
+function pickHintByCharCount(count, isIdle) {
+  // 200자 이상이고 일정 시간 입력이 멈췄으면 종료 유도 문구를 보여준다.
+  if (count >= END_BUTTON_MIN_COUNT && isIdle) return TYPING_HINT_IDLE_MESSAGE;
+  // minCount 내림차순으로 현재 글자 수에 맞는 첫 구간을 찾는다.
+  for (let i = TYPING_HINT_STAGES.length - 1; i >= 0; i--) {
+    if (count >= TYPING_HINT_STAGES[i].minCount) return TYPING_HINT_STAGES[i];
+  }
+  return TYPING_HINT_STAGES[0];
 }
 
 function applyTypingHintText(hintEl, line1El, line2El, message) {
@@ -503,8 +530,9 @@ function updateTypingHint(options = {}) {
   if (!hintEl || !line1El || !line2El) return;
 
   const hintState = getTypingHintState();
-  const now = Date.now();
-  const message = pickSequentialTypingHint(now, hintState.enteredAt);
+  const count = state.charCount || 0;
+  const isIdle = (Date.now() - hintState.lastTypedAt) >= TYPING_IDLE_MS;
+  const message = pickHintByCharCount(count, isIdle);
 
   const hintKey = `${message.kind}:${message.line1}:${message.line2}`;
   if (hintState.lastHintKey === hintKey) return;
@@ -552,7 +580,17 @@ function onType() {
 
   state.charCount = count;
   document.getElementById('char-count').textContent = count;
+  const hintState = getTypingHintState();
+  hintState.lastTypedAt = Date.now();
+  updateEndButtonVisibility(count);
   updateTypingHint();
+}
+
+// 종료 버튼은 일정 글자 수 이상 입력했을 때만 노출한다.
+function updateEndButtonVisibility(count) {
+  const endBtn = document.querySelector('#p9 .end-btn');
+  if (!endBtn) return;
+  endBtn.style.display = count >= END_BUTTON_MIN_COUNT ? 'block' : 'none';
 }
 
 function endTyping() { goTo('p11'); }

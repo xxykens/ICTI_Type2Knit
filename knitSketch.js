@@ -294,6 +294,12 @@ function setup() {
   cvs.style('top', '0');
   cvs.style('left', '0');
 
+  // 사이트와 동일한 폰트(HSHwalkong)를 캔버스 글자에도 사용
+  loadFont('HSHwalkongSerif-Regular.otf',
+    (f) => { window._floatFont = f; },
+    ()  => { window._floatFont = null; }
+  );
+
   window.gridPath = [];
   if (window.page_S4) page_S4.initGridPath();
 
@@ -314,7 +320,7 @@ function setup() {
         if (window.tempText.length > 0) window.tempText = window.tempText.slice(0, -1);
       }
     });
-    ta.addEventListener('input', function() {
+    ta.addEventListener('input', function(e) {
       if (!window.state || window.state.currentScreen !== 'p9') return;
       const baseline = window._tempTextBaseline || 0;
       if (ta.value.length < baseline) {
@@ -323,6 +329,29 @@ function setup() {
         window.tempText = '';
       } else {
         window.tempText = ta.value.slice(baseline);
+      }
+
+      // 떠오르는 글자 처리
+      // - 영문/숫자/기호: input 이벤트의 e.data 로 즉시 띄움
+      // - 한글: 조합 중에는 띄우지 않고 compositionend 에서 완성 글자를 띄움
+      if (!e.isComposing && e.inputType !== 'deleteContentBackward'
+          && e.inputType !== 'deleteContentForward' && e.data) {
+        if (window.page_S4 && typeof page_S4.spawnFloatingChar === 'function') {
+          for (const ch of e.data) {
+            if (ch && ch.trim()) page_S4.spawnFloatingChar(ch);
+          }
+        }
+      }
+      window._floatCharLastLen = ta.value.length;
+    });
+
+    // 한글 등 IME 조합이 끝나면 완성된 글자(들)를 띄움
+    ta.addEventListener('compositionend', function(e) {
+      if (!window.state || window.state.currentScreen !== 'p9') return;
+      if (e.data && window.page_S4 && typeof page_S4.spawnFloatingChar === 'function') {
+        for (const ch of e.data) {
+          if (ch && ch.trim()) page_S4.spawnFloatingChar(ch);
+        }
       }
     });
   }
@@ -502,6 +531,10 @@ window.knitSketch_onP9Enter = function() {
   window._tempTextBaseline     = 0;
 
   if (window.page_S4) window.page_S4._prevKnitstampLen = 0;
+  if (window.page_S4) {
+    window.page_S4._floatingChars = [];
+    window._floatCharLastLen = 0;
+  }
   if (window.page_S4) page_S4.initGridPath();
 
   fitP5CanvasToContainer('knit-canvas-container');

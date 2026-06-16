@@ -1,4 +1,3 @@
-
 @font-face {
       font-family: 'HSHwalkong';
       src: url('HSHwalkongSerif-Regular.otf') format('opentype');
@@ -1738,6 +1737,7 @@
 
     #p9 .end-btn {
       position: absolute; bottom: 96px; right: 60px;
+      display: none;
     }
     #p9 .reset-face-hint {
       position: absolute; bottom: 126px; left: 60px;
@@ -1800,7 +1800,7 @@
       position: absolute;
       left: 50%;
       transform: translateX(-50%);
-      bottom: 126px;
+      bottom: 110px;
       font-size: 28px;
       color: var(--mid-gray);
       letter-spacing: 0.05em;
