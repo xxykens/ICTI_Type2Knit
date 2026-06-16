@@ -17,6 +17,8 @@
 
     slides.forEach((slide, slideIndex) => {
       slide.classList.toggle('is-active', slideIndex === currentSlideIndex);
+      slide.classList.toggle('is-before', slideIndex < currentSlideIndex);
+      slide.classList.toggle('is-after', slideIndex > currentSlideIndex);
     });
 
     dots.forEach((dot, dotIndex) => {

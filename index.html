@@ -19,7 +19,6 @@
 
 <!-- P1 – LANDING -->
 <div id="p1" class="screen active">
-  <div class="preview-tag" onclick="goTo('p10')">► 미리보기</div>
   <div class="p1-hero">
     <div class="p1-title">
       <h1>Type to Knit_</h1>
@@ -32,6 +31,7 @@
         <button class="enter-btn" type="button" onclick="goTo('p19')">입장하기</button>
         <button class="archive-tag secondary-btn" type="button" onclick="goTo('p18')">아카이브 보기</button>
       </div>
+      <button class="preview-tag" type="button" onclick="goTo('p10')">► How to Knit</button>
     </div>
     <div class="right">
       <svg class="knit-graphic" width="343" height="535" viewBox="0 0 343 535" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -241,8 +241,6 @@
 
 <!-- P19 – ENTRY INTRO -->
 <div id="p19" class="screen entry-intro-screen">
-  <button class="entry-intro-skip" type="button" onclick="goTo('p2')">건너뛰기</button>
-
   <section class="entry-intro-slide is-active" data-entry-slide>
     <div class="entry-intro-kicker">1 / 3</div>
     <h2>감정이 격해질 때<br>우리는 타이핑합니다</h2>
@@ -250,7 +248,8 @@
       보내지 못한 말, 지웠던 문장, 손끝의 반복적인 리듬.
     </p>
     <p class="entry-intro-subcopy">
-      Type to Knit은 그 순간의 타이핑 리듬과 표정 변화를 뜨개 패턴으로 번역합니다.
+      Type to Knit은 그 순간의 표정 변화와 타이핑 리듬을<br>
+      뜨개 패턴으로 번역합니다.
     </p>
     <p class="entry-concept-line">
       글 대신, 몸의 흔적이 남습니다.
@@ -281,7 +280,7 @@
       <div class="entry-intro-kicker">3 / 3</div>
       <h2>감정이<br>패턴이 됩니다</h2>
       <p>
-        타이핑 속도와 표정 태그가 만나<br>
+        표정 태그와 타이핑 속도가 만나<br>
         색, 형태, 코의 밀도를 바꿉니다.
       </p>
     </div>
@@ -299,13 +298,14 @@
       <span></span>
     </div>
     <button class="entry-intro-next" type="button" data-entry-next onclick="p19NextSlide()">다음</button>
+    <button class="entry-intro-skip" type="button" onclick="goTo('p2')">건너뛰기</button>
   </div>
 </div>
 
 <!-- P10 – PREVIEW -->
 <div id="p10" class="screen preview-screen">
-  <section class="preview-copy" aria-label="미리보기 설명">
-    <h2>미리보기</h2>
+  <section class="preview-copy" aria-label="How to Knit 설명">
+    <h2>How to Knit</h2>
     <p>
       감정의 리듬을 따라 색과 형태가<br>
       다른 코로 번역됩니다.<br>
