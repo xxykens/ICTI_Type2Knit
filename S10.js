@@ -806,4 +806,12 @@
       renderLegendToHTML();
     }
   };
+  // ── export용 유틸 노출 ──
+  window.knitCellExport = {
+    hsbToRgb: hsbToRgb,
+    drawRoundedRect: drawRoundedRect,
+    drawKnitCell: drawKnitCell,
+    drawThreadBase: drawThreadBase
+  };
+
 }()); // S10.js 끝

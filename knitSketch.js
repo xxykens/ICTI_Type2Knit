@@ -8,6 +8,8 @@ const CELL_SIZE = 26;
 const SPACING   = 30;
 const DEFAULT_STAGE_W = 1280;
 const DEFAULT_STAGE_H = 832;
+const COMPLETE_PREVIEW_SCROLL_EASE = 0.18;
+const COMPLETE_PREVIEW_SCROLL_SNAP = 0.35;
 
 window.cells                 = [];
 window.archiveData           = [];
@@ -18,6 +20,7 @@ window.lastSecondSpeedTarget = 0;
 window.tempBackspaceFlag     = false;
 window.tempText              = '';
 window._completePreviewScrollY = 0;
+window._completePreviewTargetScrollY = 0;
 window._completePreviewMaxScroll = 0;
 
 window.LegendUI = {
@@ -410,8 +413,19 @@ function draw() {
           ? startY + (rowCount - 1) * spacing + cellSize / 2
           : startY;
         const maxScroll = Math.max(0, contentBottom - ph + 36);
-        const scrollY = Math.min(window._completePreviewScrollY || 0, maxScroll);
+        const currentScroll = Math.max(0, Math.min(maxScroll, window._completePreviewScrollY || 0));
+        const targetFromWheel = Number.isFinite(window._completePreviewTargetScrollY)
+          ? window._completePreviewTargetScrollY
+          : currentScroll;
+        const targetScroll = Math.max(0, Math.min(maxScroll, targetFromWheel));
+        let scrollY = currentScroll;
+        if (Math.abs(targetScroll - scrollY) > COMPLETE_PREVIEW_SCROLL_SNAP) {
+          scrollY += (targetScroll - scrollY) * COMPLETE_PREVIEW_SCROLL_EASE;
+        } else {
+          scrollY = targetScroll;
+        }
         window._completePreviewScrollY = scrollY;
+        window._completePreviewTargetScrollY = targetScroll;
         window._completePreviewMaxScroll = maxScroll;
 
         page_S7_S8.drawKnitGrid(gridData, startX, startY - scrollY, cellSize, spacing, {
@@ -500,8 +514,12 @@ function mouseWheel(event) {
   if (window.state.currentScreen === 'p12' || window.state.currentScreen === 'p14') {
     const maxScroll = window._completePreviewMaxScroll || 0;
     if (maxScroll > 0) {
-      const nextScroll = (window._completePreviewScrollY || 0) + event.delta;
-      window._completePreviewScrollY = Math.max(0, Math.min(maxScroll, nextScroll));
+      const currentTarget = Number.isFinite(window._completePreviewTargetScrollY)
+        ? window._completePreviewTargetScrollY
+        : (window._completePreviewScrollY || 0);
+      const nextScroll = currentTarget + event.delta;
+      window._completePreviewTargetScrollY = Math.max(0, Math.min(maxScroll, nextScroll));
+      loop();
       return false;
     }
   }
@@ -583,6 +601,113 @@ window.knitSketch_onP18Leave = function() {
   noLoop();
 };
 
+// ── 전체 띠 이미지 export (QR용) — 순수 Canvas 2D, p5 캔버스 무관 ──
+window.knitSketch_exportFullImage = function() {
+  return new Promise((resolve) => {
+    if (!window._knitSketchPreviewPiece) { resolve(null); return; }
+    const fns = window.knitCellExport;
+    if (!fns) { resolve(null); return; }
+
+    const gridData = window._knitSketchPreviewPiece.knitArray || window._knitSketchPreviewPiece.cells || [];
+    if (gridData.length === 0) { resolve(null); return; }
+    const rowCount = Math.ceil(gridData.length / 10);
+
+    const EXPORT_W    = 560;
+    const INSET_X     = 28;
+    const LOGO_AREA_H = 72;
+    const FOOTER_H    = 56;
+    const PAD_V       = 20;
+    const MAX_STRIP_H = 1200;
+
+    // 셀 크기/간격: 10열 배치 기준 너비에 맞춤
+    const S8_CELL    = 38;
+    const S8_SPACING = 44;
+    const availW     = EXPORT_W - INSET_X * 2;
+    const S8_GRID_W  = S8_CELL / 2 + 9 * S8_SPACING + S8_CELL / 2;
+    const baseScale  = availW / S8_GRID_W;
+    const baseSpacing  = S8_SPACING * baseScale;
+    const baseCellSize = S8_CELL    * baseScale;
+    const baseContentH = (rowCount - 1) * baseSpacing + baseCellSize;
+
+    const scaleFactor = baseContentH > MAX_STRIP_H ? MAX_STRIP_H / baseContentH : 1;
+    const spacing  = baseSpacing  * scaleFactor;
+    const cellSize = baseCellSize * scaleFactor;
+    const contentH = (rowCount - 1) * spacing + cellSize;
+
+    const centerX = EXPORT_W / 2;
+    const baseY   = LOGO_AREA_H + PAD_V + cellSize / 2;
+    const totalH  = Math.ceil(LOGO_AREA_H + PAD_V + contentH + PAD_V + FOOTER_H);
+
+    // 오프스크린 캔버스 생성 (p5 무관)
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const cvs = document.createElement('canvas');
+    cvs.width  = Math.round(EXPORT_W * dpr);
+    cvs.height = Math.round(totalH   * dpr);
+    const ctx = cvs.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    // 배경
+    ctx.fillStyle = '#FAFAFA';
+    ctx.fillRect(0, 0, EXPORT_W, totalH);
+
+    // 로고
+    const logoImg = document.querySelector('.site-logo-image');
+    if (logoImg && logoImg.complete && logoImg.naturalWidth > 0) {
+      const lh = 28;
+      const lw = (logoImg.naturalWidth / logoImg.naturalHeight) * lh;
+      ctx.drawImage(logoImg, (EXPORT_W - lw) / 2, (LOGO_AREA_H - lh) / 2, lw, lh);
+    }
+
+    // 셀 위치 배열
+    const positions = gridData.map((_, idx) => ({
+      x: centerX - 4.5 * spacing + (idx % 10) * spacing,
+      y: baseY   + Math.floor(idx / 10) * spacing,
+      r: Math.floor(idx / 10),
+      c: idx % 10
+    }));
+
+    const metrics = { spacing, cellSize, centerX, baseY, positions };
+
+    // 실 베이스
+    fns.drawThreadBase(ctx, metrics);
+
+    // 각 셀 그리기 (영문 emotionTag 매핑 포함)
+    const EYE_MAP = { FROWN: '짜증', SURPRISED: '놀람', BLURRY: '찌푸림', NEUTRAL: '중립' };
+    gridData.forEach((cell, idx) => {
+      if (cell.isBackspace) {
+        // 백스페이스: 끊긴 실 표현
+        const pos = positions[idx];
+        if (!pos) return;
+        ctx.save();
+        const [r, g, b] = cell.bgHue != null
+          ? fns.hsbToRgb(cell.bgHue, (cell.sat || 40) / 100, (cell.bgBri || 70) / 100)
+          : [160, 160, 160];
+        ctx.strokeStyle = `rgb(${r},${g},${b})`;
+        ctx.lineWidth = 3.5;
+        ctx.beginPath();
+        ctx.moveTo(pos.x - 12, pos.y - 12); ctx.lineTo(pos.x + 5,  pos.y);
+        ctx.moveTo(pos.x - 12, pos.y + 12); ctx.lineTo(pos.x + 2,  pos.y);
+        ctx.stroke();
+        ctx.restore();
+        return;
+      }
+      const mapped = Object.assign({}, cell, { eye: EYE_MAP[cell.eye] || cell.eye || '중립' });
+      fns.drawKnitCell
+        ? fns.drawKnitCell(ctx, mapped, idx, metrics)
+        : null;
+    });
+
+    // 태그라인
+    ctx.fillStyle = 'rgba(0,0,0,0.38)';
+    ctx.font = `14px 'HSHwalkong', 'Noto Serif KR', serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('감정이∙패턴이∙되는∙순간', EXPORT_W / 2, LOGO_AREA_H + PAD_V + contentH + PAD_V + FOOTER_H / 2);
+
+    resolve(cvs.toDataURL('image/png'));
+  });
+};
+
 // ── p12/p14 미리보기 ──
 window.knitSketch_renderPreview = function() {
   const panel = document.querySelector('.complete-screen.active .preview-panel');
@@ -613,6 +738,7 @@ window.knitSketch_renderPreview = function() {
   piece.absorbArchiveData(window.archiveData);
   window._knitSketchPreviewPiece = piece;
   window._completePreviewScrollY = 0;
+  window._completePreviewTargetScrollY = 0;
   window._completePreviewMaxScroll = 0;
 
   loop();

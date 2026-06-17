@@ -1977,7 +1977,7 @@
       align-items: flex-start;
       gap: 16px;
       max-width: 620px;
-      font-size: 22px;
+      font-size: 20px;
       line-height: 1.55;
     }
     .complete-screen .complete-detail {
@@ -1991,12 +1991,12 @@
     }
     .complete-screen .complete-detail-label {
       color: rgba(0, 0, 0, 0.46);
-      font-size: 17px;
+      font-size: 15px;
       line-height: 1.4;
     }
     .complete-screen .complete-detail strong {
       color: rgba(0, 0, 0, 0.82);
-      font-size: 21px;
+      font-size: 19px;
       font-weight: 400;
       line-height: 1.7;
     }
@@ -2005,7 +2005,7 @@
     }
     .complete-screen .complete-detail-summary p {
       color: rgba(0, 0, 0, 0.72);
-      font-size: 21px;
+      font-size: 19px;
       line-height: 1.7;
       word-break: keep-all;
       overflow-wrap: anywhere;
@@ -2026,7 +2026,7 @@
       background: rgba(122, 184, 200, 0.13);
       color: rgba(0, 0, 0, 0.68);
       border: 1px solid rgba(122, 184, 200, 0.36);
-      font-size: 17px;
+      font-size: 15px;
       line-height: 1;
       white-space: nowrap;
     }
@@ -2047,7 +2047,7 @@
       background: rgba(0, 0, 0, 0.09);
       color: rgba(0, 0, 0, 0.7);
       font-family: inherit;
-      font-size: 17px;
+      font-size: 15px;
       line-height: 1.2;
       cursor: pointer;
       transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
@@ -2153,6 +2153,32 @@
       font-weight: 500;
       line-height: 1.35;
       margin-bottom: 24px;
+    }
+    .qr-code-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 240px;
+      height: 240px;
+      margin: 0 auto;
+      border-radius: 8px;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      background: #ffffff;
+    }
+    .qr-code-container img,
+    .qr-code-container canvas {
+      display: block;
+    }
+    .qr-loading,
+    .qr-error {
+      text-align: center;
+      font-size: 15px;
+      color: rgba(0, 0, 0, 0.5);
+      line-height: 1.6;
+      margin: 0;
+    }
+    .qr-error {
+      color: rgba(180, 0, 0, 0.7);
     }
     .qr-sample-canvas {
       display: block;

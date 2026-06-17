@@ -899,7 +899,7 @@ function openKnitQrPopup() {
 
   backdrop.classList.add('is-visible');
   backdrop.setAttribute('aria-hidden', 'false');
-  drawKnitQrPlaceholder();
+  generateKnitQr();
 
   const closeButton = backdrop.querySelector('.qr-popup-close');
   if (closeButton) closeButton.focus();
@@ -913,7 +913,63 @@ function closeKnitQrPopup() {
   backdrop.setAttribute('aria-hidden', 'true');
 }
 
-function drawKnitQrPlaceholder() {
+async function generateKnitQr() {
+  const container = document.getElementById('knit-qr-code');
+  const note = document.querySelector('.qr-popup-note');
+  if (!container) return;
+
+  container.innerHTML = '<p class="qr-loading">업로드 중...</p>';
+  if (note) note.textContent = '';
+
+  try {
+    const apiKey = window.CONFIG && window.CONFIG.IMGBB_API_KEY;
+    if (!apiKey) throw new Error('CONFIG.IMGBB_API_KEY not set');
+
+    if (typeof QRCode === 'undefined') throw new Error('QRCode library not loaded');
+    if (!window.knitSketch_exportFullImage) throw new Error('export function not available');
+
+    const dataUrl = await window.knitSketch_exportFullImage();
+    if (!dataUrl) throw new Error('이미지 생성 실패');
+
+    const base64 = dataUrl.split(',')[1];
+
+    const formData = new FormData();
+    formData.append('image', base64);
+    formData.append('key', apiKey);
+
+    const res = await fetch('https://api.imgbb.com/1/upload', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+
+    const data = await res.json();
+    console.log('[QR] imgbb response:', data);
+
+    if (!data.success) throw new Error('imgbb 오류: ' + JSON.stringify(data.error || data));
+
+    const imageUrl = data.data.url;
+    container.innerHTML = '';
+    new QRCode(container, {
+      text: imageUrl,
+      width: 240,
+      height: 240,
+      colorDark: '#1d1d1d',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+
+    if (note) note.textContent = '스캔하면 작품 이미지를 저장할 수 있어요.';
+
+  } catch (e) {
+    console.error('[QR] 오류:', e);
+    container.innerHTML = `<p class="qr-error">QR 생성 실패<br><small>${e.message}</small></p>`;
+    if (note) note.textContent = '';
+  }
+}
+
+function _unused_drawKnitQrPlaceholder() {
   const canvas = document.getElementById('knit-qr-example-canvas');
   if (!canvas) return;
 

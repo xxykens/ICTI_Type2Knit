@@ -1,0 +1,3 @@
+var CONFIG = {
+  IMGBB_API_KEY: 'YOUR_IMGBB_API_KEY'
+};

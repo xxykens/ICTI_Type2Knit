@@ -455,8 +455,8 @@
     <button type="button" class="qr-popup-close" onclick="closeKnitQrPopup()" aria-label="닫기">닫기</button>
     <p class="qr-popup-kicker">작품 이미지 다운받기</p>
     <h2 id="knit-qr-title">휴대폰으로 QR을 스캔해주세요.</h2>
-    <canvas id="knit-qr-example-canvas" class="qr-sample-canvas" width="240" height="240" aria-label="QR 예시"></canvas>
-    <p class="qr-popup-note">이미지 업로드 연결 전 예시 화면입니다.</p>
+    <div id="knit-qr-code" class="qr-code-container" aria-label="QR 코드"></div>
+    <p class="qr-popup-note"></p>
   </section>
 </div>
 
@@ -574,6 +574,8 @@
   </div>
 
 <!-- 스크립트: DOM 로드 후 실행 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="config.js"></script>
 <script src="libraries/p5.min.js"></script>
 <script src="libraries/p5.sound.min.js"></script>
 <script src="https://unpkg.com/ml5@0.12.2/dist/ml5.min.js"></script>
