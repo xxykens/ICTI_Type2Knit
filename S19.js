@@ -5,6 +5,20 @@
     return Array.from(document.querySelectorAll('#p19 [data-entry-slide]'));
   }
 
+  function playSlideReveal(slide) {
+    if (!slide) return;
+
+    const revealTargets = Array.from(slide.querySelectorAll('[data-entry-reveal]'));
+    slide.classList.remove('is-revealing');
+
+    revealTargets.forEach((target, targetIndex) => {
+      target.style.setProperty('--entry-reveal-delay', `${160 + targetIndex * 250}ms`);
+    });
+
+    void slide.offsetWidth;
+    slide.classList.add('is-revealing');
+  }
+
   function setEntrySlide(index) {
     const slides = getSlides();
     const dots = Array.from(document.querySelectorAll('#p19 .entry-intro-dots span'));
@@ -19,6 +33,7 @@
       slide.classList.toggle('is-active', slideIndex === currentSlideIndex);
       slide.classList.toggle('is-before', slideIndex < currentSlideIndex);
       slide.classList.toggle('is-after', slideIndex > currentSlideIndex);
+      slide.classList.remove('is-revealing');
     });
 
     dots.forEach((dot, dotIndex) => {
@@ -30,9 +45,25 @@
       prevButton.classList.toggle('is-disabled', currentSlideIndex === 0);
     }
 
+    const nextChevron = document.querySelector('#p19 [data-entry-next-chevron]');
+    const skipButton = document.querySelector('#p19 .entry-intro-skip');
+    const isLast = currentSlideIndex === slides.length - 1;
+
     if (nextButton) {
-      nextButton.textContent = currentSlideIndex === slides.length - 1 ? '입장하기' : '다음';
+      nextButton.textContent = isLast ? '시작하기' : '다음';
     }
+
+    if (nextChevron) {
+      nextChevron.classList.toggle('is-hidden', isLast);
+    }
+
+    if (skipButton) {
+      skipButton.classList.toggle('is-hidden', isLast);
+    }
+
+    window.requestAnimationFrame(() => {
+      playSlideReveal(slides[currentSlideIndex]);
+    });
   }
 
   window.p19PrevSlide = function () {

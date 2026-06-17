@@ -262,13 +262,13 @@
     }
     ctx.stroke();
 
-    if (cell.text && cell.text.trim().length > 0) {
-      ctx.fillStyle = 'rgba(0,0,0,0.68)';
-      ctx.font = `bold ${Math.round(metrics.cellSize * 0.5)}px 'HSHwalkong', serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(cell.text.trim()[0], px, py + 1);
-    }
+    // if (cell.text && cell.text.trim().length > 0) {
+    //   ctx.fillStyle = 'rgba(0,0,0,0.68)';
+    //   ctx.font = `bold ${Math.round(metrics.cellSize * 0.5)}px 'HSHwalkong', serif`;
+    //   ctx.textAlign = 'center';
+    //   ctx.textBaseline = 'middle';
+    //   ctx.fillText(cell.text.trim()[0], px, py + 1);
+    // }
   }
 
   function drawThreadBase(ctx, metrics) {
@@ -641,7 +641,7 @@
     const renderGrid = () => {
       ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
       ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-      drawThreadBase(ctx, metrics);
+      // drawThreadBase(ctx, metrics);
       cells.forEach((cell, idx) => drawKnitCell(ctx, cell, idx, metrics));
       drawNeedles(ctx, metrics);
     };
