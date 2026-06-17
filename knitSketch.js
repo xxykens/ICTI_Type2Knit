@@ -668,10 +668,7 @@ window.knitSketch_exportFullImage = function() {
 
     const metrics = { spacing, cellSize, centerX, baseY, positions };
 
-    // 실 베이스
-    fns.drawThreadBase(ctx, metrics);
-
-    // 각 셀 그리기 (영문 emotionTag 매핑 포함)
+    // 각 셀 그리기 (영문 emotionTag 매핑 포함, 텍스트 오버레이 제거)
     const EYE_MAP = { FROWN: '짜증', SURPRISED: '놀람', BLURRY: '찌푸림', NEUTRAL: '중립' };
     gridData.forEach((cell, idx) => {
       if (cell.isBackspace) {
@@ -691,7 +688,7 @@ window.knitSketch_exportFullImage = function() {
         ctx.restore();
         return;
       }
-      const mapped = Object.assign({}, cell, { eye: EYE_MAP[cell.eye] || cell.eye || '중립' });
+      const mapped = Object.assign({}, cell, { eye: EYE_MAP[cell.eye] || cell.eye || '중립', text: '' });
       fns.drawKnitCell
         ? fns.drawKnitCell(ctx, mapped, idx, metrics)
         : null;
