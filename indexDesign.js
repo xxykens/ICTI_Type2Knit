@@ -1385,6 +1385,17 @@ function _getCanvasCssSize(cvs) {
   };
 }
 
+// DB에 저장된 기존 기본 조각(isDefault 필드 없음)도 포함해 판별
+function _isDefaultPiece(piece) {
+  if (!piece) return false;
+  if (piece.isDefault === true) return true;
+  // defaultArchivePieces.js에 정의된 3개 조각의 고유 닉네임으로 식별
+  if (piece.nickname === '과제하기 싫어') return true;
+  if (piece.nickname === '직딩의 하루') return true;
+  if (piece.nickname === '' && piece.privacy === 'partial') return true;
+  return false;
+}
+
 function renderP18Cards(pieces) {
   const track = document.getElementById('p18-track');
   const empty = document.getElementById('p18-empty');
@@ -1859,30 +1870,32 @@ function openP18Overlay(piece, sourceCvs) {
   selInfo.textContent = '니트 코 위에 마우스를 올리면 정보가 표시됩니다.';
   info.appendChild(selInfo);
 
-  // 구분선 + 뜨개실 풀기
-  const hr4 = document.createElement('div');
-  hr4.style.cssText = 'border-top:1px solid #e0e0e0; margin:20px 0 14px;';
-  info.appendChild(hr4);
+  // 구분선 + 뜨개실 풀기 (기본 아카이브 조각은 삭제 불가)
+  if (!_isDefaultPiece(piece)) {
+    const hr4 = document.createElement('div');
+    hr4.style.cssText = 'border-top:1px solid #e0e0e0; margin:20px 0 14px;';
+    info.appendChild(hr4);
 
-  const unravelLink = document.createElement('div');
-  unravelLink.textContent = '뜨개실 풀기';
-  unravelLink.style.cssText = 'font-size:14px; font-weight:600; color:#d9534f; text-align:center; cursor:pointer; letter-spacing:0.02em; transition:color 0.15s ease;';
-  unravelLink.addEventListener('mouseenter', () => { if (!_unraveling) unravelLink.style.color = '#b8413d'; });
-  unravelLink.addEventListener('mouseleave', () => { if (!_unraveling) unravelLink.style.color = '#d9534f'; });
-  unravelLink.addEventListener('click', () => {
-    if (_unraveling) return;
-    _showUnravelConfirm(() => {
-      _unraveling = true;
-      if (_rafId) { cancelAnimationFrame(_rafId); _rafId = null; }
-      unravelLink.textContent = '뜨개실을 푸는 중...';
-      unravelLink.style.cursor = 'default';
-      unravelLink.style.color = '#bbb';
-      _playArchiveUnravelAnimation(bigCvs, piece, overlayW, overlayH, () => {
-        _deleteArchivePiece(piece);
+    const unravelLink = document.createElement('div');
+    unravelLink.textContent = '뜨개실 풀기';
+    unravelLink.style.cssText = 'font-size:14px; font-weight:600; color:#d9534f; text-align:center; cursor:pointer; letter-spacing:0.02em; transition:color 0.15s ease;';
+    unravelLink.addEventListener('mouseenter', () => { if (!_unraveling) unravelLink.style.color = '#b8413d'; });
+    unravelLink.addEventListener('mouseleave', () => { if (!_unraveling) unravelLink.style.color = '#d9534f'; });
+    unravelLink.addEventListener('click', () => {
+      if (_unraveling) return;
+      _showUnravelConfirm(() => {
+        _unraveling = true;
+        if (_rafId) { cancelAnimationFrame(_rafId); _rafId = null; }
+        unravelLink.textContent = '뜨개실을 푸는 중...';
+        unravelLink.style.cursor = 'default';
+        unravelLink.style.color = '#bbb';
+        _playArchiveUnravelAnimation(bigCvs, piece, overlayW, overlayH, () => {
+          _deleteArchivePiece(piece);
+        });
       });
     });
-  });
-  info.appendChild(unravelLink);
+    info.appendChild(unravelLink);
+  }
 
   // 마우스 호버 → 선택된 코 정보 업데이트
   const _SP = Math.floor((overlayW - 8) / 10);
