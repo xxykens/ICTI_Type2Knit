@@ -94,7 +94,8 @@ function _buildSeedPiece(nickname, privacy, daysAgo, segments) {
     privacy,
     date,
     cells,
-    knitArray
+    knitArray,
+    isDefault: true
   };
 }
 
