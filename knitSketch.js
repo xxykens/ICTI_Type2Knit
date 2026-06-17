@@ -612,7 +612,7 @@ window.knitSketch_exportFullImage = function() {
     if (gridData.length === 0) { resolve(null); return; }
     const rowCount = Math.ceil(gridData.length / 10);
 
-    const EXPORT_W    = 560;
+    const EXPORT_W    = 400;
     const INSET_X     = 28;
     const LOGO_AREA_H = 72;
     const FOOTER_H    = 56;
@@ -696,7 +696,7 @@ window.knitSketch_exportFullImage = function() {
 
     // 태그라인
     ctx.fillStyle = 'rgba(0,0,0,0.38)';
-    ctx.font = `14px 'HSHwalkong', 'Noto Serif KR', serif`;
+    ctx.font = `18px 'HSHwalkong', 'Noto Serif KR', serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('감정이∙패턴이∙되는∙순간', EXPORT_W / 2, LOGO_AREA_H + PAD_V + contentH + PAD_V + FOOTER_H / 2);
