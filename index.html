@@ -530,27 +530,21 @@
 
   <!-- 공통 하단 툴팁 버튼 -->
   <div class="app-footer" aria-hidden="false">
-    <button id="footer-tooltip-button" type="button" onclick="window.LegendUI && window.LegendUI.toggleFooterTooltip()">
+    
+    <button id="footer-home-button" type="button" onclick="window.location.reload();">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+      </svg>
+      처음 화면으로
+    </button>
+
+    <button id="footer-tooltip-button" type="button">
       당신의 감정은 어떻게 뜨개 패턴이 되나요?
     </button>
   </div>
-  <div id="footer-tooltip" class="footer-tooltip" role="tooltip" aria-hidden="true">
-    <!-- 감정별 뜨개 패턴 설명 -->
-    <div class="legend-title">감정별 뜨개 패턴</div>
-    <div class="legend-description">타이핑하는 동안 웹캠이 표정 변화(눈썹·눈·입)를 기준 표정과 비교해 감정을 추정하고, 그 감정과 타이핑 속도에 따라 코의 색과 형태 등이 달라져요.</div>
-    
-    <div class="legend-section">
-      <div class="legend-section-title">■ 감정 베이스 색상</div>
-      <div class="legend-emotions">
-        <div class="legend-emotion"><span class="emotion-box" style="background:hsl(0, 40%, 90%)"></span> 짜증</div>
-        <div class="legend-emotion"><span class="emotion-box" style="background:hsl(51, 40%, 90%)"></span> 중립</div>
-        <div class="legend-emotion"><span class="emotion-box" style="background:hsl(103, 40%, 90%)"></span> 해탈</div>
-        <div class="legend-emotion"><span class="emotion-box" style="background:hsl(154, 40%, 90%)"></span> 미묘</div>
-        <div class="legend-emotion"><span class="emotion-box" style="background:hsl(206, 40%, 90%)"></span> 슬픔</div>
-        <div class="legend-emotion"><span class="emotion-box" style="background:hsl(257, 40%, 90%)"></span> 긴장</div>
-        <div class="legend-emotion"><span class="emotion-box" style="background:hsl(309, 40%, 90%)"></span> 놀람</div>
-      </div>
-    </div>
+
+  <div id="footer-tooltip" class="footer-tooltip" role="tooltip" aria-hidden="true"></div>
     
     <div class="legend-section-title">■ 형태 및 코 무늬</div>
       <div style="font-size: 12px; color: #666; margin-bottom: 8px;">입꼬리 긴장도</div>
