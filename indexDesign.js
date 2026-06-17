@@ -988,8 +988,8 @@ async function generateKnitQr() {
     container.innerHTML = '';
     new QRCode(container, {
       text: imageUrl,
-      width: 240,
-      height: 240,
+      width: 160,
+      height: 160,
       colorDark: '#1d1d1d',
       colorLight: '#ffffff',
       correctLevel: QRCode.CorrectLevel.M
