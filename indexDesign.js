@@ -748,6 +748,40 @@ function _shuffleArray(arr) {
   return result;
 }
 
+// 최종 텍스트에서 '오늘'과 '{nickname}님'이 각각 한 번씩만 등장하도록 중복 제거
+function _filterDuplicateTerms(text, nickname) {
+  const nicknameEsc = nickname ? nickname.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') : null;
+  let todaySeen = false;
+  let nickSeen = false;
+
+  return text.split(/(?<=[.!?])\s+/).map(s => {
+    let m = s;
+
+    if (nicknameEsc && m.includes(nickname + '님')) {
+      if (nickSeen) {
+        m = m
+          .replace(new RegExp(nicknameEsc + '님[은이을가]?\\s*', 'g'), '')
+          .replace(/,\s*([.!?])/g, '$1')
+          .replace(/,\s*$/g, '')
+          .replace(/\s+/g, ' ')
+          .trim();
+      } else {
+        nickSeen = true;
+      }
+    }
+
+    if (m.includes('오늘')) {
+      if (todaySeen) {
+        m = m.replace(/오늘은?\s*/g, '').replace(/\s+/g, ' ').trim();
+      } else {
+        todaySeen = true;
+      }
+    }
+
+    return m;
+  }).filter(s => s.trim()).join(' ');
+}
+
 const KNITSTAMP_CHAR_COUNT_THRESHOLD = 150; // 글자 수 많음/적음 기준
 const KNITSTAMP_SPEED_VERY_SLOW = 0.15;     // 포문 B로 전환되는 "현저히 느림" 기준
 const KNITSTAMP_SPEED_SLOW = 0.4;           // [3] 느림 문장 기준
@@ -836,7 +870,8 @@ function _buildKnitstampFinalMessage(piece, charCountOverride) {
     block3 = '천천히 꺼내야 하는 감정이었나봐요.';
   }
 
-  return _shuffleArray([block1, block2, block3].filter(Boolean)).join(' ');
+  const shuffled = _shuffleArray([block1, block2, block3].filter(Boolean)).join(' ');
+  return _filterDuplicateTerms(shuffled, nickname);
 }
 
 function fillCompleteDetails(screenId) {
