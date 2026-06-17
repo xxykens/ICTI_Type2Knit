@@ -2344,8 +2344,8 @@
       position: fixed;
       right: 24px;
       bottom: 84px; /* 버튼 위에 뜨도록 */
-      width: 500px; /* 사용자님 도면의 가로 크기 */
-      height: 605px; /* 사용자님 도면의 세로 크기 */
+      width: 400px; /* 사용자님 도면의 가로 크기 */
+      height: 505px; /* 사용자님 도면의 세로 크기 */
       max-width: 90vh;
       
       /* 🌟 스크롤바 완벽 삭제 (도면 크기에 딱 맞춥니다) */
