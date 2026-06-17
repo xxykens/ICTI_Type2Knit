@@ -64,8 +64,8 @@ window.LegendUI = {
 
       const cvs = document.createElement('canvas');
       const dpr = window.devicePixelRatio || 1;
-      const boxW = 280;
-      const boxH = 350;
+      const boxW = 500;
+      const boxH = 605;
 
       cvs.width = boxW * dpr;
       cvs.height = boxH * dpr;
@@ -79,6 +79,16 @@ window.LegendUI = {
 
       const ctx = cvs.getContext('2d');
       ctx.scale(dpr, dpr);
+      // 1. 먼저 상하좌우 여백을 주기 위해 그림을 중앙으로 살짝 이동시킵니다. (넉넉하게 40px씩)
+      ctx.translate(40, 40); 
+    
+    // 2. 이제 내용물 전체를 비율 어긋남 없이 1.5배 확대합니다.
+    // 이 명령 덕분에 drawStaticLegend 내의 모든 좌표와 폰트 크기가 자동으로 1.5배 커집니다.
+      ctx.scale(1.5, 1.5); 
+    // -------------------------------------------------------------
+    
+    // -------------------------------------------------------------
+    // 이미 확대와 이동을 처리했으므로 시작 좌표는 (0, 0)으로 바꿉니다.
       this.drawStaticLegend(ctx, 0, 0);
 
       this.isInitialized = true;
