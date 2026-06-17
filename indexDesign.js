@@ -433,7 +433,8 @@ async function handleBaselineRegister() {
 // 사용자의 현재 입력(글자 수) 상태에 따라 달라지는 안내 문구.
 // 각 구간은 minCount(이 글자 수 이상일 때 적용)로 정의되며,
 // 내림차순으로 정렬되어 현재 글자 수에 맞는 첫 구간이 선택된다.
-const END_BUTTON_MIN_COUNT = 200; // 종료 버튼이 뜨는 최소 글자 수
+const END_BUTTON_VISIBLE_COUNT = 100; // 종료 버튼이 뜨기 시작하는 최소 글자 수
+const END_HINT_MIN_COUNT = 200; // 종료 안내 문구가 뜨는 최소 글자 수
 
 const TYPING_HINT_STAGES = [
   {
@@ -462,7 +463,7 @@ const TYPING_HINT_STAGES = [
   },
   {
     kind: 'slow',
-    minCount: END_BUTTON_MIN_COUNT,
+    minCount: END_HINT_MIN_COUNT,
     line1: '이제 충분히 많은 마음을 짜냈어요.',
     line2: '마음껏 감정을 표출하고 종료 버튼을 눌러도 좋아요.'
   }
@@ -507,7 +508,7 @@ function getTypingHintState() {
 
 function pickHintByCharCount(count, isIdle) {
   // 200자 이상이고 일정 시간 입력이 멈췄으면 종료 유도 문구를 보여준다.
-  if (count >= END_BUTTON_MIN_COUNT && isIdle) return TYPING_HINT_IDLE_MESSAGE;
+  if (count >= END_HINT_MIN_COUNT && isIdle) return TYPING_HINT_IDLE_MESSAGE;
   // minCount 내림차순으로 현재 글자 수에 맞는 첫 구간을 찾는다.
   for (let i = TYPING_HINT_STAGES.length - 1; i >= 0; i--) {
     if (count >= TYPING_HINT_STAGES[i].minCount) return TYPING_HINT_STAGES[i];
@@ -590,7 +591,9 @@ function onType() {
 function updateEndButtonVisibility(count) {
   const endBtn = document.querySelector('#p9 .end-btn');
   if (!endBtn) return;
-  endBtn.style.display = count >= END_BUTTON_MIN_COUNT ? 'block' : 'none';
+  const isVisible = count >= END_BUTTON_VISIBLE_COUNT;
+  endBtn.classList.toggle('is-visible', isVisible);
+  endBtn.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
 }
 
 function endTyping() { goTo('p11'); }
@@ -988,8 +991,8 @@ async function generateKnitQr() {
     container.innerHTML = '';
     new QRCode(container, {
       text: imageUrl,
-      width: 240,
-      height: 240,
+      width: 160,
+      height: 160,
       colorDark: '#1d1d1d',
       colorLight: '#ffffff',
       correctLevel: QRCode.CorrectLevel.M

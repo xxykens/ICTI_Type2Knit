@@ -612,7 +612,7 @@ window.knitSketch_exportFullImage = function() {
     if (gridData.length === 0) { resolve(null); return; }
     const rowCount = Math.ceil(gridData.length / 10);
 
-    const EXPORT_W    = 560;
+    const EXPORT_W    = 400;
     const INSET_X     = 28;
     const LOGO_AREA_H = 72;
     const FOOTER_H    = 56;
@@ -668,10 +668,7 @@ window.knitSketch_exportFullImage = function() {
 
     const metrics = { spacing, cellSize, centerX, baseY, positions };
 
-    // 실 베이스
-    fns.drawThreadBase(ctx, metrics);
-
-    // 각 셀 그리기 (영문 emotionTag 매핑 포함)
+    // 각 셀 그리기 (영문 emotionTag 매핑 포함, 텍스트 오버레이 제거)
     const EYE_MAP = { FROWN: '짜증', SURPRISED: '놀람', BLURRY: '찌푸림', NEUTRAL: '중립' };
     gridData.forEach((cell, idx) => {
       if (cell.isBackspace) {
@@ -691,7 +688,7 @@ window.knitSketch_exportFullImage = function() {
         ctx.restore();
         return;
       }
-      const mapped = Object.assign({}, cell, { eye: EYE_MAP[cell.eye] || cell.eye || '중립' });
+      const mapped = Object.assign({}, cell, { eye: EYE_MAP[cell.eye] || cell.eye || '중립', text: '' });
       fns.drawKnitCell
         ? fns.drawKnitCell(ctx, mapped, idx, metrics)
         : null;
@@ -699,7 +696,7 @@ window.knitSketch_exportFullImage = function() {
 
     // 태그라인
     ctx.fillStyle = 'rgba(0,0,0,0.38)';
-    ctx.font = `14px 'HSHwalkong', 'Noto Serif KR', serif`;
+    ctx.font = `18px 'HSHwalkong', 'Noto Serif KR', serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('감정이∙패턴이∙되는∙순간', EXPORT_W / 2, LOGO_AREA_H + PAD_V + contentH + PAD_V + FOOTER_H / 2);
