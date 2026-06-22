@@ -10,7 +10,7 @@ class KnitCell {
     this.mouthScore = data.mouthScore;
     this.emotionTag = data.tag; // 🌟 [수정 부분 1] 감정 원본 태그를 받도록 추가
 
-    this.pos = createVector(width / 2, 220 - CELL_SIZE);
+    this.pos = createVector(width / 2, 350 - CELL_SIZE);
     this.targetPos = createVector(0, 0);
     
     this.calculateStyles();

@@ -4,17 +4,11 @@
  */
 const page_S4 = {
 
+  _prevKnitstampLen: 0,
   // --- 메인 그래픽 업데이트 및 렌더링 ---
   updateAndDraw: function() {
-    // 1. 인풋 시스템 프레임 업데이트 감지
-    let prevLen = window.knitstamp && window.knitstamp.seconds ? window.knitstamp.seconds.length : 0;
-    
-    if (typeof updateKnitstampInput === 'function') {
-      updateKnitstampInput(); 
-    }
-
-    // 2. 새로운 1초 데이터가 푸시된 순간 셀 생성 (전역 배열에 적재)
-    if (window.knitstamp && window.knitstamp.seconds && window.knitstamp.seconds.length > prevLen) {
+      if (window.knitstamp && window.knitstamp.seconds && window.knitstamp.seconds.length > this._prevKnitstampLen) {
+    this._prevKnitstampLen = window.knitstamp.seconds.length;
       let secData = window.knitstamp.seconds[window.knitstamp.seconds.length - 1];
       let kps = secData.input.typing.keysPerSecond;
       let face = secData.input.face;
@@ -74,7 +68,9 @@ const page_S4 = {
 
       // 1초 단위 전역 캐싱 초기화
       tempBackspaceFlag = false;
-      tempText = "";
+      tempText = '';
+      const _ta = document.getElementById('typing-capture');
+      if (_ta) window._tempTextBaseline = _ta.value.length;
     }
 
     // 3. 바늘 보간 및 애니메이션 업데이트 (전역 변수 활용)
@@ -98,6 +94,56 @@ const page_S4 = {
         window.cells[i].display(CELL_SIZE, i); 
       }
     }
+
+    // 5. 대바늘 위 떠다니는 입력 글자 애니메이션
+    this.drawFloatingChars();
+  },
+
+  // --- 대바늘 위 글자 페이드 애니메이션 ---
+  _floatingChars: [],
+  _FLOAT_LIFE_MS: 1000,   // 글자가 떠 있는 시간 (1초)
+  _FLOAT_RISE: 26,        // 1초 동안 위로 떠오르는 거리(px)
+
+  spawnFloatingChar: function(ch) {
+    if (!ch) return;
+    // 대바늘 교차점(약간 위)을 기준으로 약간의 좌우 흔들림을 줘서 겹침 방지
+    const jitterX = (Math.random() - 0.5) * 24;
+    this._floatingChars.push({
+      ch: ch,
+      bornAt: (typeof millis === 'function') ? millis() : performance.now(),
+      jitterX: jitterX
+    });
+    // 너무 많이 쌓이지 않도록 제한
+    if (this._floatingChars.length > 30) this._floatingChars.shift();
+  },
+
+  drawFloatingChars: function() {
+    if (!this._floatingChars.length) return;
+    const now = (typeof millis === 'function') ? millis() : performance.now();
+    const baseX = width / 2;
+    const baseY = 350 - CELL_SIZE * 0.8 - 18; // 대바늘 교차점 살짝 위
+
+    push();
+    colorMode(RGB, 255);                       // 색 모드를 RGB로 고정
+    if (window._floatFont) textFont(window._floatFont); // 사이트와 동일 폰트
+    textAlign(CENTER, CENTER);
+    textSize(18);
+    textStyle(NORMAL);
+    for (let i = this._floatingChars.length - 1; i >= 0; i--) {
+      const f = this._floatingChars[i];
+      const age = now - f.bornAt;
+      if (age >= this._FLOAT_LIFE_MS) {
+        this._floatingChars.splice(i, 1);
+        continue;
+      }
+      const t = age / this._FLOAT_LIFE_MS;      // 0 → 1
+      const alpha = 255 * (1 - t);               // 점점 투명
+      const y = baseY - this._FLOAT_RISE * t;    // 위로 떠오름
+      noStroke();
+      fill(26, 26, 26, alpha);                   // 거의 검은색
+      text(f.ch, baseX + f.jitterX, y);
+    }
+    pop();
   },
 
   // --- 내부 계산 및 드로잉 유틸리티 ---
@@ -122,7 +168,7 @@ const page_S4 = {
 
   getGridPosition: function(index) {
     let cellPos = gridPath[index] || gridPath[gridPath.length - 1];
-    let y = cellPos.r * SPACING + 220; 
+    let y = cellPos.r * SPACING + 350; 
     let startX = -((cellPos.w - 1) * SPACING) / 2;
     let x = startX + (cellPos.c * SPACING) + (width / 2);
     return createVector(x, y);
@@ -130,7 +176,7 @@ const page_S4 = {
 
   drawNeedles: function(typingIntensity) {
     push();
-    translate(width / 2, 220 - CELL_SIZE * 0.8); 
+    translate(width / 2, 350 - CELL_SIZE * 0.8); 
     
     let slideBase = 8 + typingIntensity * 12; 
     
@@ -169,8 +215,9 @@ const page_S4 = {
     grad.addColorStop(0, `rgb(${r}, ${g}, ${b})`);
     grad.addColorStop(1, 'rgb(225, 205, 175)');
 
-    ctx.fillStyle = grad;
+    fill(255);
     noStroke();
+    ctx.fillStyle = grad;
     
     beginShape();
     vertex(-3, -25);   

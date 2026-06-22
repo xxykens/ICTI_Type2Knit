@@ -3,7 +3,8 @@ window.knitstamp = window.knitstamp || {
 };
 
 // ==========================================
-// 🔍 [디버그 모드] true = 카메라 미리보기 + 콘솔 로그 ON
+// FACE_DEBUG true = 콘솔 로그 ON
+// 카메라 프리뷰는 p6/p7의 사용자용 얼굴 인식 프레임에서만 표시됩니다.
 // ==========================================
 const FACE_DEBUG = true;
 
@@ -25,6 +26,10 @@ function setupKnitstampInput() {
     typingTracker: new TypingSpeedTracker(),
     intervalMs: 1000
   });
+
+  if (window.state?.currentScreen) {
+    knitstampInputController.faceTracker.setPreviewScreen(window.state.currentScreen);
+  }
 }
 
 // main sketch에서 draw 때 호출
@@ -122,20 +127,17 @@ class FaceExpressionTracker {
     this.predictions = [];
     this.baseline = null;
     this.hasLoggedFirstFace = false;
+    this.previewPanel = null;
+    this.previewStatusText = null;
+    this.previewScreen = null;
 
     this.video = createCapture(VIDEO);
     this.video.size(w, h);
+    this.video.hide();
+    this.setupFaceRecognitionPreview();
 
     if (FACE_DEBUG) {
-      this.video.style('position', 'fixed');
-      this.video.style('top', '10px');
-      this.video.style('right', '10px');
-      this.video.style('width', '160px');
-      this.video.style('border', '2px solid red');
-      this.video.style('z-index', '9999');
       console.log("[facemesh] ml5.facemesh 존재?", typeof ml5?.facemesh);
-    } else {
-      this.video.hide();
     }
 
     let videoEl = this.video.elt || this.video;
@@ -153,7 +155,112 @@ class FaceExpressionTracker {
           console.log("[facemesh] 첫 얼굴 감지 ✅ — 기준값은 자동 등록하지 않음");
         }
       }
+
+      this.updatePreviewStatus();
     });
+  }
+
+  setupFaceRecognitionPreview() {
+    document.getElementById('face-debug-camera-panel')?.remove();
+    document.getElementById('face-debug-camera-reopen')?.remove();
+    document.getElementById('face-recognition-preview')?.remove();
+
+    const panel = document.createElement('div');
+    panel.id = 'face-recognition-preview';
+    panel.className = 'face-recognition-preview is-hidden';
+
+    const videoWrap = document.createElement('div');
+    videoWrap.className = 'face-recognition-video-wrap';
+
+    const frame = document.createElement('div');
+    frame.className = 'face-recognition-guide-frame';
+    frame.setAttribute('aria-hidden', 'true');
+    frame.innerHTML = `
+      <svg class="face-recognition-guide-icon" viewBox="0 0 300 240" preserveAspectRatio="xMidYMax meet" focusable="false" aria-hidden="true">
+        <path
+          class="face-recognition-guide-outline"
+          d="M27 239 C30 220 34 199 40 181 C44 168 54 162 68 157 L96 146 C112 140 120 130 122 116 C112 106 108 90 108 70 C108 35 125 16 150 16 C175 16 192 35 192 70 C192 90 188 106 178 116 C180 130 188 140 204 146 L232 157 C246 162 256 168 260 181 C266 199 270 220 273 239"
+        />
+      </svg>
+    `;
+
+    const status = document.createElement('div');
+    status.className = 'face-recognition-status';
+
+    const statusDot = document.createElement('span');
+    statusDot.className = 'face-recognition-status-dot';
+    statusDot.setAttribute('aria-hidden', 'true');
+
+    const statusText = document.createElement('span');
+    statusText.className = 'face-recognition-status-text';
+    statusText.textContent = '얼굴을 찾고 있어요.';
+
+    status.append(statusDot, statusText);
+    videoWrap.append(frame, status);
+    panel.append(videoWrap);
+    document.body.append(panel);
+
+    const videoEl = this.video.elt || this.video;
+    videoWrap.prepend(videoEl);
+    this.video.style('position', 'static');
+    this.video.style('display', 'none');
+    this.video.style('width', '100%');
+    this.video.style('height', '100%');
+    this.video.style('border', '0');
+    this.video.style('object-fit', 'cover');
+    this.video.style('object-position', 'center center');
+    this.video.style('transform', 'scaleX(-1)');
+    this.video.style('transform-origin', 'center center');
+
+    this.previewPanel = panel;
+    this.previewStatusText = statusText;
+  }
+
+  setPreviewScreen(screenId) {
+    this.previewScreen = screenId;
+
+    if (!this.previewPanel) return;
+
+    const shouldShow = screenId === 'p6' || screenId === 'p7';
+    const slot = shouldShow ? document.getElementById(`${screenId}-face-preview-slot`) : null;
+
+    if (!shouldShow || !slot) {
+      this.previewPanel.classList.add('is-hidden');
+      this.video.style('display', 'none');
+      return;
+    }
+
+    slot.appendChild(this.previewPanel);
+    this.previewPanel.classList.remove('is-hidden');
+    this.previewPanel.dataset.screen = screenId;
+    this.video.style('display', 'block');
+    this.updatePreviewStatus();
+  }
+
+  updatePreviewStatus() {
+    if (!this.previewPanel || !this.previewStatusText || this.previewPanel.classList.contains('is-hidden')) {
+      return;
+    }
+
+    const hasFace = this.hasFace();
+    this.previewPanel.classList.toggle('has-face', hasFace);
+    this.previewPanel.classList.toggle('is-searching', !hasFace);
+
+    if (this.previewScreen === 'p6') {
+      this.previewStatusText.textContent = hasFace
+        ? '얼굴이 프레임 안에 들어왔어요.'
+        : '얼굴을 프레임 안에 맞춰주세요.';
+      return;
+    }
+
+    if (this.baseline) {
+      this.previewStatusText.textContent = '기준표정이 등록되었어요.';
+      return;
+    }
+
+    this.previewStatusText.textContent = hasFace
+      ? '얼굴이 인식되고 있어요. 표정을 유지해주세요.'
+      : '얼굴을 찾고 있어요.';
   }
 
   hasFace() {
@@ -173,6 +280,7 @@ class FaceExpressionTracker {
 
     if (!keypoints) {
       if (FACE_DEBUG) console.log("[baseline] 등록 실패 — 얼굴 미감지");
+      this.updatePreviewStatus();
 
       return {
         success: false,
@@ -183,6 +291,7 @@ class FaceExpressionTracker {
     this.baseline = this.extractFaceValues(keypoints);
 
     if (FACE_DEBUG) console.log("[baseline] 등록 완료 ✅", this.baseline);
+    this.updatePreviewStatus();
 
     return {
       success: true,
